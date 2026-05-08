@@ -1,0 +1,177 @@
+
+ GET|HEAD / .. home › Marketplace\HomeController
+ GET|HEAD admin .. admin.index › Admin\AdminController@index
+ GET|HEAD admin/analytics .. admin.analytics › Admin\AnalyticsController@index
+ GET|HEAD admin/announcements .. admin.announcements › Admin\AnnouncementController@index
+ POST admin/announcements .. admin.announcements.store › Admin\AnnouncementController@store
+ PATCH admin/announcements/{announcement} .. admin.announcements.update › Admin\AnnouncementController@update
+ DELETE admin/announcements/{announcement} .. admin.announcements.destroy › Admin\AnnouncementController@destroy
+ PATCH admin/announcements/{announcement}/toggle admin.announcements.toggle › Admin\AnnouncementController@toggle
+ GET|HEAD admin/api-tokens .. admin.api-tokens › Admin\ApiTokenController@index
+ POST admin/api-tokens .. admin.api-tokens.store › Admin\ApiTokenController@store
+ DELETE admin/api-tokens/{token} .. admin.api-tokens.destroy › Admin\ApiTokenController@destroy
+ GET|HEAD admin/audit .. admin.audit › Admin\AuditLogController@index
+ POST admin/bulk/products .. admin.bulk.products › Admin\BulkActionController@products
+ POST admin/bulk/users .. admin.bulk.users › Admin\BulkActionController@users
+ GET|HEAD admin/categories .. admin.categories › Admin\AdminController@categories
+ POST admin/categories .. admin.categories.store › Admin\AdminController@storeCategory
+ PATCH admin/categories/{category} .. admin.categories.update › Admin\AdminController@updateCategory
+ DELETE admin/categories/{category} .. admin.categories.destroy › Admin\AdminController@destroyCategory
+ GET|HEAD admin/content .. admin.content › Admin\ContentController@edit
+ POST admin/email-templates .. admin.email-templates.store › Admin\ContentController@email
+ DELETE admin/email-templates/{emailTemplate} admin.email-templates.destroy › Admin\ContentController@deleteEmail
+ GET|HEAD admin/export/orders .. admin.export.orders › Admin\ExportController@orders
+ GET|HEAD admin/export/payments .. admin.export.payments › Admin\ExportController@payments
+ GET|HEAD admin/export/payouts .. admin.export.payouts › Admin\ExportController@payouts
+ GET|HEAD admin/export/users .. admin.export.users › Admin\ExportController@users
+ GET|HEAD admin/licenses .. admin.licenses › Admin\AdminController@licenses
+ POST admin/licenses .. admin.licenses.store › Admin\AdminController@storeLicense
+ PATCH admin/licenses/{license} .. admin.licenses.update › Admin\AdminController@updateLicense
+ DELETE admin/licenses/{license} .. admin.licenses.destroy › Admin\AdminController@destroyLicense
+ POST admin/mail/test .. admin.mail.test › Admin\ContentController@sendTestEmail
+ GET|HEAD admin/moderation .. admin.moderation.hub › Admin\ModerationController@hub
+ GET|HEAD admin/moderation/comments .. admin.moderation.comments › Admin\ModerationController@comments
+ PATCH admin/moderation/comments/{comment} admin.moderation.comments.update › Admin\ModerationController@updateC…
+ DELETE admin/moderation/comments/{comment} admin.moderation.comments.destroy › Admin\ModerationController@destro…
+ GET|HEAD admin/moderation/makes .. admin.moderation.makes › Admin\ModerationController@makes
+ PATCH admin/moderation/makes/{make} .. admin.moderation.makes.update › Admin\ModerationController@updateMake
+ DELETE admin/moderation/makes/{make} .. admin.moderation.makes.destroy › Admin\ModerationController@destroyMake
+ GET|HEAD admin/moderation/reports .. admin.moderation.reports › Admin\ModerationController@reports
+ PATCH admin/moderation/reports/{report} admin.moderation.reports.update › Admin\ModerationController@updateRepo…
+ GET|HEAD admin/moderation/reviews .. admin.moderation.reviews › Admin\ModerationController@reviews
+ PATCH admin/moderation/reviews/{review} admin.moderation.reviews.update › Admin\ModerationController@updateRevi…
+ DELETE admin/moderation/reviews/{review} admin.moderation.reviews.destroy › Admin\ModerationController@destroyRe…
+ GET|HEAD admin/newsletter .. admin.newsletter › Admin\NewsletterController@index
+ POST admin/newsletter/blast .. admin.newsletter.blast › Admin\NewsletterController@blast
+ DELETE admin/newsletter/subscribers/{subscriber} .. admin.newsletter.destroy › Admin\NewsletterController@destroy
+ GET|HEAD admin/orders .. admin.orders › Admin\AdminController@orders
+ GET|HEAD admin/payments .. admin.payments › Admin\AdminController@payments
+ GET|HEAD admin/payouts .. admin.payouts › Admin\PayoutAdminController@index
+ PATCH admin/payouts/{payout} .. admin.payouts.update › Admin\PayoutAdminController@update
+ GET|HEAD admin/products .. admin.products › Admin\AdminController@products
+ GET|HEAD admin/products/featured .. admin.products.featured › Admin\FeaturedProductsController@index
+ POST admin/products/featured/reorder admin.products.featured.reorder › Admin\FeaturedProductsController@reorder
+ PATCH admin/products/{product}/moderate .. admin.products.moderate › Admin\AdminController@moderate
+ PATCH admin/products/{product}/toggle-featured admin.products.toggle-featured › Admin\FeaturedProductsControlle…
+ GET|HEAD admin/promo-codes .. admin.promo-codes › Admin\PromoCodeAdminController@index
+ POST admin/promo-codes .. admin.promo-codes.store › Admin\PromoCodeAdminController@store
+ PATCH admin/promo-codes/{promoCode} .. admin.promo-codes.update › Admin\PromoCodeAdminController@update
+ DELETE admin/promo-codes/{promoCode} .. admin.promo-codes.destroy › Admin\PromoCodeAdminController@destroy
+ GET|HEAD admin/refunds .. admin.refunds › Admin\RefundAdminController@index
+ PATCH admin/refunds/{refundRequest} .. admin.refunds.update › Admin\RefundAdminController@update
+ POST admin/seo .. admin.seo.store › Admin\ContentController@seo
+ DELETE admin/seo/{seoPage} .. admin.seo.destroy › Admin\ContentController@deleteSeo
+ POST admin/settings .. admin.settings.store › Admin\ContentController@setting
+ POST admin/settings/asset/delete .. admin.settings.asset.delete › Admin\ContentController@deleteAsset
+ POST admin/settings/bulk .. admin.settings.bulk › Admin\ContentController@bulkSettings
+ GET|HEAD admin/system .. admin.system › Admin\SystemController@index
+ POST admin/system/cache .. admin.system.cache › Admin\SystemController@clearCache
+ GET|HEAD admin/system/failed-jobs .. admin.system.failed-jobs › Admin\SystemController@failedJobs
+ GET|HEAD admin/system/logs .. admin.system.logs › Admin\SystemController@logs
+ POST admin/system/maintenance .. admin.system.maintenance › Admin\SystemController@toggleMaintenance
+ POST admin/system/queue/delete/{id} .. admin.system.queue.delete › Admin\SystemController@deleteJob
+ POST admin/system/queue/flush .. admin.system.queue.flush › Admin\SystemController@flushFailed
+ POST admin/system/queue/retry-all .. admin.system.queue.retry-all › Admin\SystemController@retryJob
+ POST admin/system/queue/retry/{id} .. admin.system.queue.retry › Admin\SystemController@retryJob
+ GET|HEAD admin/tags .. admin.tags › Admin\AdminController@tags
+ POST admin/tags .. admin.tags.store › Admin\AdminController@storeTag
+ PATCH admin/tags/{tag} .. admin.tags.update › Admin\AdminController@updateTag
+ DELETE admin/tags/{tag} .. admin.tags.destroy › Admin\AdminController@destroyTag
+ ANY admin/taxonomy .. admin.taxonomy › Illuminate\Routing › RedirectController
+ GET|HEAD admin/tips .. admin.tips › Admin\TipsAdminController@index
+ POST admin/translations .. admin.translations.store › Admin\ContentController@translation
+ DELETE admin/translations/{translation} .. admin.translations.destroy › Admin\ContentController@deleteTranslation
+ GET|HEAD admin/users .. admin.users › Admin\AdminController@users
+ PATCH admin/users/{user} .. admin.users.update › Admin\AdminController@updateUser
+ DELETE admin/users/{user} .. admin.users.destroy › Admin\AdminController@destroyUser
+ POST admin/users/{user}/reset-password .. admin.users.reset-password › Admin\AdminController@resetUserPassword
+ PATCH admin/users/{user}/toggle-manual-verification admin.users.toggle-manual-verification › Admin\AdminControl…
+ POST admin/users/{user}/toggle-verification admin.users.toggle-verification › Admin\AdminController@toggleUser…
+ GET|HEAD auth/github/callback .. auth.github.callback › Auth\SocialAuthController@githubCallback
+ GET|HEAD auth/github/redirect .. auth.github.redirect › Auth\SocialAuthController@githubRedirect
+ GET|POST|HEAD auth/telegram .. auth.telegram › Auth\SocialAuthController@telegram
+ GET|HEAD author/analytics .. author.analytics › Marketplace\AuthorAnalyticsController@index
+ GET|HEAD author/payouts .. author.payouts › Marketplace\PayoutController@index
+ POST author/payouts .. author.payouts.store › Marketplace\PayoutController@store
+ GET|HEAD author/products .. author.products.index › Marketplace\ProductController@myProducts
+ POST author/products .. author.products.store › Marketplace\ProductController@store
+ GET|HEAD author/products/create .. author.products.create › Marketplace\ProductController@create
+ PATCH author/products/{product} .. author.products.update › Marketplace\ProductController@update
+ GET|HEAD author/products/{product}/edit .. author.products.edit › Marketplace\ProductController@edit
+ DELETE author/products/{product}/files/{file} author.products.files.destroy › Marketplace\ProductController@dest…
+ GET|HEAD authors/{user} .. authors.show › Marketplace\AuthorController@show
+ POST authors/{user}/contact .. authors.contact › Marketplace\AuthorContactController@store
+ POST authors/{user}/follow .. authors.follow › Marketplace\AuthorFollowController@store
+ DELETE authors/{user}/follow .. authors.unfollow › Marketplace\AuthorFollowController@destroy
+ ANY catalog .. catalog › Illuminate\Routing › RedirectController
+ POST checkout/{order}/demo-confirm .. checkout.demo-confirm › Marketplace\CheckoutController@demoConfirm
+ GET|HEAD checkout/{order}/success .. checkout.success › Marketplace\CheckoutController@success
+ POST checkout/{product:slug} .. checkout.store › Marketplace\CheckoutController@store
+ GET|HEAD confirm-password .. password.confirm › Auth\ConfirmablePasswordController@show
+ POST confirm-password .. Auth\ConfirmablePasswordController@store
+ GET|HEAD dashboard .. dashboard › Marketplace\DashboardController
+ POST email/verification-notification .. verification.send › Auth\EmailVerificationNotificationController@store
+ GET|HEAD forgot-password .. password.request › Auth\PasswordResetLinkController@create
+ POST forgot-password .. password.email › Auth\PasswordResetLinkController@store
+ GET|HEAD locale/{locale} .. locale.switch › LocaleController@switch
+ GET|HEAD login .. login › Auth\AuthenticatedSessionController@create
+ POST login .. Auth\AuthenticatedSessionController@store
+ POST logout .. logout › Auth\AuthenticatedSessionController@destroy
+ GET|HEAD models .. products.index › Marketplace\ProductController@index
+ GET|HEAD models/{product:slug} .. products.show › Marketplace\ProductController@show
+ POST models/{product:slug}/comments .. products.comments.store › Marketplace\CommentController@store
+ DELETE models/{product:slug}/comments/{comment} products.comments.destroy › Marketplace\CommentController@destroy
+ GET|HEAD models/{product:slug}/d/{file} .. products.download.signed › Marketplace\DownloadController@signed
+ GET|HEAD models/{product:slug}/download-options products.download-options › Marketplace\DownloadOptionsController@…
+ GET|HEAD models/{product:slug}/download/{file} .. products.download › Marketplace\DownloadController
+ POST models/{product:slug}/makes .. products.makes.store › Marketplace\MakeController@store
+ DELETE models/{product:slug}/makes/{make} .. products.makes.destroy › Marketplace\MakeController@destroy
+ PATCH models/{product:slug}/makes/{make}/moderate products.makes.moderate › Marketplace\MakeController@moderate
+ GET|HEAD models/{product:slug}/print-profile products.print-profile.download › Marketplace\PrintProfileDownloadCon…
+ POST models/{product:slug}/promo .. products.promo.apply › Marketplace\PromoCodeController@apply
+ POST models/{product:slug}/report .. products.report › Marketplace\ReportController@store
+ POST models/{product:slug}/reviews .. products.reviews.store › Marketplace\ReviewController@store
+ DELETE models/{product:slug}/reviews/{review} .. products.reviews.destroy › Marketplace\ReviewController@destroy
+ POST models/{product:slug}/tip .. products.tip › Marketplace\TipController@store
+ POST newsletter/subscribe .. newsletter.subscribe › NewsletterController@subscribe
+ GET|HEAD newsletter/unsubscribe/{token} .. newsletter.unsubscribe › NewsletterController@unsubscribe
+ GET|HEAD notifications .. notifications.index › Marketplace\NotificationController@index
+ PATCH notifications/read-all .. notifications.read-all › Marketplace\NotificationController@readAll
+ GET|HEAD notifications/{id} .. notifications.read › Marketplace\NotificationController@read
+ DELETE notifications/{id} .. notifications.destroy › Marketplace\NotificationController@destroy
+ POST orders/{order}/refund .. refunds.store › Marketplace\RefundRequestController@store
+ PUT password .. password.update › Auth\PasswordController@update
+ POST payments/aifo/webhook .. payments.aifo.webhook › Marketplace\PaymentWebhookController
+ GET|HEAD profile .. profile.edit › ProfileController@edit
+ PATCH profile .. profile.update › ProfileController@update
+ DELETE profile .. profile.destroy › ProfileController@destroy
+ GET|HEAD profile/printers .. printers.index › Marketplace\PrinterProfileController@index
+ POST profile/printers .. printers.store › Marketplace\PrinterProfileController@store
+ PATCH profile/printers/{printer} .. printers.update › Marketplace\PrinterProfileController@update
+ DELETE profile/printers/{printer} .. printers.destroy › Marketplace\PrinterProfileController@destroy
+ POST profile/printers/{printer}/default .. printers.default › Marketplace\PrinterProfileController@makeDefault
+ GET|HEAD profile/two-factor .. two-factor.show › TwoFactorController@show
+ DELETE profile/two-factor .. two-factor.disable › TwoFactorController@disable
+ POST profile/two-factor/enable .. two-factor.enable › TwoFactorController@enable
+ POST profile/two-factor/recovery-codes .. two-factor.recovery › TwoFactorController@regenerateRecovery
+ GET|HEAD refunds .. refunds.index › Marketplace\RefundRequestController@index
+ GET|HEAD register .. register › Auth\RegisteredUserController@create
+ POST register .. Auth\RegisteredUserController@store
+ POST reset-password .. password.store › Auth\NewPasswordController@store
+ GET|HEAD reset-password/{token} .. password.reset › Auth\NewPasswordController@create
+ GET|HEAD saved-searches .. saved-searches.index › Marketplace\SavedSearchController@index
+ POST saved-searches .. saved-searches.store › Marketplace\SavedSearchController@store
+ DELETE saved-searches/{savedSearch} .. saved-searches.destroy › Marketplace\SavedSearchController@destroy
+ GET|HEAD sitemap.xml .. sitemap › Marketplace\SitemapController
+ GET|HEAD storage/{path} storage.local › vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServiceProvid…
+ PUT storage/{path} storage.local.upload › vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServic…
+ GET|HEAD two-factor/challenge .. two-factor.challenge › TwoFactorController@challenge
+ POST two-factor/challenge .. two-factor.challenge.submit › TwoFactorController@challengeSubmit
+ GET|HEAD up .. vendor/laravel/framework/src/Illuminate/Foundation/Configuration/ApplicationBuilder.php:223
+ GET|HEAD verify-email .. verification.notice › Auth\EmailVerificationPromptController
+ GET|HEAD verify-email/{id}/{hash} .. verification.verify › Auth\VerifyEmailController
+ GET|HEAD wishlist .. wishlist.index › Marketplace\WishlistController@index
+ POST wishlist/{product:slug}/toggle .. wishlist.toggle › Marketplace\WishlistController@toggle
+
+ Showing [173] routes
+

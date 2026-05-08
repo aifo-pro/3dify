@@ -1,0 +1,363 @@
+<?php
+
+namespace App\Http\Controllers\Marketplace;
+
+use App\Http\Controllers\Controller;
+use App\Models\Category;
+use App\Models\License;
+use App\Models\ModelFile;
+use App\Models\Product;
+use App\Models\Tag;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+
+class ProductController extends Controller
+{
+    public function index(Request $request)
+    {
+        $minPrice = $request->filled('min_price') ? max(0, (float) $request->input('min_price')) : null;
+        $maxPrice = $request->filled('max_price') ? max(0, (float) $request->input('max_price')) : null;
+        $licenseSlugs = (array) $request->input('license', []);
+        $formatExt = (array) $request->input('format', []);
+
+        $products = Product::query()
+            ->with(['author', 'category', 'tags'])
+            ->published()
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $term = '%'.$request->string('q')->toString().'%';
+                $query->where(function ($inner) use ($term) {
+                    $inner->where('slug', 'like', $term)
+                        ->orWhere('title', 'like', $term)
+                        ->orWhere('description', 'like', $term);
+                });
+            })
+            ->when($request->filled('category'), fn ($query) => $query->whereHas('category', fn ($q) => $q->where('slug', $request->category)))
+            ->when($request->boolean('free'), fn ($query) => $query->where('is_free', true))
+            ->when($request->filled('tag'), fn ($query) => $query->whereHas('tags', fn ($q) => $q->where('slug', $request->tag)))
+            ->when(! empty($licenseSlugs), fn ($query) => $query->whereHas('license', fn ($q) => $q->whereIn('slug', $licenseSlugs)))
+            ->when(! empty($formatExt), fn ($query) => $query->whereHas('files', fn ($q) => $q->whereIn('extension', array_map('strtolower', $formatExt))))
+            ->when($minPrice !== null, fn ($query) => $query->where('price', '>=', $minPrice))
+            ->when($maxPrice !== null, fn ($query) => $query->where('price', '<=', $maxPrice))
+            ->when($request->input('sort') === 'popular', fn ($query) => $query->orderByDesc('views_count'))
+            ->when($request->input('sort') === 'downloads', fn ($query) => $query->orderByDesc('downloads_count'))
+            ->when($request->input('sort') === 'price_asc', fn ($query) => $query->orderBy('price'))
+            ->when($request->input('sort') === 'price_desc', fn ($query) => $query->orderByDesc('price'))
+            ->when($request->input('sort') === 'oldest', fn ($query) => $query->oldest('published_at'))
+            ->when(! in_array($request->input('sort'), ['popular', 'downloads', 'price_asc', 'price_desc', 'oldest'], true), fn ($query) => $query->latest('published_at'))
+            ->paginate(12)
+            ->withQueryString();
+
+        $availableFormats = \Illuminate\Support\Facades\DB::table('model_files')
+            ->whereNotNull('extension')
+            ->where('is_preview', false)
+            ->select('extension', \Illuminate\Support\Facades\DB::raw('count(*) as c'))
+            ->groupBy('extension')
+            ->orderByDesc('c')
+            ->limit(12)
+            ->get();
+
+        return view('marketplace.products.index', [
+            'products' => $products,
+            'categories' => Category::query()->where('is_active', true)->orderBy('sort_order')->get(),
+            'tags' => Tag::query()->orderBy('slug')->get(),
+            'licenses' => License::query()->orderBy('id')->get(),
+            'availableFormats' => $availableFormats,
+            'filters' => [
+                'q' => (string) $request->input('q', ''),
+                'category' => (string) $request->input('category', ''),
+                'tag' => (string) $request->input('tag', ''),
+                'free' => $request->boolean('free'),
+                'license' => $licenseSlugs,
+                'format' => array_map('strtolower', $formatExt),
+                'min_price' => $minPrice,
+                'max_price' => $maxPrice,
+                'sort' => (string) $request->input('sort', 'latest'),
+            ],
+        ]);
+    }
+
+    public function show(Product $product)
+    {
+        abort_unless($product->status === 'published' || auth()->id() === $product->user_id || auth()->user()?->canModerate(), 404);
+        $product->increment('views_count');
+
+        // Daily aggregate for analytics. Insert-if-missing then increment — works on SQLite/MySQL alike.
+        $today = now()->toDateString();
+        $existing = DB::table('product_view_stats')->where('product_id', $product->id)->where('date', $today)->first();
+        if ($existing) {
+            DB::table('product_view_stats')->where('id', $existing->id)->update(['count' => $existing->count + 1, 'updated_at' => now()]);
+        } else {
+            DB::table('product_view_stats')->insert(['product_id' => $product->id, 'date' => $today, 'count' => 1, 'created_at' => now(), 'updated_at' => now()]);
+        }
+
+        $product->load(['author', 'category', 'license', 'tags', 'files']);
+
+        // Approved makes for everyone + own pending makes for the uploader.
+        $makes = $product->makes()
+            ->with('user')
+            ->where(function ($q) {
+                $q->where('status', 'approved');
+                if (auth()->check()) {
+                    $q->orWhere(fn ($qq) => $qq->where('user_id', auth()->id()));
+                }
+            })
+            ->latest()
+            ->get();
+
+        $comments = $product->comments()
+            ->with('user', 'replies.user')
+            ->whereNull('parent_id')
+            ->where('status', 'published')
+            ->latest()
+            ->get();
+
+        // Similar models: same category > same tags > latest published, exclude self.
+        $similar = Product::query()
+            ->with(['author', 'category'])
+            ->published()
+            ->where('id', '!=', $product->id)
+            ->when($product->category_id, fn ($q) => $q->where('category_id', $product->category_id))
+            ->latest('published_at')
+            ->take(4)
+            ->get();
+
+        if ($similar->count() < 4 && $product->tags->isNotEmpty()) {
+            $tagIds = $product->tags->pluck('id');
+            $tagBased = Product::query()
+                ->with(['author', 'category'])
+                ->published()
+                ->where('id', '!=', $product->id)
+                ->whereNotIn('id', $similar->pluck('id'))
+                ->whereHas('tags', fn ($q) => $q->whereIn('tags.id', $tagIds))
+                ->latest('published_at')
+                ->take(4 - $similar->count())
+                ->get();
+            $similar = $similar->concat($tagBased);
+        }
+
+        if ($similar->count() < 4) {
+            $filler = Product::query()
+                ->with(['author', 'category'])
+                ->published()
+                ->where('id', '!=', $product->id)
+                ->whereNotIn('id', $similar->pluck('id'))
+                ->latest('published_at')
+                ->take(4 - $similar->count())
+                ->get();
+            $similar = $similar->concat($filler);
+        }
+
+        return view('marketplace.products.show', [
+            'product' => $product,
+            'makes' => $makes,
+            'comments' => $comments,
+            'similar' => $similar,
+        ]);
+    }
+
+    public function create()
+    {
+        $this->authorize('create', Product::class);
+
+        return view('marketplace.author.form', [
+            'product' => new Product(['currency' => 'EUR']),
+            'categories' => Category::query()->where('is_active', true)->orderBy('sort_order')->get(),
+            'licenses' => License::query()->orderBy('slug')->get(),
+            'tags' => Tag::query()->orderBy('slug')->get(),
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $this->authorize('create', Product::class);
+
+        $data = $this->validated($request);
+        $product = DB::transaction(function () use ($request, $data) {
+            $product = Product::create($this->productPayload($request, $data));
+            $this->syncTags($product, $request);
+            $this->storeFiles($product, $request);
+
+            return $product;
+        });
+
+        return redirect()->route('author.products.edit', $product)->with('status', 'Модель збережено та відправлено на модерацію.');
+    }
+
+    public function edit(Product $product)
+    {
+        $this->authorize('update', $product);
+
+        return view('marketplace.author.form', [
+            'product' => $product->load('tags', 'files'),
+            'categories' => Category::query()->where('is_active', true)->orderBy('sort_order')->get(),
+            'licenses' => License::query()->orderBy('slug')->get(),
+            'tags' => Tag::query()->orderBy('slug')->get(),
+        ]);
+    }
+
+    public function update(Request $request, Product $product)
+    {
+        $this->authorize('update', $product);
+
+        $data = $this->validated($request);
+        DB::transaction(function () use ($request, $product, $data) {
+            $product->update($this->productPayload($request, $data, $product));
+            $this->syncTags($product, $request);
+            $this->storeFiles($product, $request);
+        });
+
+        return back()->with('status', 'Модель оновлено.');
+    }
+
+    public function myProducts()
+    {
+        return view('marketplace.author.index', [
+            'products' => auth()->user()->products()->with('category')->latest()->paginate(10),
+        ]);
+    }
+
+    public function destroyFile(Product $product, ModelFile $file)
+    {
+        $this->authorize('update', $product);
+        abort_unless($file->product_id === $product->id, 404);
+
+        Storage::disk($file->disk)->delete($file->path);
+        $file->delete();
+
+        return back()->with('status', 'Файл видалено.');
+    }
+
+    private function validated(Request $request): array
+    {
+        return $request->validate([
+            'title_uk' => ['required', 'string', 'max:180'],
+            'title_en' => ['nullable', 'string', 'max:180'],
+            'short_description_uk' => ['nullable', 'string', 'max:500'],
+            'description_uk' => ['required', 'string'],
+            'description_en' => ['nullable', 'string'],
+            'category_id' => ['nullable', 'exists:categories,id'],
+            'license_id' => ['nullable', 'exists:licenses,id'],
+            'price' => ['required', 'numeric', 'min:0', 'max:99999'],
+            'currency' => ['required', Rule::in(['EUR', 'USD', 'UAH'])],
+            'cover' => ['nullable', 'image', 'max:4096'],
+            'gallery.*' => ['nullable', 'image', 'max:4096'],
+            'files.*' => ['nullable', 'file', 'max:102400'],
+            'preview_file' => ['nullable', 'file', 'max:51200'],
+            'tags' => ['array'],
+            'tags.*' => ['exists:tags,id'],
+            'dim_x' => ['nullable', 'integer', 'min:1', 'max:2000'],
+            'dim_y' => ['nullable', 'integer', 'min:1', 'max:2000'],
+            'dim_z' => ['nullable', 'integer', 'min:1', 'max:2000'],
+            'recommended_materials' => ['nullable', 'array'],
+            'recommended_materials.*' => ['string', 'max:32'],
+            'print_profile_settings' => ['nullable', 'array'],
+            'print_profile_settings.*' => ['nullable', 'string', 'max:60'],
+            'print_profile_file' => ['nullable', 'file', 'max:51200'],
+            'print_profile_remove' => ['nullable', 'boolean'],
+        ]);
+    }
+
+    private function productPayload(Request $request, array $data, ?Product $product = null): array
+    {
+        $titleEn = $data['title_en'] ?? null;
+        $shortDescriptionUk = $data['short_description_uk'] ?? '';
+        $descriptionEn = $data['description_en'] ?? null;
+        $cover = $product?->cover_path;
+        if ($request->hasFile('cover')) {
+            $cover = $request->file('cover')->store('covers', 'public');
+        }
+        $gallery = $product?->gallery ?? [];
+        foreach ((array) $request->file('gallery', []) as $image) {
+            $gallery[] = $image->store('gallery', 'public');
+        }
+        if (! $cover && count($gallery) > 0) {
+            $cover = $gallery[0];
+        }
+
+        $printProfilePath = $product?->print_profile_path;
+        $printProfileName = $product?->print_profile_name;
+        if ($request->boolean('print_profile_remove') && $printProfilePath) {
+            Storage::disk('private')->delete($printProfilePath);
+            $printProfilePath = null;
+            $printProfileName = null;
+        }
+        if ($request->hasFile('print_profile_file')) {
+            $pp = $request->file('print_profile_file');
+            $allowed = ['3mf', 'gcode', 'bgcode', 'zip'];
+            $ext = strtolower($pp->getClientOriginalExtension());
+            abort_unless(in_array($ext, $allowed, true), 422, 'Unsupported print profile type.');
+            if ($printProfilePath) {
+                Storage::disk('private')->delete($printProfilePath);
+            }
+            $printProfilePath = $pp->store('print-profiles/'.($product?->id ?? 'new'), 'private');
+            $printProfileName = $pp->getClientOriginalName();
+        }
+
+        $settings = array_filter((array) ($data['print_profile_settings'] ?? []), fn ($v) => filled($v));
+
+        return [
+            'user_id' => $product?->user_id ?? $request->user()->id,
+            'category_id' => $data['category_id'] ?? null,
+            'license_id' => $data['license_id'] ?? null,
+            'slug' => $product?->slug ?? Str::slug($titleEn ?: $data['title_uk']).'-'.Str::lower(Str::random(6)),
+            'title' => ['uk' => $data['title_uk'], 'en' => $titleEn ?: $data['title_uk']],
+            'short_description' => ['uk' => $shortDescriptionUk, 'en' => $shortDescriptionUk],
+            'description' => ['uk' => $data['description_uk'], 'en' => $descriptionEn ?: $data['description_uk']],
+            'status' => $request->user()->canModerate() ? 'published' : 'pending',
+            'price' => $data['price'],
+            'currency' => $data['currency'],
+            'is_free' => (float) $data['price'] === 0.0,
+            'cover_path' => $cover,
+            'gallery' => array_values(array_unique($gallery)),
+            'published_at' => $request->user()->canModerate() ? now() : $product?->published_at,
+            'dim_x' => $data['dim_x'] ?? null,
+            'dim_y' => $data['dim_y'] ?? null,
+            'dim_z' => $data['dim_z'] ?? null,
+            'recommended_materials' => $data['recommended_materials'] ?? null,
+            'print_profile_path' => $printProfilePath,
+            'print_profile_name' => $printProfileName,
+            'print_profile_settings' => $settings ?: null,
+        ];
+    }
+
+    private function syncTags(Product $product, Request $request): void
+    {
+        $product->tags()->sync($request->input('tags', []));
+    }
+
+    private function storeFiles(Product $product, Request $request): void
+    {
+        foreach ((array) $request->file('files', []) as $file) {
+            $extension = strtolower($file->getClientOriginalExtension());
+            abort_unless(in_array($extension, ModelFile::ALLOWED_EXTENSIONS, true), 422, 'Unsupported file type.');
+            $product->files()->create([
+                'type' => 'source',
+                'disk' => 'private',
+                'path' => $file->store('models/'.$product->id, 'private'),
+                'original_name' => $file->getClientOriginalName(),
+                'extension' => $extension,
+                'size' => $file->getSize(),
+            ]);
+        }
+
+        if ($request->hasFile('preview_file')) {
+            $file = $request->file('preview_file');
+            $extension = strtolower($file->getClientOriginalExtension());
+            $allowedPreview = ['glb', 'gltf', 'obj', 'stl', 'gif', 'png', 'jpg', 'jpeg', 'webp'];
+            abort_unless(in_array($extension, $allowedPreview, true), 422, 'Unsupported preview file type.');
+            $product->files()->where('is_preview', true)->update(['is_preview' => false]);
+            $product->files()->create([
+                'type' => 'preview',
+                'disk' => 'public',
+                'path' => $file->store('previews/'.$product->id, 'public'),
+                'original_name' => $file->getClientOriginalName(),
+                'extension' => $extension,
+                'size' => $file->getSize(),
+                'is_preview' => true,
+            ]);
+        }
+    }
+}

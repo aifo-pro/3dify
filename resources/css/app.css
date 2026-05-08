@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] {
+    display: none !important;
+}
+
+/* Hide ugly native spinner arrows on number inputs across the app.
+   Users can still type, use ↑/↓ arrow keys, or scroll-wheel.
+   Opt back in by adding the `.has-spin` class to a specific input. */
+@layer base {
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+    input[type="number"].has-spin {
+        -moz-appearance: auto;
+        appearance: auto;
+    }
+    input[type="number"].has-spin::-webkit-outer-spin-button,
+    input[type="number"].has-spin::-webkit-inner-spin-button {
+        -webkit-appearance: auto;
+    }
+}
