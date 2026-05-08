@@ -277,6 +277,8 @@ Route::middleware(['auth', 'role:admin,moderator'])->prefix('admin')->name('admi
     Route::get('/newsletter', [AdminNewsletterController::class, 'index'])->name('newsletter');
     Route::delete('/newsletter/subscribers/{subscriber}', [AdminNewsletterController::class, 'destroy'])->name('newsletter.destroy');
     Route::post('/newsletter/blast', [AdminNewsletterController::class, 'blast'])->name('newsletter.blast');
+    Route::get('/newsletter/template/{key}', [AdminNewsletterController::class, 'template'])->name('newsletter.template');
+    Route::post('/newsletter/preview', [AdminNewsletterController::class, 'preview'])->name('newsletter.preview');
 
     // Analytics
     Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics');
