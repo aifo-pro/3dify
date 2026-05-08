@@ -52,14 +52,31 @@ return new class extends Migration
         });
 
         // Add fields to products: dimensions, recommended materials, print profile attachment.
+        // We position the new columns after `cover_path` (the actual column on the products
+        // table) — earlier revisions of this migration referenced a non-existent
+        // `preview_path` column which caused a SQL 1054 on fresh installs.
         Schema::table('products', function (Blueprint $table) {
-            $table->unsignedSmallInteger('dim_x')->nullable()->after('preview_path');
-            $table->unsignedSmallInteger('dim_y')->nullable()->after('dim_x');
-            $table->unsignedSmallInteger('dim_z')->nullable()->after('dim_y');
-            $table->json('recommended_materials')->nullable()->after('dim_z');
-            $table->string('print_profile_path')->nullable()->after('recommended_materials');
-            $table->string('print_profile_name')->nullable()->after('print_profile_path');
-            $table->json('print_profile_settings')->nullable()->after('print_profile_name');
+            if (! Schema::hasColumn('products', 'dim_x')) {
+                $table->unsignedSmallInteger('dim_x')->nullable()->after('cover_path');
+            }
+            if (! Schema::hasColumn('products', 'dim_y')) {
+                $table->unsignedSmallInteger('dim_y')->nullable()->after('dim_x');
+            }
+            if (! Schema::hasColumn('products', 'dim_z')) {
+                $table->unsignedSmallInteger('dim_z')->nullable()->after('dim_y');
+            }
+            if (! Schema::hasColumn('products', 'recommended_materials')) {
+                $table->json('recommended_materials')->nullable()->after('dim_z');
+            }
+            if (! Schema::hasColumn('products', 'print_profile_path')) {
+                $table->string('print_profile_path')->nullable()->after('recommended_materials');
+            }
+            if (! Schema::hasColumn('products', 'print_profile_name')) {
+                $table->string('print_profile_name')->nullable()->after('print_profile_path');
+            }
+            if (! Schema::hasColumn('products', 'print_profile_settings')) {
+                $table->json('print_profile_settings')->nullable()->after('print_profile_name');
+            }
         });
     }
 

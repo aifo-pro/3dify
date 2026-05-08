@@ -7,7 +7,7 @@ Sets up everything this app needs and is **idempotent** — safe to re-run.
 
 | Component        | Version             | Purpose                                       |
 | ---------------- | ------------------- | --------------------------------------------- |
-| PHP              | 8.3 + FPM           | runtime (with `bcmath`, `gmp`, `gd`, `intl`, `mbstring`, `mysql`, `redis`, `zip`, `opcache`, …) |
+| PHP              | 8.4 + FPM           | runtime (with `bcmath`, `gmp`, `gd`, `intl`, `mbstring`, `mysql`, `redis`, `zip`, `opcache`, …). Required by Symfony 8 components shipped with Laravel 13. |
 | Composer         | 2.x                 | PHP package manager                           |
 | Node.js          | 20 LTS              | for `vite build` once at deploy time          |
 | MySQL            | 8                   | primary database                              |
@@ -82,7 +82,7 @@ All defaults can be overridden via environment variables:
 | `APP_SLUG`     | `3dify`          | used in paths and unit names       |
 | `APP_DIR`      | `/var/www/3dify` | where code lives                   |
 | `APP_USER`     | `deploy`         | system user that owns the code     |
-| `PHP_VERSION`  | `8.3`            | matches `composer.json` constraint |
+| `PHP_VERSION`  | `8.4`            | required by Symfony 8 / Laravel 13 ecosystem. `8.3` works only if `composer.lock` was generated on 8.3 too. |
 | `NODE_MAJOR`   | `20`             | Vite 8 needs ≥ 20.19               |
 | `DOMAIN`       | _required_       | server name + Certbot              |
 | `LE_EMAIL`     | _required_       | Let's Encrypt account              |
