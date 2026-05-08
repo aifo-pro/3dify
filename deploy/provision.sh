@@ -382,14 +382,17 @@ step "Installing PHP dependencies"
 sudo -u "$APP_USER" composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction
 
 step "Installing & building frontend"
-# npm ci is strict; if package-lock and package.json are out of sync (a common
-# git slip), fall back to npm install with a loud warning.
-if ! sudo -u "$APP_USER" npm ci --no-audit --no-fund; then
-    warn "npm ci failed — falling back to npm install (your lock file is out of sync)"
-    sudo -u "$APP_USER" rm -rf node_modules
-    sudo -u "$APP_USER" npm install --no-audit --no-fund
-fi
-sudo -u "$APP_USER" npm run build
+# Use `npm install` (not `npm ci`): it tolerates lock drift, which spares us
+# downtime when someone forgets to commit package-lock.json. Vite still needs
+# the full devDependencies set, so we don't pass --omit=dev here.
+sudo -u "$APP_USER" -H bash -lc "
+    cd '$APP_DIR'
+    rm -rf node_modules
+    npm install --no-audit --no-fund
+    npm run build
+    rm -rf node_modules
+"
+info "Frontend built (node_modules removed — Vite output lives in public/build)"
 
 step "Generating app key, linking storage, running migrations"
 sudo -u "$APP_USER" php artisan key:generate --force
@@ -458,12 +461,12 @@ php artisan down --render="errors::503" || true
 git pull --ff-only
 composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction
 
-if ! npm ci --no-audit --no-fund; then
-    echo "⚠  npm ci failed — falling back to npm install. Regenerate package-lock.json locally and commit it!"
-    rm -rf node_modules
-    npm install --no-audit --no-fund
-fi
+# npm install is more forgiving than npm ci when a deploy is in flight —
+# we don't want a stale lock file to take the site down.
+rm -rf node_modules
+npm install --no-audit --no-fund
 npm run build
+rm -rf node_modules
 
 php artisan migrate --force --no-interaction
 php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan event:cache
