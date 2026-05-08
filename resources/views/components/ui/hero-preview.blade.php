@@ -27,7 +27,7 @@
             </div>
             <div class="flex h-7 max-w-[260px] flex-1 items-center gap-2 rounded-lg border border-white/10 bg-zinc-950/80 px-3">
                 <svg class="h-3 w-3 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <span class="truncate font-mono text-[11px] text-zinc-500">3dify.com<span class="text-emerald-200">/models/mythic-dragon</span></span>
+                <span class="truncate font-mono text-[11px] text-zinc-500">{{ parse_url(config('app.url'), PHP_URL_HOST) ?: '3dify.dev' }}<span class="text-emerald-200">/models/mythic-dragon</span></span>
             </div>
             <div class="hidden items-center gap-1 rounded-md border border-amber-300/30 bg-amber-300/[0.10] px-2 py-1 sm:flex">
                 <svg class="h-2.5 w-2.5 text-amber-300" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 14.39 8.26 21 9 16 13.74 17.18 20.52 12 17.27 6.82 20.52 8 13.74 3 9 9.61 8.26z"/></svg>

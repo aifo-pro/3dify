@@ -350,7 +350,7 @@
                         <x-admin.field as="textarea" rows="3" name="settings[seo.meta_description_uk]" :label="__('Meta description (UK)')" :value="$val('seo.meta_description_uk')" :helper="__('150–160 символів.')" />
                         <x-admin.field as="textarea" rows="3" name="settings[seo.meta_description_en]" :label="__('Meta description (EN)')" :value="$val('seo.meta_description_en')" />
                         <x-admin.field name="settings[seo.meta_keywords]" :label="__('Keywords (через кому)')" :value="$val('seo.meta_keywords')" />
-                        <x-admin.field name="settings[seo.canonical_url]" :label="__('Canonical URL')" :value="$val('seo.canonical_url')" placeholder="https://3dify.com" />
+                        <x-admin.field name="settings[seo.canonical_url]" :label="__('Canonical URL')" :value="$val('seo.canonical_url')" :placeholder="config('app.url')" />
                     </div>
                 </x-admin.settings-card>
 
