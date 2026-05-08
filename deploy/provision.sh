@@ -500,8 +500,9 @@ fi
 
 # ─── DONE ────────────────────────────────────────────────────────────────────
 step "All done"
-cat <<SUMMARY
-
+# Use `echo -e` (or `printf`) so the ANSI escape codes are interpreted —
+# `cat <<HEREDOC` would print them as literal "\033[1;32m" garbage.
+echo -e "
   ${C_GRN}✓${C_RST} ${APP_NAME} provisioned
 
     URL              :  https://${DOMAIN}
@@ -515,8 +516,7 @@ cat <<SUMMARY
     Worker           :  systemctl status ${APP_SLUG}-queue.service
     Scheduler timer  :  systemctl list-timers ${APP_SLUG}-scheduler.timer
     Re-deploy        :  ssh ${APP_USER}@${DOMAIN} '${APP_SLUG}-deploy'
-
-SUMMARY
+"
 
 if [[ "$SMOKE_OK" -eq 0 ]]; then
     warn "Some smoke checks failed — investigate before celebrating."
