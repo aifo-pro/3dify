@@ -6,6 +6,7 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>{{ config('app.name', '3Dify') }}</title>
         <x-site.google-head />
+        @stack('head')
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="min-h-screen bg-zinc-950 text-zinc-100 antialiased">
@@ -44,5 +45,7 @@
                 </div>
             </section>
         </main>
+
+        <x-site.cookie-banner />
     </body>
 </html>

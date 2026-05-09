@@ -47,6 +47,10 @@
                 <x-ui.footer-link :href="route('pages.show', 'contact')">{{ __('Contact') }}</x-ui.footer-link>
                 <x-ui.footer-link :href="route('pages.show', 'faq')">{{ __('FAQ') }}</x-ui.footer-link>
                 <x-ui.footer-link :href="route('pages.show', 'privacy')">{{ __('Privacy') }}</x-ui.footer-link>
+                <button type="button" onclick="window.openCookieSettings && window.openCookieSettings()"
+                    class="inline-flex w-fit text-sm text-zinc-400 transition hover:text-emerald-200 hover:translate-x-0.5">
+                    {{ __('Налаштування cookies') }}
+                </button>
                 <x-ui.footer-link :href="route('locale.switch', app()->getLocale() === 'uk' ? 'en' : 'uk')">{{ __('Мова') }}: {{ app()->getLocale() === 'uk' ? 'Українська' : 'English' }}</x-ui.footer-link>
             </div>
         </div>

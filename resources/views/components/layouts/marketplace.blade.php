@@ -71,5 +71,7 @@
     <main>{{ $slot }}</main>
 
     <x-site.footer :site-name="$siteName" />
+
+    <x-site.cookie-banner />
 </body>
 </html>
