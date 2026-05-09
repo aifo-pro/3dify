@@ -61,12 +61,14 @@ IFS=$'\n\t'
 trap 'rc=$?; echo -e "\n\033[1;31mxx  install-iredmail.sh aborted at line $LINENO (exit $rc)\033[0m" >&2' ERR
 
 # ─── Script revision (bump on each meaningful change) ──────────────────────
-SCRIPT_REVISION="2026-05-09.r4"
+SCRIPT_REVISION="2026-05-09.r5"
 
 # ─── Defaults (override via env) ────────────────────────────────────────────
-# Set to AUTO to fetch the latest tag from GitHub at runtime.
+# AUTO picks the right iRedMail tag based on OS (1.8.x for Ubuntu 24+/Debian 12+,
+# 1.7.4 for older Ubuntu 22.04 / Debian 11). Override with e.g. IREDMAIL_VERSION=1.7.4.
 IREDMAIL_VERSION="${IREDMAIL_VERSION:-AUTO}"
 IREDMAIL_FALLBACK_VERSION="1.8.0"
+IREDMAIL_LEGACY_VERSION="1.7.4"          # last release that supports Ubuntu 22 / Debian 11
 DOMAIN="${DOMAIN:-}"
 MAIL_HOSTNAME="${MAIL_HOSTNAME:-}"        # public-facing (Roundcube URL, MX target)
 SYSTEM_HOSTNAME="${SYSTEM_HOSTNAME:-}"    # what /etc/hostname becomes (HELO/PTR-match)
@@ -121,7 +123,14 @@ echo -e "${C_DIM}install-iredmail.sh revision ${SCRIPT_REVISION}${C_RST}"
 OS_ID=$(. /etc/os-release && echo "$ID")
 OS_VERSION=$(. /etc/os-release && echo "$VERSION_ID")
 case "$OS_ID-$OS_VERSION" in
-    ubuntu-24.04|ubuntu-22.04|debian-12|debian-11) info "OS: $OS_ID $OS_VERSION (supported)";;
+    ubuntu-26.04|ubuntu-24.04|debian-13|debian-12)
+        info "OS: $OS_ID $OS_VERSION  (supports iRedMail 1.8.x)"
+        SUGGESTED_IREDMAIL="$IREDMAIL_FALLBACK_VERSION"
+        ;;
+    ubuntu-22.04|debian-11)
+        info "OS: $OS_ID $OS_VERSION  (supports iRedMail 1.7.x only — using $IREDMAIL_LEGACY_VERSION)"
+        SUGGESTED_IREDMAIL="$IREDMAIL_LEGACY_VERSION"
+        ;;
     *) fatal "Unsupported OS: $OS_ID $OS_VERSION. iRedMail supports Ubuntu 22+/Debian 11+ only.";;
 esac
 
@@ -268,20 +277,11 @@ yes y | ufw enable >/dev/null 2>&1 || true
 info "$(ufw status | head -1)"
 
 # ─── 5. Download iRedMail ───────────────────────────────────────────────────
-step "Resolving latest iRedMail version"
+step "Resolving iRedMail version for this OS"
 if [[ "$IREDMAIL_VERSION" == "AUTO" ]]; then
-    LATEST=$(curl -fsSL https://api.github.com/repos/iredmail/iRedMail/tags 2>/dev/null \
-        | grep -oE '"name"[[:space:]]*:[[:space:]]*"[0-9][0-9.]*"' \
-        | head -1 \
-        | grep -oE '[0-9][0-9.]*' || true)
-    if [[ -n "$LATEST" ]]; then
-        IREDMAIL_VERSION="$LATEST"
-        info "GitHub latest tag: ${IREDMAIL_VERSION}"
-    else
-        IREDMAIL_VERSION="$IREDMAIL_FALLBACK_VERSION"
-        warn "Could not query GitHub API — falling back to ${IREDMAIL_VERSION}"
-    fi
+    IREDMAIL_VERSION="$SUGGESTED_IREDMAIL"
 fi
+info "Using iRedMail ${IREDMAIL_VERSION}"
 
 step "Downloading iRedMail ${IREDMAIL_VERSION}"
 cd /opt
@@ -372,9 +372,10 @@ export AUTO_CLEANUP_RESTART_FIREWALL=Y
 export AUTO_CLEANUP_REPLACE_MYSQL_CONFIG=Y
 export AUTO_CLEANUP_RESTART_IPTABLES=Y
 export AUTO_CLEANUP_RESTART_SYSLOG=Y
+#EOF
 IREDCFG
 chmod 600 "/opt/iRedMail-${IREDMAIL_VERSION}/config"
-info "Config written"
+info "Config written (with #EOF marker)"
 
 # ─── 8. Run iRedMail installer ──────────────────────────────────────────────
 step "Running iRedMail installer (this takes ~5-10 minutes)"
@@ -382,6 +383,10 @@ cd "/opt/iRedMail-${IREDMAIL_VERSION}"
 if [[ -f /etc/iredmail-release ]]; then
     info "iRedMail is already installed — skipping installer; will only refresh post-install."
 else
+    # AUTO_USE_EXISTING_CONFIG_FILE=Y forces iRedMail to honour our pre-filled
+    # ./config (which ends in #EOF) instead of falling back to its TUI dialogs.
+    export AUTO_USE_EXISTING_CONFIG_FILE=Y
+    export AUTO_INSTALL_WITHOUT_CONFIRM=Y
     bash iRedMail.sh </dev/null
 fi
 
