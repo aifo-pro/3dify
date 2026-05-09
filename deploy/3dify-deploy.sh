@@ -51,6 +51,12 @@ php artisan down --render="errors::503" --retry=60 || true
 # Ensure we always come back up, even if a step below fails.
 trap 'php artisan up >/dev/null 2>&1 || true' EXIT
 
+# Discard any drift in tracked files. On a production box nothing should
+# be edited "by hand" — npm install / composer install can touch lock
+# files and `git pull` would then refuse with "local changes". Anything
+# generated (vendor/, node_modules/, public/build/, .env) is gitignored
+# so this is safe and makes deploys deterministic.
+git checkout -- .
 git pull --ff-only
 
 composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction
