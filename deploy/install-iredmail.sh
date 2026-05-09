@@ -57,6 +57,9 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+# Surface failures with line numbers instead of dying silently.
+trap 'rc=$?; echo -e "\n\033[1;31mxx  install-iredmail.sh aborted at line $LINENO (exit $rc)\033[0m" >&2' ERR
+
 # ─── Defaults (override via env) ────────────────────────────────────────────
 IREDMAIL_VERSION="${IREDMAIL_VERSION:-1.7.2}"
 DOMAIN="${DOMAIN:-}"
@@ -92,7 +95,12 @@ prompt() {
 }
 
 gen_password() {
-    tr -dc 'A-HJ-NP-Za-km-z2-9' </dev/urandom | head -c 24
+    # Run in subshell w/o pipefail so SIGPIPE from tr (when head closes early)
+    # doesn't kill the parent script under `set -euo pipefail`.
+    (
+        set +o pipefail
+        LC_ALL=C tr -dc 'A-HJ-NP-Za-km-z2-9' </dev/urandom 2>/dev/null | head -c 24
+    )
 }
 
 have() { command -v "$1" >/dev/null 2>&1; }
