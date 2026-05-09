@@ -242,6 +242,11 @@ class ProductController extends Controller
             'license_id' => ['nullable', 'exists:licenses,id'],
             'price' => ['required', 'numeric', 'min:0', 'max:99999'],
             'currency' => ['required', Rule::in(['EUR', 'USD', 'UAH'])],
+            'commercial_license_enabled' => ['nullable'],
+            'commercial_price' => ['nullable', 'numeric', 'min:0', 'max:99999'],
+            'commercial_license_id' => ['nullable', 'exists:licenses,id'],
+            'commercial_license_description_uk' => ['nullable', 'string', 'max:1500'],
+            'commercial_license_description_en' => ['nullable', 'string', 'max:1500'],
             'cover' => ['nullable', 'image', 'max:4096'],
             'gallery.*' => ['nullable', 'image', 'max:4096'],
             'files.*' => ['nullable', 'file', 'max:102400'],
@@ -298,6 +303,17 @@ class ProductController extends Controller
 
         $settings = array_filter((array) ($data['print_profile_settings'] ?? []), fn ($v) => filled($v));
 
+        $commercialEnabled = $request->boolean('commercial_license_enabled');
+        $commercialDescription = null;
+        $descUk = trim((string) ($data['commercial_license_description_uk'] ?? ''));
+        $descEn = trim((string) ($data['commercial_license_description_en'] ?? ''));
+        if ($commercialEnabled && ($descUk !== '' || $descEn !== '')) {
+            $commercialDescription = [
+                'uk' => $descUk,
+                'en' => $descEn ?: $descUk,
+            ];
+        }
+
         return [
             'user_id' => $product?->user_id ?? $request->user()->id,
             'category_id' => $data['category_id'] ?? null,
@@ -308,6 +324,11 @@ class ProductController extends Controller
             'description' => ['uk' => $data['description_uk'], 'en' => $descriptionEn ?: $data['description_uk']],
             'status' => $request->user()->canModerate() ? 'published' : 'pending',
             'price' => $data['price'],
+            'personal_price' => $data['price'],
+            'commercial_price' => $commercialEnabled ? ($data['commercial_price'] ?? null) : null,
+            'commercial_license_enabled' => $commercialEnabled,
+            'commercial_license_id' => $commercialEnabled ? ($data['commercial_license_id'] ?? null) : null,
+            'commercial_license_description' => $commercialDescription,
             'currency' => $data['currency'],
             'is_free' => (float) $data['price'] === 0.0,
             'cover_path' => $cover,

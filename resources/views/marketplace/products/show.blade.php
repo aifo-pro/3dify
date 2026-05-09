@@ -106,10 +106,10 @@
                     </a>
                 @endif
                 @if($product->license)
-                    <span class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-zinc-300">
-                        <svg class="h-3 w-3 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        {{ $product->license->localized('name') }}
-                    </span>
+                    <x-license-badge :license="$product->license" size="md" />
+                @endif
+                @if($product->commercial_license_enabled && ($product->commercialLicense ?? null) && $product->commercial_license_id !== $product->license_id)
+                    <x-license-badge :license="$product->commercialLicense" size="md" />
                 @endif
             </div>
             <h1 class="mt-5 max-w-4xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">{{ $product->localized('title') }}</h1>
@@ -167,19 +167,50 @@
             </div>
 
             <aside class="self-start lg:sticky lg:top-28">
-                <x-ui.card class="p-6">
+                <x-ui.card
+                    class="p-6"
+                    x-data="{
+                        licenseType: '{{ $product->commercial_license_enabled ? 'personal' : 'personal' }}',
+                        personalPrice: {{ (float) $product->personalPrice() }},
+                        commercialPrice: {{ (float) $product->commercialPrice() }},
+                        currency: '{{ $product->currency ?? 'EUR' }}',
+                        get currentPrice() { return this.licenseType === 'commercial' ? this.commercialPrice : this.personalPrice; },
+                        get displayPrice() {
+                            if (this.currentPrice <= 0) return @js(__('Безкоштовно'));
+                            return new Intl.NumberFormat(@js(app()->getLocale() === 'uk' ? 'uk-UA' : 'en-US'), { style: 'currency', currency: this.currency, minimumFractionDigits: 2 }).format(this.currentPrice);
+                        }
+                    }"
+                    @license-changed="licenseType = $event.detail.type"
+                >
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <p class="text-sm text-zinc-500">{{ __('Ціна') }}</p>
-                            <strong class="mt-1 block text-3xl text-white">{{ $product->display_price }}</strong>
+                            <strong class="mt-1 block text-3xl text-white" x-text="displayPrice">{{ $product->display_price }}</strong>
                         </div>
                         <x-ui.badge>{{ $product->category?->localized('name') ?? __('3D model') }}</x-ui.badge>
                     </div>
 
+                    {{-- Pricing cards (personal vs commercial) --}}
+                    @if($product->commercial_license_enabled && ! $product->is_free)
+                        <div class="mt-5">
+                            <x-license-pricing-cards :product="$product" />
+                        </div>
+                    @endif
+
                     <div class="mt-6 grid gap-3 rounded-3xl border border-white/10 bg-zinc-950/60 p-4 text-sm">
                         <div class="flex justify-between gap-4"><span class="text-zinc-500">{{ __('Автор') }}</span><span class="text-right text-white">{{ $product->author->name }}</span></div>
                         @if($product->license)
-                            <div class="flex justify-between gap-4"><span class="text-zinc-500">{{ __('Ліцензія') }}</span><span class="text-right text-white">{{ $product->license->localized('name') }}</span></div>
+                            <div class="flex items-center justify-between gap-4">
+                                <span class="text-zinc-500">{{ __('Ліцензія') }}</span>
+                                <span x-show="licenseType === 'personal'">
+                                    <x-license-badge :license="$product->license" size="sm" :tooltip="false" />
+                                </span>
+                                @if($product->commercial_license_enabled)
+                                    <span x-show="licenseType === 'commercial'" x-cloak>
+                                        <x-license-badge :license="$product->commercialLicense ?? $product->license" size="sm" :tooltip="false" />
+                                    </span>
+                                @endif
+                            </div>
                         @endif
                         <div class="flex justify-between gap-4"><span class="text-zinc-500">{{ __('Статус') }}</span><span class="text-right text-emerald-200">{{ __('Опубліковано') }}</span></div>
                         @if($product->published_at)
@@ -210,7 +241,14 @@
                         <div class="mt-3 grid grid-cols-[1fr_auto] gap-2">
                             <form method="POST" action="{{ route('checkout.store', $product) }}">
                                 @csrf
-                                <button class="h-12 w-full rounded-2xl bg-emerald-400 px-5 font-bold text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-300">{{ $product->is_free ? __('Отримати файли') : __('Купити модель') }}</button>
+                                <input type="hidden" name="license_type" :value="licenseType">
+                                <button class="h-12 w-full rounded-2xl bg-emerald-400 px-5 font-bold text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-300">
+                                    @if($product->is_free)
+                                        {{ __('Отримати файли') }}
+                                    @else
+                                        <span x-text="licenseType === 'commercial' ? @js(__('Купити Commercial')) : @js(__('Купити Personal'))">{{ __('Купити модель') }}</span>
+                                    @endif
+                                </button>
                             </form>
                             <x-ui.wishlist-button :product="$product" variant="icon" size="lg" class="self-stretch [&_button]:h-12 [&_button]:w-12" />
                         </div>
@@ -424,43 +462,33 @@
                                 </dd>
                             </div>
                         @endif
-                        @if($product->license)
-                            <div class="sm:col-span-2">
-                                <dt class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">{{ __('Ліцензія') }}</dt>
-                                <dd class="mt-1.5">
-                                    <div class="rounded-2xl border border-white/10 bg-zinc-950/40 p-4">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <span class="text-sm font-bold text-white">{{ $product->license->localized('name') }}</span>
-                                            <span class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-zinc-300">{{ $product->license->slug }}</span>
-                                        </div>
-                                        <div class="mt-2 flex flex-wrap gap-2">
-                                            @if(! empty($product->license->allows_commercial_use))
-                                                <span class="inline-flex items-center gap-1 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-200">
-                                                    <svg class="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                                    {{ __('Комерційне використання') }}
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center gap-1 rounded-full border border-rose-300/30 bg-rose-300/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-200">
-                                                    <svg class="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                                    {{ __('Лише особисте використання') }}
-                                                </span>
-                                            @endif
-                                            @if(! empty($product->license->requires_attribution))
-                                                <span class="inline-flex items-center gap-1 rounded-full border border-amber-300/30 bg-amber-300/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-200">
-                                                    <svg class="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                                                    {{ __('Зазначайте автора') }}
-                                                </span>
-                                            @endif
-                                        </div>
-                                        @if($product->license->localized('description'))
-                                            <p class="mt-2 text-xs leading-5 text-zinc-400">{{ $product->license->localized('description') }}</p>
-                                        @endif
-                                    </div>
-                                </dd>
-                            </div>
-                        @endif
                     </dl>
                 </article>
+
+                {{-- License summary --}}
+                @if($product->license)
+                    <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-1 shadow-xl shadow-black/20">
+                        <div class="rounded-[calc(1.5rem-4px)] bg-zinc-950/60 p-5 sm:p-6">
+                            <header class="mb-4 flex items-start justify-between gap-3">
+                                <div>
+                                    <h3 class="text-lg font-bold text-white">{{ __('Що дозволяє ліцензія') }}</h3>
+                                    <p class="mt-1 text-xs text-zinc-500">{{ __('Чек-лист прав використання моделі.') }}</p>
+                                </div>
+                            </header>
+                            <x-license-summary :license="$product->license" :product="$product" />
+
+                            @if($product->commercial_license_enabled && $product->commercialLicense && $product->commercial_license_id !== $product->license_id)
+                                <div class="mt-5 border-t border-white/5 pt-5">
+                                    <p class="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/[0.08] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-200">
+                                        <x-license-icons name="commercial" class="h-3.5 w-3.5" />
+                                        {{ __('Альтернативно: Commercial license') }}
+                                    </p>
+                                    <x-license-summary :license="$product->commercialLicense" :compact="true" />
+                                </div>
+                            @endif
+                        </div>
+                    </article>
+                @endif
             </div>
 
             {{-- Sticky right rail (CTA + author) --}}

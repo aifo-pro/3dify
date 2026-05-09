@@ -416,48 +416,60 @@ class AdminController extends Controller
 
     public function storeLicense(Request $request)
     {
-        $data = $request->validate([
-            'slug' => ['required', 'alpha_dash', 'unique:licenses,slug'],
-            'name_uk' => ['required', 'string', 'max:120'],
-            'name_en' => ['nullable', 'string', 'max:120'],
-            'description_uk' => ['nullable', 'string', 'max:1000'],
-            'description_en' => ['nullable', 'string', 'max:1000'],
-            'allows_commercial_use' => ['nullable', 'boolean'],
-            'requires_attribution' => ['nullable', 'boolean'],
-        ]);
+        $data = $this->validatedLicense($request, null);
 
-        License::create([
-            'slug' => $data['slug'],
-            'name' => ['uk' => $data['name_uk'], 'en' => $data['name_en'] ?: $data['name_uk']],
-            'description' => ['uk' => $data['description_uk'] ?? '', 'en' => $data['description_en'] ?? $data['description_uk'] ?? ''],
-            'allows_commercial_use' => $request->boolean('allows_commercial_use'),
-            'requires_attribution' => $request->boolean('requires_attribution', true),
-        ]);
+        License::create($this->licensePayload($data, $request));
 
         return back()->with('status', 'Ліцензію створено.');
     }
 
     public function updateLicense(Request $request, License $license)
     {
-        $data = $request->validate([
-            'slug' => ['required', 'alpha_dash', Rule::unique('licenses', 'slug')->ignore($license->id)],
+        $data = $this->validatedLicense($request, $license);
+
+        $license->update($this->licensePayload($data, $request));
+
+        return back()->with('status', 'Ліцензію оновлено.');
+    }
+
+    private function validatedLicense(Request $request, ?License $existing): array
+    {
+        return $request->validate([
+            'slug' => ['required', 'alpha_dash', $existing
+                ? Rule::unique('licenses', 'slug')->ignore($existing->id)
+                : 'unique:licenses,slug'],
             'name_uk' => ['required', 'string', 'max:120'],
             'name_en' => ['nullable', 'string', 'max:120'],
             'description_uk' => ['nullable', 'string', 'max:1000'],
             'description_en' => ['nullable', 'string', 'max:1000'],
+            'badge_label' => ['nullable', 'string', 'max:60'],
+            'badge_color' => ['nullable', Rule::in(License::COLORS)],
+            'icon_slug' => ['nullable', Rule::in(License::ICONS)],
             'allows_commercial_use' => ['nullable', 'boolean'],
             'requires_attribution' => ['nullable', 'boolean'],
+            'allows_redistribution' => ['nullable', 'boolean'],
+            'allows_remix' => ['nullable', 'boolean'],
+            'allows_selling_prints' => ['nullable', 'boolean'],
+            'forbids_file_resale' => ['nullable', 'boolean'],
         ]);
+    }
 
-        $license->update([
+    private function licensePayload(array $data, Request $request): array
+    {
+        return [
             'slug' => $data['slug'],
             'name' => ['uk' => $data['name_uk'], 'en' => $data['name_en'] ?: $data['name_uk']],
             'description' => ['uk' => $data['description_uk'] ?? '', 'en' => $data['description_en'] ?? $data['description_uk'] ?? ''],
+            'badge_label' => $data['badge_label'] ?? null,
+            'badge_color' => $data['badge_color'] ?? null,
+            'icon_slug' => $data['icon_slug'] ?? null,
             'allows_commercial_use' => $request->boolean('allows_commercial_use'),
             'requires_attribution' => $request->boolean('requires_attribution'),
-        ]);
-
-        return back()->with('status', 'Ліцензію оновлено.');
+            'allows_redistribution' => $request->boolean('allows_redistribution'),
+            'allows_remix' => $request->boolean('allows_remix', true),
+            'allows_selling_prints' => $request->boolean('allows_selling_prints'),
+            'forbids_file_resale' => $request->boolean('forbids_file_resale', true),
+        ];
     }
 
     public function destroyLicense(License $license)

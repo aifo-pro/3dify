@@ -10,15 +10,31 @@ use App\Models\Product;
 use App\Notifications\NewSaleNotification;
 use App\Services\AifoPaymentService;
 use App\Services\PromoCodeService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
 class CheckoutController extends Controller
 {
-    public function store(Product $product, AifoPaymentService $payments, PromoCodeService $promoService)
+    public function store(Request $request, Product $product, AifoPaymentService $payments, PromoCodeService $promoService)
     {
         abort_unless($product->status === 'published', 404);
 
-        $subtotal = (float) $product->price;
+        // Resolve license type. Falls back to "personal" if commercial isn't offered.
+        $requestedType = (string) $request->input('license_type', 'personal');
+        $licenseType = in_array($requestedType, Product::LICENSE_TYPES, true) ? $requestedType : 'personal';
+        if ($licenseType === 'commercial' && ! $product->commercial_license_enabled) {
+            $licenseType = 'personal';
+        }
+
+        $licenseModel = $product->licenseFor($licenseType);
+        $licenseSnapshot = $licenseModel ? $licenseModel->toSnapshot() : null;
+        if ($licenseSnapshot && $licenseType === 'commercial' && is_array($product->commercial_license_description ?? null)) {
+            // Capture author's per-product commercial wording so it survives later edits.
+            $licenseSnapshot['description'] = $product->commercial_license_description;
+        }
+        $licenseSnapshot = $licenseSnapshot ? array_merge($licenseSnapshot, ['type' => $licenseType]) : ['type' => $licenseType];
+
+        $subtotal = $product->priceFor($licenseType);
         $discount = 0.0;
         $promoApplied = null;
 
@@ -47,6 +63,8 @@ class CheckoutController extends Controller
             'author_id' => $product->user_id,
             'price' => $total,
             'currency' => $product->currency,
+            'license_type' => $licenseType,
+            'license_snapshot' => $licenseSnapshot,
         ]);
 
         if ($promoApplied) {

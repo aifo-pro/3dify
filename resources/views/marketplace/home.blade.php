@@ -97,7 +97,7 @@
 
                 <h1 class="mt-6 text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-[56px]">
                     {{ __('Преміальні') }}
-                    <span class="bg-gradient-to-r from-emerald-300 via-emerald-200 to-sky-300 bg-clip-text text-transparent">{{ __('3D-моделі') }}</span>
+                    <span class="whitespace-nowrap bg-gradient-to-r from-emerald-300 via-emerald-200 to-sky-300 bg-clip-text text-transparent">{{ __('3D-моделі') }}</span>
                     {{ __('для якісного друку') }}
                 </h1>
 

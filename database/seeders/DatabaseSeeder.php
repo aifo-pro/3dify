@@ -52,11 +52,13 @@ class DatabaseSeeder extends Seeder
             'name' => ['uk' => $slug, 'en' => $slug],
         ]));
 
-        $license = License::create([
-            'slug' => 'personal',
-            'name' => ['uk' => 'Персональна ліцензія', 'en' => 'Personal license'],
-            'description' => ['uk' => 'Для особистого друку без перепродажу файлів.', 'en' => 'For personal printing without file resale.'],
-        ]);
+        $license = License::firstOrCreate(
+            ['slug' => 'personal'],
+            [
+                'name' => ['uk' => 'Персональна ліцензія', 'en' => 'Personal license'],
+                'description' => ['uk' => 'Для особистого друку без перепродажу файлів.', 'en' => 'For personal printing without file resale.'],
+            ]
+        );
 
         $product = Product::create([
             'user_id' => $author->id,
@@ -90,6 +92,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call([
+            LicensesSeeder::class,
             LegalPagesSeeder::class,
         ]);
 

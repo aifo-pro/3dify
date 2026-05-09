@@ -6,9 +6,18 @@
         'name_en' => is_array($l->name) ? ($l->name['en'] ?? '') : '',
         'description_uk' => is_array($l->description) ? ($l->description['uk'] ?? '') : (string) $l->description,
         'description_en' => is_array($l->description) ? ($l->description['en'] ?? '') : '',
+        'badge_label' => (string) ($l->badge_label ?? ''),
+        'badge_color' => (string) ($l->badge_color ?? 'emerald'),
+        'icon_slug' => (string) ($l->icon_slug ?? 'shield'),
         'allows_commercial_use' => (bool) $l->allows_commercial_use,
         'requires_attribution' => (bool) $l->requires_attribution,
+        'allows_redistribution' => (bool) $l->allows_redistribution,
+        'allows_remix' => (bool) $l->allows_remix,
+        'allows_selling_prints' => (bool) $l->allows_selling_prints,
+        'forbids_file_resale' => (bool) $l->forbids_file_resale,
     ])->all();
+    $colors = \App\Models\License::COLORS;
+    $icons = \App\Models\License::ICONS;
 @endphp
 
 <x-layouts.admin
@@ -57,10 +66,13 @@
                 <header class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
                         <span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-300/15 text-emerald-100">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            <x-license-icons :name="$license->iconSlug()" class="h-5 w-5" />
                         </span>
                         <h3 class="mt-3 truncate text-base font-bold text-white">{{ $license->localized('name') }}</h3>
                         <p class="text-xs font-mono text-zinc-500">/{{ $license->slug }}</p>
+                        <div class="mt-2">
+                            <x-license-badge :license="$license" size="sm" :tooltip="false" />
+                        </div>
                     </div>
                     <div class="flex items-center gap-1">
                         <button type="button" x-data @click="$dispatch('open-form', { mode: 'edit', id: {{ $license->id }} })" class="grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-zinc-300 transition hover:border-emerald-300/30 hover:bg-emerald-300/10 hover:text-emerald-100" title="{{ __('Редагувати') }}">
@@ -132,11 +144,11 @@
         x-data="{
             open: false,
             mode: 'create',
-            data: { id: null, slug: '', name_uk: '', name_en: '', description_uk: '', description_en: '', allows_commercial_use: false, requires_attribution: true },
+            data: { id: null, slug: '', name_uk: '', name_en: '', description_uk: '', description_en: '', badge_label: '', badge_color: 'emerald', icon_slug: 'shield', allows_commercial_use: false, requires_attribution: true, allows_redistribution: false, allows_remix: true, allows_selling_prints: false, forbids_file_resale: true },
             items: @js($editable),
             openCreate() {
                 this.mode = 'create';
-                this.data = { id: null, slug: '', name_uk: '', name_en: '', description_uk: '', description_en: '', allows_commercial_use: false, requires_attribution: true };
+                this.data = { id: null, slug: '', name_uk: '', name_en: '', description_uk: '', description_en: '', badge_label: '', badge_color: 'emerald', icon_slug: 'shield', allows_commercial_use: false, requires_attribution: true, allows_redistribution: false, allows_remix: true, allows_selling_prints: false, forbids_file_resale: true };
                 this.open = true;
             },
             openEdit(id) {
@@ -147,8 +159,13 @@
                     id: c.id, slug: c.slug,
                     name_uk: c.name_uk || '', name_en: c.name_en || '',
                     description_uk: c.description_uk || '', description_en: c.description_en || '',
+                    badge_label: c.badge_label || '', badge_color: c.badge_color || 'emerald', icon_slug: c.icon_slug || 'shield',
                     allows_commercial_use: !!c.allows_commercial_use,
                     requires_attribution: !!c.requires_attribution,
+                    allows_redistribution: !!c.allows_redistribution,
+                    allows_remix: !!c.allows_remix,
+                    allows_selling_prints: !!c.allows_selling_prints,
+                    forbids_file_resale: !!c.forbids_file_resale,
                 };
                 this.open = true;
             }
@@ -191,21 +208,84 @@
                         <x-admin.field as="textarea" name="description_uk" :label="__('Опис (UK)')" rows="3" placeholder="{{ __('Що дозволено, що ні') }}" x-model="data.description_uk" :error="$errors->first('description_uk')" />
                         <x-admin.field as="textarea" name="description_en" :label="__('Опис (EN)')" rows="3" placeholder="What is allowed and what isn't" x-model="data.description_en" :error="$errors->first('description_en')" />
 
-                        <label class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-zinc-950/50 px-4 py-3">
-                            <span>
-                                <span class="block text-sm font-semibold text-white">{{ __('Дозволяє комерційне використання') }}</span>
-                                <span class="block text-xs text-zinc-500">{{ __('Покупець може заробляти на надрукованих моделях.') }}</span>
-                            </span>
-                            <input type="checkbox" name="allows_commercial_use" value="1" x-model="data.allows_commercial_use" class="h-5 w-5 rounded border-white/20 bg-zinc-950 text-emerald-400 focus:ring-emerald-300">
-                        </label>
+                        {{-- Badge / icon block --}}
+                        <div class="rounded-xl border border-white/10 bg-zinc-950/40 p-4">
+                            <p class="text-xs font-bold uppercase tracking-[0.14em] text-emerald-300">{{ __('Візуальний badge') }}</p>
+                            <div class="mt-3 grid gap-3">
+                                <x-admin.field name="badge_label" :label="__('Підпис на pill')" placeholder="Personal · Commercial · Royalty-free" x-model="data.badge_label" :error="$errors->first('badge_label')" />
+                                <div class="grid gap-3 sm:grid-cols-2">
+                                    <div>
+                                        <label class="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">{{ __('Колір') }}</label>
+                                        <select name="badge_color" x-model="data.badge_color" class="h-10 w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3 text-sm text-white focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40">
+                                            @foreach($colors as $color)
+                                                <option value="{{ $color }}">{{ ucfirst($color) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="mb-1 block text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">{{ __('Іконка') }}</label>
+                                        <select name="icon_slug" x-model="data.icon_slug" class="h-10 w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3 text-sm text-white focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40">
+                                            @foreach($icons as $icon)
+                                                <option value="{{ $icon }}">{{ $icon }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                        <label class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-zinc-950/50 px-4 py-3">
-                            <span>
-                                <span class="block text-sm font-semibold text-white">{{ __('Вимагає attribution') }}</span>
-                                <span class="block text-xs text-zinc-500">{{ __('Покупець має вказати автора.') }}</span>
-                            </span>
-                            <input type="checkbox" name="requires_attribution" value="1" x-model="data.requires_attribution" class="h-5 w-5 rounded border-white/20 bg-zinc-950 text-emerald-400 focus:ring-emerald-300">
-                        </label>
+                        {{-- Flags --}}
+                        <div class="grid gap-2">
+                            <p class="text-xs font-bold uppercase tracking-[0.14em] text-emerald-300">{{ __('Дозволи та обмеження') }}</p>
+
+                            <label class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-zinc-950/50 px-4 py-3">
+                                <span>
+                                    <span class="block text-sm font-semibold text-white">{{ __('Комерційне використання') }}</span>
+                                    <span class="block text-xs text-zinc-500">{{ __('Покупець може заробляти на надрукованих моделях.') }}</span>
+                                </span>
+                                <input type="checkbox" name="allows_commercial_use" value="1" x-model="data.allows_commercial_use" class="h-5 w-5 rounded border-white/20 bg-zinc-950 text-emerald-400 focus:ring-emerald-300">
+                            </label>
+
+                            <label class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-zinc-950/50 px-4 py-3">
+                                <span>
+                                    <span class="block text-sm font-semibold text-white">{{ __('Вимагає attribution') }}</span>
+                                    <span class="block text-xs text-zinc-500">{{ __('Покупець має вказати автора.') }}</span>
+                                </span>
+                                <input type="checkbox" name="requires_attribution" value="1" x-model="data.requires_attribution" class="h-5 w-5 rounded border-white/20 bg-zinc-950 text-emerald-400 focus:ring-emerald-300">
+                            </label>
+
+                            <label class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-zinc-950/50 px-4 py-3">
+                                <span>
+                                    <span class="block text-sm font-semibold text-white">{{ __('Дозволяє продаж надрукованих копій') }}</span>
+                                    <span class="block text-xs text-zinc-500">{{ __('Selling printed copies allowed.') }}</span>
+                                </span>
+                                <input type="checkbox" name="allows_selling_prints" value="1" x-model="data.allows_selling_prints" class="h-5 w-5 rounded border-white/20 bg-zinc-950 text-emerald-400 focus:ring-emerald-300">
+                            </label>
+
+                            <label class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-zinc-950/50 px-4 py-3">
+                                <span>
+                                    <span class="block text-sm font-semibold text-white">{{ __('Дозволяє ремікси/модифікацію') }}</span>
+                                    <span class="block text-xs text-zinc-500">{{ __('Remix and derivative works allowed.') }}</span>
+                                </span>
+                                <input type="checkbox" name="allows_remix" value="1" x-model="data.allows_remix" class="h-5 w-5 rounded border-white/20 bg-zinc-950 text-emerald-400 focus:ring-emerald-300">
+                            </label>
+
+                            <label class="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-zinc-950/50 px-4 py-3">
+                                <span>
+                                    <span class="block text-sm font-semibold text-white">{{ __('Дозволяє перезавантаження на інші сайти') }}</span>
+                                    <span class="block text-xs text-zinc-500">{{ __('Redistribution to other platforms allowed.') }}</span>
+                                </span>
+                                <input type="checkbox" name="allows_redistribution" value="1" x-model="data.allows_redistribution" class="h-5 w-5 rounded border-white/20 bg-zinc-950 text-emerald-400 focus:ring-emerald-300">
+                            </label>
+
+                            <label class="flex items-center justify-between gap-4 rounded-xl border border-rose-300/20 bg-rose-300/[0.04] px-4 py-3">
+                                <span>
+                                    <span class="block text-sm font-semibold text-rose-100">{{ __('Заборонено перепродаж файла') }}</span>
+                                    <span class="block text-xs text-rose-200/70">{{ __('Reselling the source file is forbidden.') }}</span>
+                                </span>
+                                <input type="checkbox" name="forbids_file_resale" value="1" x-model="data.forbids_file_resale" class="h-5 w-5 rounded border-white/20 bg-zinc-950 text-rose-400 focus:ring-rose-300">
+                            </label>
+                        </div>
                     </div>
                 </div>
 

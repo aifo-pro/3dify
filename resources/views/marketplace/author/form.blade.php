@@ -177,35 +177,77 @@
                             @endforeach
                         </x-ui.select>
                     </div>
-                    <label class="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-zinc-950/50 p-4">
-                        <span class="min-w-0">
-                            <span class="block font-semibold text-white">{{ __('Комерційне використання') }}</span>
-                            <span class="text-sm text-zinc-500">{{ __('Візуальний перемикач для майбутньої ліцензійної деталізації.') }}</span>
-                        </span>
-                        <input type="checkbox" class="h-5 w-5 rounded border-white/20 bg-zinc-950 text-emerald-400 focus:ring-emerald-300">
-                    </label>
                 </section>
 
-                {{-- Section 3: Ціна --}}
-                <section class="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-xl shadow-black/20 sm:p-7">
+                {{-- Section 3: Ціна та ліцензії --}}
+                <section
+                    x-data="{ commercial: {{ old('commercial_license_enabled', $product->commercial_license_enabled ?? false) ? 'true' : 'false' }} }"
+                    class="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-xl shadow-black/20 sm:p-7"
+                >
                     <header class="flex items-start gap-4">
                         <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-emerald-300/15 text-sm font-black text-emerald-100">3</span>
                         <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300">{{ __('Ціна') }}</p>
-                            <h2 class="mt-0.5 text-xl font-bold text-white">{{ __('Ціна та продажі') }}</h2>
-                            <p class="mt-1 text-sm leading-6 text-zinc-400">{{ __('Поставте 0, щоб опублікувати безкоштовну модель.') }}</p>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300">{{ __('Ціна та ліцензії') }}</p>
+                            <h2 class="mt-0.5 text-xl font-bold text-white">{{ __('Цінова політика') }}</h2>
+                            <p class="mt-1 text-sm leading-6 text-zinc-400">{{ __('Поставте 0, щоб опублікувати безкоштовну модель. Можна додати окрему комерційну ліцензію.') }}</p>
                         </div>
                     </header>
+
+                    {{-- Personal price (legacy "price" stays for back-compat) --}}
                     <div class="mt-6 grid gap-4 md:grid-cols-[1fr_180px]">
-                        <x-ui.input type="number" step="0.01" min="0" name="price" value="{{ old('price', $product->price ?? 0) }}" :label="__('Ціна')" :helper="__('0 означає безкоштовну модель.')" :error="$errors->first('price')" />
+                        <x-ui.input type="number" step="0.01" min="0" name="price" value="{{ old('price', $product->price ?? 0) }}" :label="__('Ціна (Personal license)')" :helper="__('0 означає безкоштовну модель.')" :error="$errors->first('price')" />
                         <x-ui.select name="currency" :label="__('Валюта')" :error="$errors->first('currency')">
                             @foreach(['EUR', 'USD', 'UAH'] as $currency)
                                 <option value="{{ $currency }}" @selected(old('currency', $product->currency ?? 'EUR') === $currency)>{{ $currency }}</option>
                             @endforeach
                         </x-ui.select>
                     </div>
+
+                    {{-- Commercial license toggle --}}
+                    <label class="mt-5 flex items-start justify-between gap-4 rounded-2xl border border-white/10 bg-zinc-950/50 p-4">
+                        <span class="min-w-0">
+                            <span class="block font-semibold text-white">{{ __('Продавати також Commercial license') }}</span>
+                            <span class="block text-sm text-zinc-500">{{ __('Покупець зможе обрати між Personal та Commercial ліцензією при оформленні замовлення.') }}</span>
+                        </span>
+                        <input type="checkbox" name="commercial_license_enabled" value="1" x-model="commercial"
+                            class="h-5 w-5 rounded border-white/20 bg-zinc-950 text-emerald-400 focus:ring-emerald-300"
+                            @if(old('commercial_license_enabled', $product->commercial_license_enabled ?? false)) checked @endif>
+                    </label>
+
+                    {{-- Commercial details --}}
+                    <div x-show="commercial" x-cloak class="mt-4 grid gap-4 rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.04] p-4">
+                        <div class="grid gap-4 md:grid-cols-[1fr_220px]">
+                            <x-ui.input type="number" step="0.01" min="0" name="commercial_price"
+                                value="{{ old('commercial_price', $product->commercial_price ?? '') }}"
+                                :label="__('Ціна Commercial')"
+                                :helper="__('Як правило, у 2-5x вище за Personal.')"
+                                :error="$errors->first('commercial_price')" />
+                            <x-ui.select name="commercial_license_id" :label="__('Тип Commercial ліцензії')" :error="$errors->first('commercial_license_id')">
+                                <option value="">{{ __('Як основна ліцензія') }}</option>
+                                @foreach($licenses as $license)
+                                    <option value="{{ $license->id }}" @selected(old('commercial_license_id', $product->commercial_license_id ?? null) == $license->id)>{{ $license->localized('name') }}</option>
+                                @endforeach
+                            </x-ui.select>
+                        </div>
+
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div>
+                                <label class="mb-1 block text-xs font-bold uppercase tracking-[0.12em] text-zinc-400">{{ __('Опис Commercial (UK)') }}</label>
+                                <textarea name="commercial_license_description_uk" rows="3"
+                                    class="w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40"
+                                    placeholder="{{ __('Що саме отримує покупець за Commercial-ліцензію.') }}">{{ old('commercial_license_description_uk', $product->commercial_license_description['uk'] ?? '') }}</textarea>
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-xs font-bold uppercase tracking-[0.12em] text-zinc-400">{{ __('Опис Commercial (EN)') }}</label>
+                                <textarea name="commercial_license_description_en" rows="3"
+                                    class="w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40"
+                                    placeholder="What exactly the buyer receives for Commercial.">{{ old('commercial_license_description_en', $product->commercial_license_description['en'] ?? '') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
                     <p class="mt-4 rounded-2xl border border-sky-300/20 bg-sky-300/[0.07] p-4 text-sm leading-6 text-sky-100">
-                        {{ __('Безкоштовні моделі підвищують довіру до автора, платні краще працюють із якісним preview, описом і зрозумілою ліцензією.') }}
+                        {{ __('Безкоштовні моделі підвищують довіру до автора. Окрема Commercial-ціна — спосіб монетизувати топові моделі для бізнес-клієнтів.') }}
                     </p>
                 </section>
 

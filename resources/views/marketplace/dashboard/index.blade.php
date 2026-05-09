@@ -124,6 +124,24 @@
                                                         <div class="min-w-0 flex-1">
                                                             <a href="{{ route('products.show', $itemProduct) }}" class="block truncate text-sm font-semibold text-white hover:text-emerald-200">{{ $itemProduct->localized('title') }}</a>
                                                             <p class="mt-0.5 text-[11px] text-zinc-500">{{ number_format((float) $item->price, 2) }} {{ $item->currency }} · {{ $itemProduct->author->name }}</p>
+                                                            <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                                                @if($item->license_type === 'commercial')
+                                                                    <span class="inline-flex items-center gap-1 rounded-full border border-emerald-300/30 bg-emerald-300/[0.10] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-100">
+                                                                        <x-license-icons name="commercial" class="h-2.5 w-2.5" />
+                                                                        {{ __('Commercial') }}
+                                                                    </span>
+                                                                @elseif($item->license_type === 'personal')
+                                                                    <span class="inline-flex items-center gap-1 rounded-full border border-sky-300/30 bg-sky-300/[0.10] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-100">
+                                                                        <x-license-icons name="personal" class="h-2.5 w-2.5" />
+                                                                        {{ __('Personal') }}
+                                                                    </span>
+                                                                @endif
+                                                                @if(is_array($item->license_snapshot))
+                                                                    <x-license-badge :snapshot="$item->license_snapshot" size="sm" />
+                                                                @elseif($itemProduct->license)
+                                                                    <x-license-badge :license="$itemProduct->license" size="sm" />
+                                                                @endif
+                                                            </div>
                                                         </div>
 
                                                         {{-- Action --}}

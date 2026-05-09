@@ -27,8 +27,14 @@
                 <div class="grid h-24 w-24 place-items-center rounded-3xl border border-white/10 bg-white/10 text-4xl font-black text-emerald-200 shadow-2xl shadow-emerald-500/10">3D</div>
             </div>
         @endif
-        <div class="absolute left-4 top-4">
+        <div class="absolute left-4 top-4 flex flex-wrap items-center gap-2">
             <x-ui.badge :variant="$product->is_free ? 'free' : 'paid'">{{ $product->is_free ? __('Безкоштовно') : __('Платна') }}</x-ui.badge>
+            @if($product->commercial_license_enabled)
+                <span class="inline-flex items-center gap-1 rounded-full border border-emerald-300/30 bg-emerald-300/[0.10] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-100">
+                    <svg class="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    {{ __('Commercial') }}
+                </span>
+            @endif
         </div>
         <div class="absolute bottom-4 right-4 rounded-full border border-white/10 bg-zinc-950/75 px-3 py-1 text-xs font-semibold text-white backdrop-blur">{{ $product->display_price }}</div>
     </div>
@@ -37,7 +43,12 @@
             <h3 class="line-clamp-2 text-lg font-semibold leading-snug text-white group-hover:text-emerald-100">{{ $product->localized('title') }}</h3>
         </div>
         <p class="mt-3 line-clamp-2 min-h-10 text-sm leading-5 text-zinc-400">{{ $product->localized('short_description') ?: __('Готова до друку 3D-модель з перевіреними файлами.') }}</p>
-        <div class="mt-5 flex items-center justify-between gap-3 border-t border-white/10 pt-4 text-xs text-zinc-500">
+        @if($product->license)
+            <div class="mt-3">
+                <x-license-badge :license="$product->license" size="sm" :tooltip="false" />
+            </div>
+        @endif
+        <div class="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-4 text-xs text-zinc-500">
             <span class="inline-flex items-center gap-1.5 truncate">
                 {{ $product->author->name }}
                 <x-ui.verified-badge :user="$product->author" size="xs" :show-label="false" />
