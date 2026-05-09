@@ -61,10 +61,12 @@ IFS=$'\n\t'
 trap 'rc=$?; echo -e "\n\033[1;31mxx  install-iredmail.sh aborted at line $LINENO (exit $rc)\033[0m" >&2' ERR
 
 # ─── Script revision (bump on each meaningful change) ──────────────────────
-SCRIPT_REVISION="2026-05-09.r3"
+SCRIPT_REVISION="2026-05-09.r4"
 
 # ─── Defaults (override via env) ────────────────────────────────────────────
-IREDMAIL_VERSION="${IREDMAIL_VERSION:-1.7.2}"
+# Set to AUTO to fetch the latest tag from GitHub at runtime.
+IREDMAIL_VERSION="${IREDMAIL_VERSION:-AUTO}"
+IREDMAIL_FALLBACK_VERSION="1.8.0"
 DOMAIN="${DOMAIN:-}"
 MAIL_HOSTNAME="${MAIL_HOSTNAME:-}"        # public-facing (Roundcube URL, MX target)
 SYSTEM_HOSTNAME="${SYSTEM_HOSTNAME:-}"    # what /etc/hostname becomes (HELO/PTR-match)
@@ -266,6 +268,21 @@ yes y | ufw enable >/dev/null 2>&1 || true
 info "$(ufw status | head -1)"
 
 # ─── 5. Download iRedMail ───────────────────────────────────────────────────
+step "Resolving latest iRedMail version"
+if [[ "$IREDMAIL_VERSION" == "AUTO" ]]; then
+    LATEST=$(curl -fsSL https://api.github.com/repos/iredmail/iRedMail/tags 2>/dev/null \
+        | grep -oE '"name"[[:space:]]*:[[:space:]]*"[0-9][0-9.]*"' \
+        | head -1 \
+        | grep -oE '[0-9][0-9.]*' || true)
+    if [[ -n "$LATEST" ]]; then
+        IREDMAIL_VERSION="$LATEST"
+        info "GitHub latest tag: ${IREDMAIL_VERSION}"
+    else
+        IREDMAIL_VERSION="$IREDMAIL_FALLBACK_VERSION"
+        warn "Could not query GitHub API — falling back to ${IREDMAIL_VERSION}"
+    fi
+fi
+
 step "Downloading iRedMail ${IREDMAIL_VERSION}"
 cd /opt
 if [[ ! -d "/opt/iRedMail-${IREDMAIL_VERSION}" ]]; then
