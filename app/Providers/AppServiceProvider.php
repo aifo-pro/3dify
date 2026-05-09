@@ -2,12 +2,12 @@
 
 namespace App\Providers;
 
+use App\Mail\RenderedTemplateMail;
 use App\Models\Product;
 use App\Policies\ProductPolicy;
 use App\Services\EmailTemplateRenderer;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -28,7 +28,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(Product::class, ProductPolicy::class);
 
-        ResetPassword::toMailUsing(function ($notifiable, string $token): MailMessage {
+        ResetPassword::toMailUsing(function ($notifiable, string $token): RenderedTemplateMail {
             $locale = $notifiable->locale ?: app()->getLocale();
             $url = url(route('password.reset', [
                 'token' => $token,
@@ -44,12 +44,11 @@ class AppServiceProvider extends ServiceProvider
                 ],
             ], $locale);
 
-            return (new MailMessage)
-                ->subject($rendered['subject'])
-                ->view('emails.templated', ['body' => $rendered['body']]);
+            return (new RenderedTemplateMail($rendered['subject'], $rendered['body']))
+                ->to($notifiable->routeNotificationFor('mail'));
         });
 
-        VerifyEmail::toMailUsing(function ($notifiable, string $verificationUrl): MailMessage {
+        VerifyEmail::toMailUsing(function ($notifiable, string $verificationUrl): RenderedTemplateMail {
             $locale = $notifiable->locale ?: app()->getLocale();
             $expire = (string) config('auth.verification.expire', 60);
 
@@ -61,9 +60,8 @@ class AppServiceProvider extends ServiceProvider
                 ],
             ], $locale);
 
-            return (new MailMessage)
-                ->subject($rendered['subject'])
-                ->view('emails.templated', ['body' => $rendered['body']]);
+            return (new RenderedTemplateMail($rendered['subject'], $rendered['body']))
+                ->to($notifiable->routeNotificationFor('mail'));
         });
     }
 }
