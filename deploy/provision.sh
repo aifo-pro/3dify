@@ -452,7 +452,16 @@ cat > /usr/local/bin/${APP_SLUG}-deploy <<DEPLOY
 set -euo pipefail
 APP_DIR="${APP_DIR}"
 APP_SLUG="${APP_SLUG}"
+APP_USER="${APP_USER}"
 PHP_VERSION="${PHP_VERSION}"
+
+# When invoked as root (the usual \`sudo \${APP_SLUG}-deploy\`), re-exec
+# under the deploy user so git/composer/npm/artisan touch files as the
+# project owner. This avoids git's "dubious ownership" guard and keeps
+# file permissions stable across deploys.
+if [[ "\$EUID" -eq 0 ]]; then
+    exec sudo -u "\$APP_USER" -H bash "\$0" "\$@"
+fi
 
 echo "==> Re-deploying \${APP_SLUG}"
 cd "\${APP_DIR}"
@@ -471,6 +480,8 @@ rm -rf node_modules
 php artisan migrate --force --no-interaction
 php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan event:cache
 
+# Sudoers grants the deploy user passwordless access to exactly these
+# two systemctl commands (see /etc/sudoers.d/\${APP_USER}).
 sudo /bin/systemctl reload php\${PHP_VERSION}-fpm
 sudo /bin/systemctl restart \${APP_SLUG}-queue.service
 
