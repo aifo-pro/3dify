@@ -16,7 +16,7 @@ class PurchaseReceiptMail extends Mailable
 
     public function build()
     {
-        $rendered = app(EmailTemplateRenderer::class)->render('purchase', [
+        $rendered = app(EmailTemplateRenderer::class)->render('purchase_success', [
             'order' => [
                 'number' => $this->order->number,
                 'total' => number_format((float) $this->order->total, 2),

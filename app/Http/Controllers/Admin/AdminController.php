@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\DatabaseTemplateMail;
 use App\Models\Category;
 use App\Models\License;
 use App\Models\Order;
@@ -11,8 +12,11 @@ use App\Models\Product;
 use App\Models\Tag;
 use App\Models\User;
 use App\Services\AdminStats;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -74,7 +78,7 @@ class AdminController extends Controller
             'github_id' => $u->github_id,
             'telegram_id' => $u->telegram_id,
             'telegram_username' => $u->telegram_username,
-            'avatar_url' => $u->avatar_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($u->avatar_path) : null,
+            'avatar_url' => $u->avatar_path ? Storage::disk('public')->url($u->avatar_path) : null,
             'created_at' => optional($u->created_at)->format('d.m.Y'),
             'products_count' => $u->products_count ?? 0,
             'orders_count' => $u->orders_count ?? 0,
@@ -169,7 +173,7 @@ class AdminController extends Controller
             : 'Email знято з підтвердження.');
     }
 
-    public function toggleManualVerification(User $user, \App\Services\AuditLogger $audit)
+    public function toggleManualVerification(User $user, AuditLogger $audit)
     {
         $user->update(['manual_verification' => ! $user->manual_verification]);
         $audit->record('user.manual_verification.toggle', $user, ['manual_verification' => $user->manual_verification]);
@@ -179,7 +183,7 @@ class AdminController extends Controller
             : __('Знак Verified знято.'));
     }
 
-    public function destroyUser(User $user, \App\Services\AuditLogger $audit)
+    public function destroyUser(User $user, AuditLogger $audit)
     {
         if ($user->id === auth()->id()) {
             return back()->withErrors(['delete' => 'Не можна видалити власний акаунт.']);
@@ -203,9 +207,11 @@ class AdminController extends Controller
         return view('admin.products', ['products' => Product::with(['author', 'category'])->latest()->paginate(20)]);
     }
 
-    public function moderate(Request $request, Product $product, \App\Services\AuditLogger $audit)
+    public function moderate(Request $request, Product $product, AuditLogger $audit)
     {
         $data = $request->validate(['status' => ['required', 'in:published,rejected,pending,archived'], 'moderation_note' => ['nullable', 'string', 'max:500']]);
+        $previousStatus = $product->status;
+
         $product->update([
             'status' => $data['status'],
             'moderation_note' => $data['moderation_note'] ?? null,
@@ -213,6 +219,29 @@ class AdminController extends Controller
         ]);
 
         $audit->record('product.moderate', $product, ['status' => $data['status']]);
+
+        $author = $product->author;
+        if ($author && $author->email) {
+            $locale = $author->locale ?: 'uk';
+            $productTitle = $product->localized('title', $locale);
+
+            $payload = [
+                'user' => ['name' => $author->displayName()],
+                'product' => [
+                    'title' => $productTitle,
+                    'url' => route('products.show', $product),
+                ],
+            ];
+
+            if ($data['status'] === 'published' && $previousStatus !== 'published') {
+                Mail::to($author)->queue(new DatabaseTemplateMail('model_approved', $author, $payload));
+            }
+
+            if ($data['status'] === 'rejected' && $previousStatus !== 'rejected') {
+                $payload['moderation'] = ['note' => (string) ($product->moderation_note ?? '')];
+                Mail::to($author)->queue(new DatabaseTemplateMail('model_rejected', $author, $payload));
+            }
+        }
 
         return back()->with('status', 'Статус моделі оновлено.');
     }

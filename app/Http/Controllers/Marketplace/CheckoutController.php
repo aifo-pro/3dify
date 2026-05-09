@@ -75,7 +75,7 @@ class CheckoutController extends Controller
 
         if ($payment->status === 'paid') {
             Mail::to($order->user)->queue(new PurchaseReceiptMail($order));
-            Mail::to($product->author)->queue(new SaleNotificationMail($order));
+            Mail::to($product->author)->queue(new SaleNotificationMail($order, $product->author));
 
             foreach ($order->items as $item) {
                 $item->author?->notify(new NewSaleNotification($item, $order));
@@ -103,7 +103,7 @@ class CheckoutController extends Controller
 
         Mail::to($order->user)->queue(new PurchaseReceiptMail($order));
         foreach ($order->items as $item) {
-            Mail::to($item->author)->queue(new SaleNotificationMail($order));
+            Mail::to($item->author)->queue(new SaleNotificationMail($order, $item->author));
             $item->author?->notify(new NewSaleNotification($item, $order));
         }
 

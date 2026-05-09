@@ -87,8 +87,8 @@ class DatabaseSeeder extends Seeder
         SeoPage::create(['route_name' => 'home', 'locale' => 'uk', 'title' => '3Dify - маркетплейс 3D-моделей', 'description' => 'Публікуйте, купуйте та завантажуйте моделі для 3D-друку.']);
 
         EmailTemplate::insert([
-            ['key' => 'purchase', 'locale' => 'uk', 'subject' => 'Ваше замовлення 3Dify', 'body' => 'Дякуємо за покупку.', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'sale', 'locale' => 'uk', 'subject' => 'Новий продаж', 'body' => 'Вашу модель купили.', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'purchase_success', 'locale' => 'uk', 'subject' => 'Ваше замовлення 3Dify', 'body' => 'Дякуємо за покупку.', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['key' => 'model_sold', 'locale' => 'uk', 'subject' => 'Новий продаж', 'body' => 'Вашу модель купили.', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         $this->call([

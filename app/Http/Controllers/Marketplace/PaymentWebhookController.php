@@ -26,7 +26,7 @@ class PaymentWebhookController extends Controller
 
         Mail::to($payment->order->user)->queue(new PurchaseReceiptMail($payment->order));
         foreach ($payment->order->items as $item) {
-            Mail::to($item->author)->queue(new SaleNotificationMail($payment->order));
+            Mail::to($item->author)->queue(new SaleNotificationMail($payment->order, $item->author));
         }
 
         return response()->json(['ok' => true]);

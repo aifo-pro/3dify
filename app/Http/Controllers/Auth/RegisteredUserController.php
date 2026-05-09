@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\DatabaseTemplateMail;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -43,6 +45,10 @@ class RegisteredUserController extends Controller
         ]);
 
         event(new Registered($user));
+
+        Mail::to($user)->queue(new DatabaseTemplateMail('registration', $user, [
+            'user' => ['name' => $user->name],
+        ]));
 
         Auth::login($user);
 
