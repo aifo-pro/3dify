@@ -5,9 +5,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>{{ config('app.name', '3Dify') }}</title>
+        <x-site.google-head />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="min-h-screen bg-zinc-950 text-zinc-100 antialiased">
+        <x-site.google-body />
         <main class="grid min-h-screen lg:grid-cols-[1.05fr_.95fr]">
             <section class="relative hidden overflow-hidden border-r border-white/10 bg-zinc-950 lg:block">
                 <div class="absolute inset-0 bg-[linear-gradient(135deg,rgba(16,185,129,.24),transparent_42%),linear-gradient(225deg,rgba(14,165,233,.16),transparent_38%)]"></div>

@@ -49,11 +49,14 @@
 
     @if($faviconPath)<link rel="icon" href="{{ Storage::disk('public')->url($faviconPath) }}">@endif
 
+    <x-site.google-head />
+
     @stack('head')
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-zinc-950 text-zinc-100 antialiased">
+    <x-site.google-body />
     <div class="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,.14),transparent_34%),radial-gradient(circle_at_top_right,rgba(14,165,233,.10),transparent_30%),linear-gradient(180deg,#071411_0%,#09090b_40%,#030712_100%)]"></div>
 
     <x-site.header :site-name="$siteName" :logo-path="$logoPath" />
