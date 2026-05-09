@@ -89,6 +89,10 @@ class DatabaseSeeder extends Seeder
             ['key' => 'sale', 'locale' => 'uk', 'subject' => 'Новий продаж', 'body' => 'Вашу модель купили.', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
+        $this->call([
+            LegalPagesSeeder::class,
+        ]);
+
         $admin->products()->count();
     }
 }

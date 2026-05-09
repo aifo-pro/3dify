@@ -6,6 +6,8 @@ use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\ApiTokenController;
 use App\Http\Controllers\Admin\BulkActionController;
 use App\Http\Controllers\Admin\ContentController;
+use App\Http\Controllers\Admin\LegalPagesController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\FeaturedProductsController;
 use App\Http\Controllers\Admin\ModerationController;
@@ -61,6 +63,11 @@ Route::post('/models/{product:slug}/report', [ReportController::class, 'store'])
 // Public authors directory and profiles.
 Route::get('/authors', [AuthorController::class, 'index'])->name('authors.index');
 Route::get('/authors/{user}', [AuthorController::class, 'show'])->name('authors.show');
+
+// CMS legal / informational pages (footer links).
+Route::get('/page/{slug}', [PageController::class, 'show'])
+    ->where('slug', '[a-z0-9\-]+')
+    ->name('pages.show');
 
 Route::post('/payments/aifo/webhook', PaymentWebhookController::class)->name('payments.aifo.webhook');
 
@@ -219,6 +226,14 @@ Route::middleware(['auth', 'role:admin,moderator'])->prefix('admin')->name('admi
     Route::post('/email-templates', [ContentController::class, 'email'])->name('email-templates.store');
     Route::delete('/email-templates/{emailTemplate}', [ContentController::class, 'deleteEmail'])->name('email-templates.destroy');
     Route::post('/mail/test', [ContentController::class, 'sendTestEmail'])->name('mail.test');
+
+    // Legal / footer CMS pages
+    Route::get('/pages/create', [LegalPagesController::class, 'create'])->name('pages.create');
+    Route::post('/pages', [LegalPagesController::class, 'store'])->name('pages.store');
+    Route::get('/pages/{page}/edit', [LegalPagesController::class, 'edit'])->name('pages.edit');
+    Route::put('/pages/{page}', [LegalPagesController::class, 'update'])->name('pages.update');
+    Route::delete('/pages/{page}', [LegalPagesController::class, 'destroy'])->name('pages.destroy');
+    Route::patch('/pages/{page}/toggle', [LegalPagesController::class, 'toggle'])->name('pages.toggle');
 
     // Moderation hub + queues
     Route::get('/moderation', [ModerationController::class, 'hub'])->name('moderation.hub');

@@ -15,6 +15,7 @@
         ['key' => 'mail', 'label' => __('SMTP / Email'), 'icon' => 'mail'],
         ['key' => 'translations', 'label' => __('Переклади'), 'icon' => 'globe'],
         ['key' => 'email_templates', 'label' => __('Email-шаблони'), 'icon' => 'inbox'],
+        ['key' => 'pages', 'label' => __('Сторінки футера'), 'icon' => 'doc'],
         ['key' => 'legal', 'label' => __('Юридичні'), 'icon' => 'shield'],
         ['key' => 'social', 'label' => __('Соцмережі'), 'icon' => 'share'],
         ['key' => 'header_footer', 'label' => __('Header / Footer'), 'icon' => 'layout'],
@@ -33,6 +34,7 @@
             'shield' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
             'share' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',
             'layout' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
+            'doc' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>',
             default => '',
         };
     };
@@ -664,6 +666,130 @@
                                 </tr>
                             @empty
                                 <tr><td colspan="5" class="px-4 py-12 text-center text-xs text-zinc-500">{{ __('Шаблонів ще немає.') }}</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </x-admin.settings-card>
+        </div>
+
+        {{-- ============================================================ --}}
+        {{-- 8.5 СТОРІНКИ ФУТЕРА (CMS)                                    --}}
+        {{-- ============================================================ --}}
+        <div x-show="tab === 'pages'" x-cloak class="grid gap-5">
+            <x-admin.settings-card
+                :title="__('Сторінки футера (CMS)')"
+                :description="__('Редагуйте контент сторінок «Правила публікації», «Авторські права», «Terms», «Контакти», «FAQ», «Privacy». Кожна сторінка має дві локалі — UK та EN. На публічному сайті сторінки доступні за адресою /page/{slug}.')"
+            >
+                @php
+                    $pagesBySlug = $legalPages->groupBy('slug');
+                    $existingSlugs = $pagesBySlug->keys()->all();
+                    $missingSlugs = collect($legalSlugs)
+                        ->reject(fn ($s) => in_array($s['slug'], $existingSlugs, true))
+                        ->values();
+                @endphp
+
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div class="text-xs text-zinc-400">
+                        {{ __('Усього сторінок') }}:
+                        <span class="font-bold text-emerald-300">{{ $legalPages->count() }}</span>
+                    </div>
+                    <a href="{{ route('admin.pages.create') }}"
+                       class="inline-flex h-9 items-center gap-2 rounded-xl bg-emerald-400 px-4 text-xs font-bold text-zinc-950 hover:bg-emerald-300">
+                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        {{ __('Додати сторінку') }}
+                    </a>
+                </div>
+
+                @if($missingSlugs->isNotEmpty())
+                    <div class="mb-4 rounded-2xl border border-amber-300/30 bg-amber-300/[0.08] p-4">
+                        <p class="text-sm font-semibold text-amber-100">{{ __('Не вистачає сторінок') }}</p>
+                        <p class="mt-1 text-xs text-amber-200/80">
+                            {{ __('Запустіть') }} <code class="rounded bg-zinc-950/40 px-1.5 py-0.5 text-[11px]">php artisan db:seed --class=LegalPagesSeeder</code> {{ __('або створіть вручну:') }}
+                        </p>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            @foreach($missingSlugs as $missing)
+                                <a href="{{ route('admin.pages.create', ['slug' => $missing['slug']]) }}"
+                                   class="inline-flex items-center gap-1.5 rounded-lg border border-amber-300/30 bg-amber-300/10 px-2.5 py-1 text-[11px] font-semibold text-amber-100 hover:bg-amber-300/20">
+                                    + {{ $missing['label_uk'] }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                <div class="overflow-hidden rounded-2xl border border-white/10">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-zinc-950/40">
+                            <tr class="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                                <th class="px-4 py-3">Slug</th>
+                                <th class="px-4 py-3">{{ __('Назва') }}</th>
+                                <th class="px-4 py-3 text-center">{{ __('Мова') }}</th>
+                                <th class="px-4 py-3 text-center">{{ __('Статус') }}</th>
+                                <th class="px-4 py-3">{{ __('Оновлено') }}</th>
+                                <th class="px-4 py-3 text-right">{{ __('Дії') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            @forelse($legalPages as $lp)
+                                <tr class="transition hover:bg-white/[0.03]">
+                                    <td class="px-4 py-2.5">
+                                        <a href="{{ route('pages.show', $lp->slug) }}" target="_blank" class="font-mono text-xs text-emerald-300 hover:underline">/{{ $lp->slug }}</a>
+                                    </td>
+                                    <td class="px-4 py-2.5">
+                                        <div class="text-sm text-white">{{ $lp->title }}</div>
+                                        @if($lp->subtitle)
+                                            <div class="mt-0.5 line-clamp-1 text-[11px] text-zinc-500">{{ $lp->subtitle }}</div>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-2.5 text-center">
+                                        <span class="inline-flex h-6 items-center rounded-full border border-white/10 bg-white/[0.04] px-2 text-[10px] font-bold uppercase tracking-wider text-zinc-300">{{ $lp->locale }}</span>
+                                    </td>
+                                    <td class="px-4 py-2.5 text-center">
+                                        @if($lp->is_published)
+                                            <span class="inline-flex items-center gap-1 rounded-full border border-emerald-300/30 bg-emerald-300/[0.08] px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-200">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>{{ __('Опубліковано') }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 rounded-full border border-zinc-500/30 bg-zinc-500/[0.08] px-2 py-0.5 text-[10px] font-bold uppercase text-zinc-400">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-zinc-500"></span>{{ __('Прихована') }}
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-2.5 text-xs text-zinc-400">
+                                        {{ $lp->updated_at?->translatedFormat('d M Y · H:i') ?? '—' }}
+                                    </td>
+                                    <td class="px-4 py-2.5">
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            <a href="{{ route('admin.pages.edit', $lp) }}"
+                                               class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 text-xs font-semibold text-zinc-200 hover:bg-white/10">
+                                                <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+                                                {{ __('Редагувати') }}
+                                            </a>
+                                            <form method="POST" action="{{ route('admin.pages.toggle', $lp) }}" class="inline">
+                                                @csrf @method('PATCH')
+                                                <button class="grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-zinc-300 hover:bg-white/10" title="{{ $lp->is_published ? __('Приховати') : __('Опублікувати') }}">
+                                                    @if($lp->is_published)
+                                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                                                    @else
+                                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                                    @endif
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="{{ route('admin.pages.destroy', $lp) }}"
+                                                  onsubmit="return confirm('{{ __('Видалити сторінку?') }}')" class="inline">
+                                                @csrf @method('DELETE')
+                                                <button class="grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-zinc-300 hover:border-rose-300/30 hover:bg-rose-300/10 hover:text-rose-100" title="{{ __('Видалити') }}">
+                                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="6" class="px-4 py-10 text-center text-sm text-zinc-500">
+                                    {{ __('Сторінок ще немає. Запустіть seeder або створіть першу.') }}
+                                </td></tr>
                             @endforelse
                         </tbody>
                     </table>

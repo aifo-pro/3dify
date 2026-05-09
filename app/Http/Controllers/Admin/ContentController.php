@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\EmailTemplate;
+use App\Models\LegalPage;
 use App\Models\SeoPage;
 use App\Models\Setting;
 use App\Models\Translation;
@@ -23,6 +24,8 @@ class ContentController extends Controller
             'seoPages' => SeoPage::orderBy('route_name')->get(),
             'translations' => Translation::orderBy('locale')->orderBy('key')->paginate(30, ['*'], 'translations_page')->withQueryString(),
             'emailTemplates' => EmailTemplate::orderBy('key')->orderBy('locale')->get(),
+            'legalPages' => LegalPage::orderBy('slug')->orderBy('locale')->get(),
+            'legalSlugs' => LegalPage::defaultSlugs(),
         ]);
     }
 

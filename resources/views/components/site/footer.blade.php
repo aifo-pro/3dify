@@ -34,9 +34,9 @@
             <h3 class="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-300">{{ __('Авторам') }}</h3>
             <div class="mt-5 grid gap-3">
                 <x-ui.footer-link :href="auth()->check() ? route('author.products.create') : route('register')">{{ __('Продати модель') }}</x-ui.footer-link>
-                <x-ui.footer-link>{{ __('Правила публікації') }}</x-ui.footer-link>
-                <x-ui.footer-link>{{ __('Copyright') }}</x-ui.footer-link>
-                <x-ui.footer-link>{{ __('Terms') }}</x-ui.footer-link>
+                <x-ui.footer-link :href="route('pages.show', 'publishing-rules')">{{ __('Правила публікації') }}</x-ui.footer-link>
+                <x-ui.footer-link :href="route('pages.show', 'copyright')">{{ __('Copyright') }}</x-ui.footer-link>
+                <x-ui.footer-link :href="route('pages.show', 'terms')">{{ __('Terms') }}</x-ui.footer-link>
             </div>
         </div>
 
@@ -44,9 +44,9 @@
         <div>
             <h3 class="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-300">{{ __('Підтримка') }}</h3>
             <div class="mt-5 grid gap-3">
-                <x-ui.footer-link>{{ __('Contact') }}</x-ui.footer-link>
-                <x-ui.footer-link>{{ __('FAQ') }}</x-ui.footer-link>
-                <x-ui.footer-link>{{ __('Privacy') }}</x-ui.footer-link>
+                <x-ui.footer-link :href="route('pages.show', 'contact')">{{ __('Contact') }}</x-ui.footer-link>
+                <x-ui.footer-link :href="route('pages.show', 'faq')">{{ __('FAQ') }}</x-ui.footer-link>
+                <x-ui.footer-link :href="route('pages.show', 'privacy')">{{ __('Privacy') }}</x-ui.footer-link>
                 <x-ui.footer-link :href="route('locale.switch', app()->getLocale() === 'uk' ? 'en' : 'uk')">{{ __('Мова') }}: {{ app()->getLocale() === 'uk' ? 'Українська' : 'English' }}</x-ui.footer-link>
             </div>
         </div>
