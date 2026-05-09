@@ -60,6 +60,9 @@ IFS=$'\n\t'
 # Surface failures with line numbers instead of dying silently.
 trap 'rc=$?; echo -e "\n\033[1;31mxx  install-iredmail.sh aborted at line $LINENO (exit $rc)\033[0m" >&2' ERR
 
+# ─── Script revision (bump on each meaningful change) ──────────────────────
+SCRIPT_REVISION="2026-05-09.r3"
+
 # ─── Defaults (override via env) ────────────────────────────────────────────
 IREDMAIL_VERSION="${IREDMAIL_VERSION:-1.7.2}"
 DOMAIN="${DOMAIN:-}"
@@ -95,17 +98,22 @@ prompt() {
 }
 
 gen_password() {
-    # Run in subshell w/o pipefail so SIGPIPE from tr (when head closes early)
-    # doesn't kill the parent script under `set -euo pipefail`.
-    (
-        set +o pipefail
-        LC_ALL=C tr -dc 'A-HJ-NP-Za-km-z2-9' </dev/urandom 2>/dev/null | head -c 24
-    )
+    # openssl rand reads a fixed number of bytes — no pipes, no SIGPIPE,
+    # no surprises with set -euo pipefail. 16 bytes hex = 32 chars, 128 bit.
+    if have openssl; then
+        openssl rand -hex 16
+    else
+        # Fallback: read a bounded chunk of urandom *first*, then filter.
+        local raw
+        raw=$(head -c 4096 /dev/urandom | LC_ALL=C tr -dc 'A-HJ-NP-Za-km-z2-9')
+        printf '%s\n' "${raw:0:24}"
+    fi
 }
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
 # ─── 1. Pre-flight ──────────────────────────────────────────────────────────
+echo -e "${C_DIM}install-iredmail.sh revision ${SCRIPT_REVISION}${C_RST}"
 [[ $EUID -eq 0 ]] || fatal "Run as root (sudo bash $0)"
 
 OS_ID=$(. /etc/os-release && echo "$ID")
