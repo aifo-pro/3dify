@@ -4,10 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\EmailTemplate;
 use App\Models\User;
-use App\Notifications\TemplatedPasswordResetNotification;
+use App\Mail\RenderedTemplateMail;
 use App\Services\EmailTemplateRenderer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class EmailTemplateRenderingTest extends TestCase
@@ -20,7 +20,7 @@ class EmailTemplateRenderingTest extends TestCase
             'key' => 'password_reset',
             'locale' => 'uk',
             'subject' => 'Reset {{ user_name }}',
-            'body' => '&lt;div&gt;Hello &lt;b&gt;{{ user.name }}&lt;/b&gt; &lt;a href=&quot;{{ link }}&quot;&gt;{{ site_name }}&lt;/a&gt; {{ reset.expires_minutes }}&lt;/div&gt;',
+            'body' => '&lt;div&gt;Hello &lt;b&gt;{{ user.name }}&lt;/b&gt; &lt;a href=&quot;{{'."\u{00A0}".'link'."\u{00A0}".'}}&quot;&gt;{{ site_name }}&lt;/a&gt; {{ reset.expires_minutes }}&lt;/div&gt;',
             'is_active' => true,
         ]);
 
@@ -41,14 +41,30 @@ class EmailTemplateRenderingTest extends TestCase
         $this->assertStringNotContainsString('{{ link }}', $rendered['body']);
     }
 
-    public function test_password_reset_notification_uses_html_view(): void
+    public function test_password_reset_queues_rendered_html_mailable(): void
     {
-        $user = User::factory()->create(['locale' => 'uk']);
+        Mail::fake();
 
-        $mail = (new TemplatedPasswordResetNotification('token'))->toMail($user);
+        EmailTemplate::create([
+            'key' => 'password_reset',
+            'locale' => 'uk',
+            'subject' => 'Reset {{ user.name }}',
+            'body' => '<h1>Reset</h1><a href="{{ link }}">Go</a>',
+            'is_active' => true,
+        ]);
 
-        $this->assertInstanceOf(MailMessage::class, $mail);
-        $this->assertSame('emails.templated', $mail->view);
-        $this->assertArrayHasKey('body', $mail->viewData);
+        $user = User::factory()->create([
+            'name' => 'Denys',
+            'email' => 'denys@example.com',
+            'locale' => 'uk',
+        ]);
+
+        $user->sendPasswordResetNotification('token');
+
+        Mail::assertQueued(RenderedTemplateMail::class, function (RenderedTemplateMail $mail) {
+            return $mail->subjectLine === 'Reset Denys'
+                && str_contains($mail->body, '<h1>Reset</h1>')
+                && ! str_contains($mail->body, '{{ link }}');
+        });
     }
 }

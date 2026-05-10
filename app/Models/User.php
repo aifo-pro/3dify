@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use App\Models\Product;
-use App\Notifications\TemplatedPasswordResetNotification;
-use App\Notifications\TemplatedVerifyEmailNotification;
+use App\Mail\RenderedTemplateMail;
+use App\Services\EmailTemplateRenderer;
 use Database\Factories\UserFactory;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -219,7 +223,30 @@ class User extends Authenticatable
      */
     public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
     {
-        $this->notify(new TemplatedPasswordResetNotification($token));
+        $url = url(route('password.reset', [
+            'token' => $token,
+            'email' => $this->getEmailForPasswordReset(),
+        ], false));
+        $expire = (string) config('auth.passwords.'.config('auth.defaults.passwords').'.expire');
+
+        $rendered = app(EmailTemplateRenderer::class)->render('password_reset', [
+            'user' => [
+                'name' => $this->name,
+                'email' => $this->email,
+                'username' => $this->username,
+                'display_name' => $this->displayName(),
+                'locale' => $this->locale,
+            ],
+            'link' => $url,
+            'reset' => [
+                'url' => $url,
+                'expires_minutes' => $expire,
+            ],
+        ], $this->locale ?: app()->getLocale());
+
+        Mail::to($this->getEmailForPasswordReset())->queue(
+            new RenderedTemplateMail($rendered['subject'], $rendered['body'])
+        );
     }
 
     /**
@@ -227,6 +254,33 @@ class User extends Authenticatable
      */
     public function sendEmailVerificationNotification(): void
     {
-        $this->notify(new TemplatedVerifyEmailNotification);
+        $expire = (int) Config::get('auth.verification.expire', 60);
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            Carbon::now()->addMinutes($expire),
+            [
+                'id' => $this->getKey(),
+                'hash' => sha1($this->getEmailForVerification()),
+            ]
+        );
+
+        $rendered = app(EmailTemplateRenderer::class)->render('email_verification', [
+            'user' => [
+                'name' => $this->name,
+                'email' => $this->email,
+                'username' => $this->username,
+                'display_name' => $this->displayName(),
+                'locale' => $this->locale,
+            ],
+            'link' => $verificationUrl,
+            'verification' => [
+                'url' => $verificationUrl,
+                'expires_minutes' => (string) $expire,
+            ],
+        ], $this->locale ?: app()->getLocale());
+
+        Mail::to($this->getEmailForVerification())->queue(
+            new RenderedTemplateMail($rendered['subject'], $rendered['body'])
+        );
     }
 }

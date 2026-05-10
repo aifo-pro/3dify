@@ -211,10 +211,9 @@ class EmailTemplateRenderer
 
     private function substituteToken(string $text, string $token, string $value): string
     {
-        $text = str_replace('{{ '.$token.' }}', $value, $text);
-        $text = str_replace('{{'.$token.'}}', $value, $text);
+        $quoted = preg_quote($token, '/');
 
-        return $text;
+        return preg_replace('/\{\{[\s\x{00A0}]*'.$quoted.'[\s\x{00A0}]*\}\}/u', $value, $text) ?? $text;
     }
 
     private static function uniqueTokens(array ...$groups): array
