@@ -36,8 +36,24 @@ class TipController extends Controller
         ]);
 
         $tipPayment = $payments->createTipPayment($tip);
+
+        if ($tipPayment === null) {
+            $tip->delete();
+
+            return redirect()
+                ->route('products.show', $product)
+                ->with('error', __('Оплата тимчасово недоступна: не налаштовано AIFO в адмінці (endpoint або API-ключ).'));
+        }
+
         $checkoutUrl = (string) ($tipPayment->payload['checkout_url'] ?? '');
-        abort_if($checkoutUrl === '', 502, __('AIFO не повернув посилання на оплату. Спробуйте ще раз.'));
+        if ($checkoutUrl === '') {
+            $tipPayment->delete();
+            $tip->delete();
+
+            return redirect()
+                ->route('products.show', $product)
+                ->with('error', __('Не вдалося отримати посилання на оплату від AIFO. Спробуйте ще раз або зверніться до підтримки.'));
+        }
 
         return redirect()->away($checkoutUrl);
     }

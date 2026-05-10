@@ -8,6 +8,7 @@ use App\Models\Tip;
 use App\Models\TipPayment;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class AifoPaymentService
 {
@@ -52,14 +53,18 @@ class AifoPaymentService
         return $payment;
     }
 
-    public function createTipPayment(Tip $tip): TipPayment
+    /**
+     * Create an AIFO checkout for a tip. Returns null when AIFO is not configured (no keys in settings).
+     */
+    public function createTipPayment(Tip $tip): ?TipPayment
     {
         $checkoutUrl = null;
-        $response = null;
 
         $endpoint = app(SiteSettings::class)->string('payments.aifo_endpoint');
         $apiKey = app(SiteSettings::class)->string('payments.aifo_api_key');
-        abort_if($endpoint === '' || $apiKey === '', 503, __('Оплата тимчасово недоступна. Адміністратор не налаштував AIFO.'));
+        if ($endpoint === '' || $apiKey === '') {
+            return null;
+        }
 
         $successUrl = route('tips.success', $tip);
         $webhookUrl = route('payments.aifo.tips.webhook');
@@ -74,6 +79,12 @@ class AifoPaymentService
 
         if ($response->successful()) {
             $checkoutUrl = $response->json('checkout_url');
+        } else {
+            Log::warning('AIFO tip checkout request failed', [
+                'tip_id' => $tip->id,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
         }
 
         return TipPayment::create([

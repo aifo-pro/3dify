@@ -96,6 +96,32 @@ class TipTest extends TestCase
         Notification::assertSentTo($author, NewTipNotification::class);
     }
 
+    public function test_when_aifo_not_configured_redirects_to_product_with_error(): void
+    {
+        $author = User::factory()->create();
+        $buyer = User::factory()->create();
+        $product = Product::query()->create([
+            'user_id' => $author->id,
+            'slug' => 'tip-no-aifo',
+            'title' => ['uk' => 'No AIFO', 'en' => 'No AIFO'],
+            'description' => ['uk' => 'Description', 'en' => 'Description'],
+            'status' => 'published',
+            'price' => 0,
+            'currency' => 'UAH',
+            'is_free' => true,
+            'published_at' => now(),
+        ]);
+
+        $this->actingAs($buyer)
+            ->post(route('products.tip', $product), [
+                'amount' => 100,
+            ])
+            ->assertRedirect(route('products.show', $product))
+            ->assertSessionHas('error');
+
+        $this->assertSame(0, Tip::query()->count());
+    }
+
     public function test_get_tip_url_redirects_to_product_page(): void
     {
         $author = User::factory()->create();

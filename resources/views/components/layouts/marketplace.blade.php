@@ -68,6 +68,12 @@
         </div>
     @endif
 
+    @if (session('error'))
+        <div class="mx-auto mt-4 max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="rounded-2xl border border-rose-400/35 bg-rose-500/10 px-4 py-3 text-sm text-rose-100 shadow-lg shadow-rose-500/10">{{ session('error') }}</div>
+        </div>
+    @endif
+
     <main>{{ $slot }}</main>
 
     <x-site.footer :site-name="$siteName" />
