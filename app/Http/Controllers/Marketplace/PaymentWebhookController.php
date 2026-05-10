@@ -7,7 +7,6 @@ use App\Mail\PurchaseReceiptMail;
 use App\Mail\SaleNotificationMail;
 use App\Models\Payment;
 use App\Services\AifoPaymentService;
-use App\Services\SiteSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
@@ -15,7 +14,7 @@ class PaymentWebhookController extends Controller
 {
     public function __invoke(Request $request, AifoPaymentService $payments)
     {
-        $secret = app(SiteSettings::class)->string('payments.aifo_webhook_secret');
+        $secret = AifoPaymentService::webhookSigningSecret();
         if ($secret !== '') {
             $expected = hash_hmac('sha256', $request->getContent(), $secret);
             abort_unless(hash_equals($expected, (string) $request->header('X-Aifo-Signature')), 403);

@@ -440,23 +440,40 @@
                 <input type="hidden" name="group" value="payments">
                 <input type="hidden" name="tab" value="payments">
 
-                <x-admin.settings-card :title="__('aifo.pro інтеграція')" :description="__('Реквізити мерчанта та URL-и для повернення.')">
+                <x-admin.settings-card :title="__('aifo.pro інтеграція')" :description="__('Реквізити з кабінету aifo.pro. Endpoint і ключі також можна задати тут — вони зберігаються в БД.')">
                     <div class="mb-4">
                         <x-admin.toggle name="settings[payments.test_mode]" :label="__('Тестовий режим (sandbox)')" :description="__('Реальні гроші не списуються.')" :checked="$bool('payments.test_mode', true)" />
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <x-admin.field name="settings[payments.merchant_id]" label="Merchant ID" :value="$val('payments.merchant_id')" />
-                        <x-admin.field name="settings[payments.api_key]" label="API key" :value="$val('payments.api_key')" />
-                        <x-admin.field type="password" name="settings[payments.secret_key]" label="Secret key" :value="$val('payments.secret_key')" :helper="__('Зберігається в БД у відкритому вигляді — використовуйте окремий env у проді.')" />
+                        <div class="sm:col-span-2">
+                            <x-admin.field
+                                name="settings[payments.aifo_endpoint]"
+                                :label="__('AIFO API endpoint (POST, створення платежу)')"
+                                :value="$val('payments.aifo_endpoint', $val('payments.api_endpoint'))"
+                                :helper="__('Скопіюйте з документації AIFO (наприклад, endpoint «create payment»). Без цього кнопка оплати не відкриє checkout.')"
+                                placeholder="https://..."
+                            />
+                        </div>
+                        <x-admin.field name="settings[payments.aifo_merchant_id]" label="Merchant ID" :value="$val('payments.aifo_merchant_id', $val('payments.merchant_id'))" />
+                        <x-admin.field name="settings[payments.aifo_api_key]" :label="__('API key (Bearer)')" :value="$val('payments.aifo_api_key', $val('payments.api_key'))" />
+                        <x-admin.field type="password" name="settings[payments.aifo_webhook_secret]" :label="__('Секрет для webhook (HMAC)')" :value="$val('payments.aifo_webhook_secret', $val('payments.secret_key'))" :helper="__('Використовується для перевірки заголовка X-Aifo-Signature. Зазвичай збігається з «Secret key» у кабінеті мерчанта.')" />
                         <x-admin.field name="settings[payments.platform_commission_percent]" :label="__('Комісія платформи (%)')" :value="$val('payments.platform_commission_percent', '10')" type="number" :min="0" :max="100" :step="0.1" />
                     </div>
                 </x-admin.settings-card>
 
-                <x-admin.settings-card :title="__('URL-и платіжного сценарію')" :description="__('Куди користувач повертається після оплати.')">
+                <x-admin.settings-card :title="__('URL-и в кабінеті aifo.pro')" :description="__('У застосунку success/webhook передаються в API при кожному платежі. Нижче — що зазвичай треба вписати в панелі AIFO як базові адреси.')">
+                    <div class="mb-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs leading-relaxed text-zinc-400">
+                        <p class="font-bold text-zinc-300">{{ __('Обовʼязкові endpoint-и на 3Dify') }}</p>
+                        <ul class="mt-2 list-disc space-y-1 pl-5">
+                            <li><span class="text-zinc-500">Webhook (замовлення моделей) — POST:</span> <code class="rounded bg-zinc-950/80 px-1.5 py-0.5 font-mono text-[11px] text-emerald-200/90">{{ url('/payments/aifo/webhook') }}</code></li>
+                            <li><span class="text-zinc-500">Webhook (подяки авторам) — POST:</span> <code class="rounded bg-zinc-950/80 px-1.5 py-0.5 font-mono text-[11px] text-emerald-200/90">{{ url('/payments/aifo/tips/webhook') }}</code></li>
+                        </ul>
+                        <p class="mt-3 text-[11px] text-zinc-500">{{ __('Якщо в AIFO можна вказати лише один webhook, орієнтуйтесь на документацію: зазвичай обидва типи платежів проходять через один URL або webhook задається в тілі запиту створення платежу.') }}</p>
+                    </div>
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <x-admin.field name="settings[payments.webhook_url]" label="Webhook URL" :value="$val('payments.webhook_url', url('/payments/aifo/webhook'))" />
-                        <x-admin.field name="settings[payments.success_url]" label="Success URL" :value="$val('payments.success_url')" />
-                        <x-admin.field name="settings[payments.fail_url]" label="Fail URL" :value="$val('payments.fail_url')" />
+                        <x-admin.field name="settings[payments.webhook_url]" label="Webhook URL (копія для довідки)" :value="$val('payments.webhook_url', url('/payments/aifo/webhook'))" :helper="__('Можна залишити як у кабінеті AIFO.')" />
+                        <x-admin.field name="settings[payments.success_url]" :label="__('Success URL (опційно, для кабінету AIFO)')" :value="$val('payments.success_url', url('/'))" :helper="__('Після оплати користувач часто повертається на сторінку замовлення / моделі — це формує застосунок.')" />
+                        <x-admin.field name="settings[payments.fail_url]" :label="__('Fail URL (опційно)')" :value="$val('payments.fail_url', url('/'))" />
                     </div>
                 </x-admin.settings-card>
 
