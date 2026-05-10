@@ -4,13 +4,23 @@ namespace App\Http\Controllers\Marketplace;
 
 use App\Http\Controllers\Controller;
 use App\Models\PrinterProfile;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class PrinterProfileController extends Controller
 {
     public function index(Request $request)
     {
+        if (! Schema::hasTable('printer_profiles')) {
+            return view('marketplace.printers.index', [
+                'printers' => collect(),
+                'technologies' => PrinterProfile::TECHNOLOGIES,
+                'printerSchemaReady' => false,
+            ]);
+        }
+
         $printers = $request->user()
             ->printers()
             ->orderByDesc('is_default')
@@ -20,11 +30,16 @@ class PrinterProfileController extends Controller
         return view('marketplace.printers.index', [
             'printers' => $printers,
             'technologies' => PrinterProfile::TECHNOLOGIES,
+            'printerSchemaReady' => true,
         ]);
     }
 
     public function store(Request $request)
     {
+        if ($redirect = $this->redirectUnlessPrinterTable()) {
+            return $redirect;
+        }
+
         $data = $this->validatedPrinterPayload($request);
 
         $user = $request->user();
@@ -53,9 +68,13 @@ class PrinterProfileController extends Controller
             ->with('status', __('Принтер збережено.'));
     }
 
-    public function update(Request $request, PrinterProfile $printer)
+    public function update(Request $request, int $printer)
     {
-        $this->authorizePrinter($request, $printer);
+        if ($redirect = $this->redirectUnlessPrinterTable()) {
+            return $redirect;
+        }
+
+        $profile = $this->printerForUser($request, $printer);
 
         $data = $this->validatedPrinterPayload($request);
 
@@ -64,7 +83,7 @@ class PrinterProfileController extends Controller
 
         $isDefault = $request->boolean('is_default');
 
-        $printer->update([
+        $profile->update([
             'name' => $data['name'],
             'technology' => $data['technology'],
             'bed_x' => $data['bed_x'] ?? null,
@@ -76,7 +95,7 @@ class PrinterProfileController extends Controller
         ]);
 
         if ($isDefault) {
-            $user->printers()->whereKeyNot($printer->id)->update(['is_default' => false]);
+            $user->printers()->whereKeyNot($profile->id)->update(['is_default' => false]);
         }
 
         if (! $user->printers()->where('is_default', true)->exists()) {
@@ -91,12 +110,16 @@ class PrinterProfileController extends Controller
             ->with('status', __('Принтер оновлено.'));
     }
 
-    public function destroy(Request $request, PrinterProfile $printer)
+    public function destroy(Request $request, int $printer)
     {
-        $this->authorizePrinter($request, $printer);
+        if ($redirect = $this->redirectUnlessPrinterTable()) {
+            return $redirect;
+        }
 
-        $wasDefault = $printer->is_default;
-        $printer->delete();
+        $profile = $this->printerForUser($request, $printer);
+
+        $wasDefault = $profile->is_default;
+        $profile->delete();
 
         if ($wasDefault) {
             $next = $request->user()->printers()->first();
@@ -110,21 +133,39 @@ class PrinterProfileController extends Controller
             ->with('status', __('Принтер видалено.'));
     }
 
-    public function makeDefault(Request $request, PrinterProfile $printer)
+    public function makeDefault(Request $request, int $printer)
     {
-        $this->authorizePrinter($request, $printer);
+        if ($redirect = $this->redirectUnlessPrinterTable()) {
+            return $redirect;
+        }
+
+        $profile = $this->printerForUser($request, $printer);
 
         $request->user()->printers()->update(['is_default' => false]);
-        $printer->update(['is_default' => true]);
+        $profile->update(['is_default' => true]);
 
         return redirect()
             ->route('printers.index')
             ->with('status', __('Основний принтер оновлено.'));
     }
 
-    private function authorizePrinter(Request $request, PrinterProfile $printer): void
+    private function printerForUser(Request $request, int $printerId): PrinterProfile
     {
-        abort_if($printer->user_id !== $request->user()->id, 403);
+        return PrinterProfile::where('user_id', $request->user()->id)->findOrFail($printerId);
+    }
+
+    /**
+     * Avoid 500 when production DB has not run migrations that create `printer_profiles`.
+     */
+    private function redirectUnlessPrinterTable(): ?RedirectResponse
+    {
+        if (Schema::hasTable('printer_profiles')) {
+            return null;
+        }
+
+        return redirect()
+            ->route('printers.index')
+            ->with('error', __('На сервері потрібно застосувати міграції бази даних. SSH: php artisan migrate --force'));
     }
 
     /**

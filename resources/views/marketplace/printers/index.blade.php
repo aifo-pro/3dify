@@ -10,6 +10,14 @@
             <div class="mb-6 rounded-2xl border border-emerald-300/30 bg-emerald-300/[0.08] px-4 py-3 text-sm text-emerald-100">{{ session('status') }}</div>
         @endif
 
+        @if (!($printerSchemaReady ?? true))
+            <div class="mb-6 rounded-2xl border border-amber-300/35 bg-amber-400/[0.08] px-4 py-3 text-sm leading-relaxed text-amber-100">
+                <p class="font-semibold text-amber-50">{{ __('База даних ще не оновлена на сервері') }}</p>
+                <p class="mt-2 text-amber-100/90">{{ __('Потрібна таблиця принтерів. На сервері виконайте в каталозі проєкту:') }}</p>
+                <code class="mt-2 block rounded-xl bg-zinc-950/90 px-3 py-2 font-mono text-[11px] text-emerald-200">php artisan migrate --force</code>
+            </div>
+        @endif
+
         @php $materialPresets = ['PLA', 'PETG', 'ABS', 'TPU', 'ASA', 'PC', 'PA (Nylon)', 'Resin', 'Resin Tough', 'Resin Flexible']; @endphp
 
         @if($printers->isNotEmpty())
@@ -53,6 +61,7 @@
             <x-ui.empty-state class="mb-8" :title="__('Принтерів ще немає')" :description="__('Додайте перший принтер нижче, щоб бачити сумісність на моделях.')" />
         @endif
 
+        @if ($printerSchemaReady ?? true)
         <div class="rounded-3xl border border-white/10 bg-white/[0.03] p-1">
             <div class="rounded-[calc(1.5rem-4px)] bg-zinc-950/60 p-6">
                 <h2 class="mb-1 text-lg font-bold text-white">{{ __('Додати принтер') }}</h2>
@@ -110,5 +119,6 @@
                 </form>
             </div>
         </div>
+        @endif
     </section>
 </x-layouts.marketplace>
