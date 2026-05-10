@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Marketplace;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Tip;
+use App\Models\TipPayment;
 use App\Services\AifoPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -13,7 +14,16 @@ class TipController extends Controller
 {
     public function redirect(Product $product)
     {
-        return redirect()->route('products.show', $product);
+        try {
+            return redirect()->route('products.show', $product);
+        } catch (\Throwable $e) {
+            Log::error('Tip shortcut redirect failed', [
+                'product_id' => $product->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('products.index');
+        }
     }
 
     public function store(Request $request, Product $product, AifoPaymentService $payments)
@@ -26,51 +36,86 @@ class TipController extends Controller
             'message' => ['nullable', 'string', 'max:280'],
         ]);
 
-        $tip = Tip::create([
-            'product_id' => $product->id,
-            'author_id' => $product->user_id,
-            'user_id' => $request->user()->id,
-            'amount' => $data['amount'],
-            'currency' => 'UAH',
-            'message' => $data['message'] ?? null,
-            'status' => Tip::STATUS_PENDING,
-        ]);
-
+        $tip = null;
         $tipPayment = null;
 
         try {
-            $tipPayment = $payments->createTipPayment($tip);
-        } catch (\Throwable $e) {
-            Log::error('Tip AIFO checkout failed with exception', [
-                'tip_id' => $tip->id,
-                'exception' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+            $tip = Tip::create([
+                'product_id' => $product->id,
+                'author_id' => $product->user_id,
+                'user_id' => $request->user()->id,
+                'amount' => $data['amount'],
+                'currency' => 'UAH',
+                'message' => $data['message'] ?? null,
+                'status' => Tip::STATUS_PENDING,
             ]);
-            $tip->delete();
+
+            $tipPayment = $payments->createTipPayment($tip);
+
+            if ($tipPayment === null) {
+                $tip->delete();
+
+                return redirect()
+                    ->route('products.show', $product)
+                    ->with('error', __('Оплата тимчасово недоступна: додайте в адмінці Merchant ID (shop_id) і Secret key вебхука (HMAC) — вони потрібні для API aifo.pro v2. Для старого API також можна вказати endpoint і API key (Bearer).'));
+            }
+
+            $checkoutUrl = trim((string) ($tipPayment->payload['checkout_url'] ?? ''));
+            if ($checkoutUrl === '' || ! $this->isAllowedPaymentRedirectUrl($checkoutUrl)) {
+                $tipPayment->delete();
+                $tip->delete();
+
+                return redirect()
+                    ->route('products.show', $product)
+                    ->with('error', __('Не вдалося отримати коректне посилання на оплату від AIFO. Спробуйте ще раз або зверніться до підтримки.'));
+            }
+
+            return redirect()->away($checkoutUrl);
+        } catch (\Throwable $e) {
+            Log::error('Tip checkout failed', [
+                'product_id' => $product->id,
+                'tip_id' => $tip?->id,
+                'message' => $e->getMessage(),
+                'exception' => $e::class,
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            try {
+                if ($tipPayment instanceof TipPayment) {
+                    $tipPayment->delete();
+                }
+            } catch (\Throwable) {
+            }
+
+            try {
+                if ($tip instanceof Tip && $tip->exists) {
+                    $tip->delete();
+                }
+            } catch (\Throwable) {
+            }
 
             return redirect()
                 ->route('products.show', $product)
-                ->with('error', __('Не вдалося підключитися до платіжної системи. Перевірте секрет і доступ сервера до aifo.pro, або спробуйте пізніше.'));
+                ->with('error', __('Тимчасова помилка при оплаті подяки. Якщо вона повторюється, перевірте лог сервера та міграції бази (таблиці tips / tip_payments).'));
+        }
+    }
+
+    /**
+     * Only http(s) URLs — avoids Throwable from redirect()->away() on malformed strings.
+     */
+    private function isAllowedPaymentRedirectUrl(string $url): bool
+    {
+        if ($url === '') {
+            return false;
         }
 
-        if ($tipPayment === null) {
-            $tip->delete();
-
-            return redirect()
-                ->route('products.show', $product)
-                ->with('error', __('Оплата тимчасово недоступна: додайте в адмінці Merchant ID (shop_id) і Secret key вебхука (HMAC) — вони потрібні для API aifo.pro v2. Для старого API також можна вказати endpoint і API key (Bearer).'));
+        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return false;
         }
 
-        $checkoutUrl = (string) ($tipPayment->payload['checkout_url'] ?? '');
-        if ($checkoutUrl === '') {
-            $tipPayment->delete();
-            $tip->delete();
+        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
 
-            return redirect()
-                ->route('products.show', $product)
-                ->with('error', __('Не вдалося отримати посилання на оплату від AIFO. Спробуйте ще раз або зверніться до підтримки.'));
-        }
-
-        return redirect()->away($checkoutUrl);
+        return in_array($scheme, ['http', 'https'], true);
     }
 }
