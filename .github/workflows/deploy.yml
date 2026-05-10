@@ -1,0 +1,42 @@
+# Після push у main (або вручну) — SSH на сервер і ./scripts/deploy.sh
+#
+# Налаштуй у репозиторії GitHub → Settings → Secrets and variables → Actions:
+#   DEPLOY_HOST      — IP або hostname (напр. 3dify.dev або 1.2.3.4)
+#   DEPLOY_USER      — користувач SSH (напр. root, deploy, ubuntu)
+#   DEPLOY_SSH_KEY   — приватний ключ (повний PEM/OpenSSH), відповідний public key доданий в ~/.ssh/authorized_keys на сервері
+#   DEPLOY_PATH      — шлях до проєкту (напр. /var/www/3dify)
+#
+# Опційно: обмеж deploy лише тегами — заміни тригер на:
+#   push:
+#     tags: ['v*']
+
+name: Deploy to server
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run remote deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd "${{ secrets.DEPLOY_PATH }}"
+            git fetch origin
+            git checkout main
+            git pull origin main
+            chmod +x scripts/deploy.sh || true
+            ./scripts/deploy.sh

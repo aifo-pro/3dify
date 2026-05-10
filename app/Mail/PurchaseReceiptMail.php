@@ -28,7 +28,8 @@ class PurchaseReceiptMail extends Mailable
             ],
         ], $this->order->user->locale);
 
-        return $this->subject($rendered['subject'])
-            ->view('emails.templated', ['body' => $rendered['body']]);
+        $html = view('emails.templated', ['body' => $rendered['body']])->render();
+
+        return $this->subject($rendered['subject'])->html($html);
     }
 }

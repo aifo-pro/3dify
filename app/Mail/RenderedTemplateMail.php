@@ -21,7 +21,8 @@ class RenderedTemplateMail extends Mailable
 
     public function build()
     {
-        return $this->subject($this->subjectLine)
-            ->view('emails.templated', ['body' => $this->body]);
+        $html = view('emails.templated', ['body' => $this->body])->render();
+
+        return $this->subject($this->subjectLine)->html($html);
     }
 }

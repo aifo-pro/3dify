@@ -591,19 +591,19 @@
                     class="grid gap-3 rounded-2xl border border-white/10 bg-zinc-950/40 p-4"
                     x-data="{!! \Illuminate\Support\Js::from([
                         'id' => '',
-                        'key' => 'registration',
+                        'emailTplKey' => 'registration',
                         'locale' => 'uk',
                         'subject' => '',
                         'body' => '',
                         'is_active' => true,
                         'placeholders' => $emailPlaceholderMap,
                     ]) !!}"
-                    @edit-email.window="id = $event.detail.id; key = $event.detail.key; locale = $event.detail.locale; subject = $event.detail.subject; body = $event.detail.body; is_active = !!$event.detail.is_active; $el.scrollIntoView({behavior:'smooth', block:'center'})"
+                    @edit-email.window="id = $event.detail.id; emailTplKey = $event.detail.key; locale = $event.detail.locale; subject = $event.detail.subject; body = $event.detail.body; is_active = !!$event.detail.is_active; $el.scrollIntoView({behavior:'smooth', block:'center'})"
                 >
                     @csrf
                     <input type="hidden" name="id" x-model="id">
                     <div class="grid gap-3 sm:grid-cols-[1fr_140px]">
-                        <x-admin.field as="select" name="key" :label="__('Тип події')" x-model="key" required>
+                        <x-admin.field as="select" name="key" :label="__('Тип події')" x-model="emailTplKey" required>
                             @foreach($emailTypes as $k => $label)
                                 <option value="{{ $k }}">{{ $label }}</option>
                             @endforeach
@@ -618,9 +618,21 @@
 
                     <div class="rounded-xl border border-sky-300/20 bg-sky-300/[0.06] p-3 text-xs leading-5 text-sky-100">
                         <p class="font-semibold">{{ __('Доступні змінні для обраного типу події') }}</p>
-                        <p class="mt-2 font-mono text-[11px] leading-relaxed text-sky-50/95 break-words" x-text="(placeholders[key] || []).join(' · ')"></p>
-                        <p class="mt-2 text-[11px] text-sky-200/80">{{ __('Приклад') }}: <code class="font-mono text-sky-50">@verbatim{{ order.number }}@endverbatim</code>.</p>
+                        <p class="mt-2 font-mono text-[11px] leading-relaxed text-sky-50/95 break-words" x-text="(placeholders[emailTplKey] || []).join(' · ')"></p>
+                        <p class="mt-2 text-[11px] text-sky-200/80">{{ __('Приклад') }}: <code class="font-mono text-sky-50">@verbatim{{ order.number }}@endverbatim</code>, @verbatim{{link}}@endverbatim.</p>
                     </div>
+
+                    <details class="rounded-xl border border-white/10 bg-zinc-950/40 p-3 text-xs text-zinc-300">
+                        <summary class="cursor-pointer font-semibold text-zinc-200">{{ __('Усі змінні за типом події (повний довідник)') }}</summary>
+                        <dl class="mt-3 grid gap-3">
+                            @foreach($emailPlaceholderMap as $phKey => $vars)
+                                <div>
+                                    <dt class="text-emerald-200/90">{{ $emailTypes[$phKey] ?? $phKey }}</dt>
+                                    <dd class="mt-1 font-mono text-[10px] leading-relaxed text-zinc-400 break-words">{{ implode(' · ', $vars) }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
+                    </details>
 
                     <div class="flex items-center justify-between gap-3 pt-1">
                         <label class="inline-flex items-center gap-2 text-xs text-zinc-300">

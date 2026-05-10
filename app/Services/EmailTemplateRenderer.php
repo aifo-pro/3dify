@@ -11,12 +11,13 @@ class EmailTemplateRenderer
         $locale ??= app()->getLocale();
 
         $siteName = app(SiteSettings::class)->string('site.name', config('app.name'));
-        $data = array_merge([
-            'site' => [
-                'name' => $siteName,
-                'url' => rtrim((string) config('app.url'), '/'),
-            ],
-        ], $data);
+        $baseSite = [
+            'name' => $siteName,
+            'url' => rtrim((string) config('app.url'), '/'),
+        ];
+        $incomingSite = is_array($data['site'] ?? null) ? $data['site'] : [];
+        unset($data['site']);
+        $data['site'] = array_merge($baseSite, $incomingSite);
 
         $candidateKeys = $this->candidateKeys($key);
         $template = $this->pickTemplate($candidateKeys, $locale);
@@ -26,8 +27,8 @@ class EmailTemplateRenderer
         $body = $template?->body ?? $this->fallbackBody($fallbackKey);
 
         foreach ($this->flatten($data) as $token => $value) {
-            $subject = str_replace('{{ '.$token.' }}', (string) $value, $subject);
-            $body = str_replace('{{ '.$token.' }}', (string) $value, $body);
+            $subject = $this->substituteToken($subject, $token, (string) $value);
+            $body = $this->substituteToken($body, $token, (string) $value);
         }
 
         return compact('subject', 'body');
@@ -90,6 +91,17 @@ class EmailTemplateRenderer
         }
 
         return $result;
+    }
+
+    /**
+     * Replace {{ token }} and {{token}} (admin templates often omit spaces).
+     */
+    private function substituteToken(string $text, string $token, string $value): string
+    {
+        $text = str_replace('{{ '.$token.' }}', $value, $text);
+        $text = str_replace('{{'.$token.'}}', $value, $text);
+
+        return $text;
     }
 
     private function fallbackSubject(string $key): string

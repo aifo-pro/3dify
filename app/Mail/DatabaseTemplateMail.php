@@ -23,7 +23,8 @@ class DatabaseTemplateMail extends Mailable
         $locale = $this->recipient->locale ?: 'uk';
         $rendered = app(EmailTemplateRenderer::class)->render($this->templateKey, $this->data, $locale);
 
-        return $this->subject($rendered['subject'])
-            ->view('emails.templated', ['body' => $rendered['body']]);
+        $html = view('emails.templated', ['body' => $rendered['body']])->render();
+
+        return $this->subject($rendered['subject'])->html($html);
     }
 }
