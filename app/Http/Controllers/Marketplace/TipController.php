@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Tip;
 use App\Models\TipPayment;
 use App\Services\AifoPaymentService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -146,10 +147,15 @@ class TipController extends Controller
             } catch (\Throwable) {
             }
 
+            $userError = __('Тимчасова помилка при оплаті подяки. Якщо вона повторюється, перевірте лог сервера та міграції бази (таблиці tips / tip_payments).');
+            if ($e instanceof QueryException) {
+                $userError = __('Помилка бази даних при збереженні оплати. На сервері виконайте: php artisan migrate --force (потрібні таблиці tips та tip_payments). Далі перегляньте storage/logs/laravel.log.');
+            }
+
             try {
                 return redirect()
                     ->route('products.show', $product)
-                    ->with('error', __('Тимчасова помилка при оплаті подяки. Якщо вона повторюється, перевірте лог сервера та міграції бази (таблиці tips / tip_payments).'));
+                    ->with('error', $userError);
             } catch (\Throwable $redirectException) {
                 error_log('[3dify-tip] redirect failed: '.$redirectException->getMessage());
 
