@@ -245,7 +245,7 @@ class NewsletterTemplateService
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->whereNotNull('orders.paid_at')
             ->where('orders.paid_at', '>=', $since)
-            ->select('order_items.product_id', DB::raw('SUM(order_items.quantity) as units'))
+            ->select('order_items.product_id', DB::raw('COUNT(*) as units'))
             ->groupBy('order_items.product_id')
             ->orderByDesc('units')
             ->limit(5)
