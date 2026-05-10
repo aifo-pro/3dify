@@ -338,5 +338,13 @@
     "Країна": "Country",
     "Оберіть країну": "Select country",
     "Країна буде показана на сторінці автора з прапором.": "The country will be shown on the author page with a flag.",
-    "Місто": "City"
+    "Місто": "City",
+    "Нові фото для додавання": "New photos to add",
+    "Ці фото будуть додані до галереї після збереження моделі.": "These photos will be added to the gallery after saving the model.",
+    "Очистити вибір": "Clear selection",
+    "Видалити фото": "Remove photo",
+    "Додані матеріали": "Added materials",
+    "Фото галереї та файли, які вже привʼязані до цієї моделі.": "Gallery photos and files already attached to this model.",
+    "Галерея": "Gallery",
+    "Видалити це фото з галереї?": "Remove this photo from the gallery?"
 }

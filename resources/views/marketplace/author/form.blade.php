@@ -252,7 +252,10 @@
                 </section>
 
                 {{-- Section 4: Файли --}}
-                <section class="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-xl shadow-black/20 sm:p-7">
+                <section
+                    x-data="galleryUploadPicker()"
+                    class="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-xl shadow-black/20 sm:p-7"
+                >
                     <header class="flex items-start gap-4">
                         <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-emerald-300/15 text-sm font-black text-emerald-100">4</span>
                         <div>
@@ -272,7 +275,15 @@
                             <span class="grid h-11 w-11 place-items-center rounded-xl bg-emerald-300/15 text-xs font-bold text-emerald-100">MORE</span>
                             <span class="mt-4 block text-sm font-semibold text-white">{{ __('Фото галереї') }}</span>
                             <span class="mt-1 block text-xs leading-5 text-zinc-500">{{ __('Додайте кілька фото для перегляду публікації: JPG, PNG, WEBP, GIF.') }}</span>
-                            <input type="file" name="gallery[]" multiple accept="image/*" class="mt-3 w-full text-xs text-zinc-400 file:mr-3 file:rounded-full file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-zinc-100 file:hover:bg-white/15">
+                            <input
+                                x-ref="galleryInput"
+                                @change="syncSelected"
+                                type="file"
+                                name="gallery[]"
+                                multiple
+                                accept="image/*"
+                                class="mt-3 w-full text-xs text-zinc-400 file:mr-3 file:rounded-full file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-zinc-100 file:hover:bg-white/15"
+                            >
                         </label>
                         <label class="group flex flex-col rounded-2xl border border-dashed border-white/15 bg-zinc-950/40 p-5 transition hover:border-sky-300/50 hover:bg-zinc-900/60">
                             <span class="grid h-11 w-11 place-items-center rounded-xl bg-sky-300/15 text-xs font-bold text-sky-100">3D</span>
@@ -287,26 +298,85 @@
                             <input type="file" name="files[]" multiple accept=".stl,.obj,.glb,.gltf,.zip,.3mf" class="mt-3 w-full text-xs text-zinc-400 file:mr-3 file:rounded-full file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-zinc-100 file:hover:bg-white/15">
                         </label>
                     </div>
+
+                    <div
+                        x-show="selected.length"
+                        x-cloak
+                        class="mt-5 rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.05] p-4"
+                    >
+                        <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                                <h3 class="text-sm font-semibold text-white">{{ __('Нові фото для додавання') }}</h3>
+                                <p class="text-xs leading-5 text-zinc-400">{{ __('Ці фото будуть додані до галереї після збереження моделі.') }}</p>
+                            </div>
+                            <button type="button" @click="clearSelected" class="text-xs font-semibold text-rose-200 hover:text-rose-100">
+                                {{ __('Очистити вибір') }}
+                            </button>
+                        </div>
+
+                        <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            <template x-for="(file, index) in selected" :key="file.key">
+                                <div class="overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/70">
+                                    <div class="relative aspect-[4/3] bg-zinc-900">
+                                        <img :src="file.url" :alt="file.name" class="h-full w-full object-cover">
+                                        <button
+                                            type="button"
+                                            @click="removeSelected(index)"
+                                            class="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-rose-300/30 bg-zinc-950/80 text-rose-100 shadow-lg shadow-black/30 transition hover:bg-rose-500/20"
+                                            :aria-label="'{{ __('Видалити фото') }}'"
+                                        >
+                                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.75 3a1.75 1.75 0 0 0-1.58 1H4.5a.75.75 0 0 0 0 1.5h11a.75.75 0 0 0 0-1.5h-2.67a1.75 1.75 0 0 0-1.58-1h-2.5ZM6 7a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 0 .75.75h5a.75.75 0 0 0 .75-.75v-7.5a.75.75 0 0 1 1.5 0v7.5a2.25 2.25 0 0 1-2.25 2.25h-5a2.25 2.25 0 0 1-2.25-2.25v-7.5A.75.75 0 0 1 6 7Zm3 .75a.75.75 0 0 1 .75.75v6a.75.75 0 0 1-1.5 0v-6A.75.75 0 0 1 9 7.75Zm2.75.75a.75.75 0 0 0-1.5 0v6a.75.75 0 0 0 1.5 0v-6Z" clip-rule="evenodd"/></svg>
+                                        </button>
+                                    </div>
+                                    <div class="p-3">
+                                        <p class="truncate text-sm font-semibold text-white" x-text="file.name"></p>
+                                        <p class="mt-1 text-xs text-zinc-500" x-text="file.size"></p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
                     @if($isEdit && ($product->files->isNotEmpty() || filled($product->gallery) || $coverUrl))
                         <div class="mt-5 rounded-2xl border border-white/10 bg-zinc-950/50 p-4">
-                            <h3 class="mb-3 text-sm font-semibold text-white">{{ __('Завантажені файли') }}</h3>
+                            <h3 class="text-sm font-semibold text-white">{{ __('Додані матеріали') }}</h3>
+                            <p class="mt-1 text-xs leading-5 text-zinc-500">{{ __('Фото галереї та файли, які вже привʼязані до цієї моделі.') }}</p>
                             @if($coverUrl || filled($product->gallery))
-                                <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                                     @if($coverUrl)
-                                        <a href="{{ $coverUrl }}" target="_blank" class="group overflow-hidden rounded-2xl border border-white/10 bg-zinc-950">
-                                            <img src="{{ $coverUrl }}" alt="{{ $product->localized('title') }}" class="aspect-square w-full object-cover transition group-hover:scale-105">
-                                        </a>
-                                    @endif
-                                    @foreach(($product->gallery ?? []) as $image)
-                                        @if(Storage::disk('public')->exists($image))
-                                            <a href="{{ Storage::disk('public')->url($image) }}" target="_blank" class="group overflow-hidden rounded-2xl border border-white/10 bg-zinc-950">
-                                                <img src="{{ Storage::disk('public')->url($image) }}" alt="{{ $product->localized('title') }}" class="aspect-square w-full object-cover transition group-hover:scale-105">
+                                        <div class="overflow-hidden rounded-2xl border border-white/10 bg-zinc-950">
+                                            <a href="{{ $coverUrl }}" target="_blank" class="group block">
+                                                <img src="{{ $coverUrl }}" alt="{{ $product->localized('title') }}" class="aspect-square w-full object-cover transition group-hover:scale-105">
                                             </a>
+                                            <div class="flex items-center justify-between gap-2 px-3 py-2">
+                                                <span class="truncate text-xs font-semibold text-emerald-100">{{ __('Обкладинка') }}</span>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    @foreach(($product->gallery ?? []) as $galleryIndex => $image)
+                                        @if(Storage::disk('public')->exists($image))
+                                            <div class="overflow-hidden rounded-2xl border border-white/10 bg-zinc-950">
+                                                <a href="{{ Storage::disk('public')->url($image) }}" target="_blank" class="group block">
+                                                    <img src="{{ Storage::disk('public')->url($image) }}" alt="{{ $product->localized('title') }}" class="aspect-square w-full object-cover transition group-hover:scale-105">
+                                                </a>
+                                                <div class="flex items-center justify-between gap-2 px-3 py-2">
+                                                    <span class="truncate text-xs font-semibold text-zinc-300">{{ __('Галерея') }} #{{ $loop->iteration }}</span>
+                                                    <button
+                                                        type="submit"
+                                                        name="gallery_remove[]"
+                                                        value="{{ $galleryIndex }}"
+                                                        onclick="return confirm('{{ __('Видалити це фото з галереї?') }}')"
+                                                        class="rounded-full border border-rose-400/40 px-2.5 py-1 text-[11px] font-semibold text-rose-200 transition hover:bg-rose-400/10"
+                                                    >
+                                                        {{ __('Видалити') }}
+                                                    </button>
+                                                </div>
+                                            </div>
                                         @endif
                                     @endforeach
                                 </div>
                             @endif
-                            <div class="divide-y divide-white/5">
+                            <div class="mt-4 divide-y divide-white/5">
                                 @foreach($product->files as $file)
                                     <div class="flex flex-col gap-2 py-3 text-sm text-zinc-300 sm:flex-row sm:items-center sm:justify-between">
                                         <div class="min-w-0">
@@ -497,4 +567,73 @@
             @endforeach
         @endif
     </section>
+
+    <script>
+        window.galleryUploadPicker = function () {
+            return {
+                selected: [],
+                syncSelected() {
+                    this.revokeSelected();
+
+                    const input = this.$refs.galleryInput;
+                    const files = input ? Array.from(input.files || []) : [];
+
+                    this.selected = files.map((file, index) => ({
+                        key: `${file.name}-${file.size}-${file.lastModified}-${index}`,
+                        name: file.name,
+                        size: this.formatSize(file.size),
+                        url: URL.createObjectURL(file),
+                    }));
+                },
+                removeSelected(index) {
+                    const input = this.$refs.galleryInput;
+
+                    if (! input || typeof DataTransfer === 'undefined') {
+                        return;
+                    }
+
+                    const transfer = new DataTransfer();
+                    Array.from(input.files || []).forEach((file, fileIndex) => {
+                        if (fileIndex !== index) {
+                            transfer.items.add(file);
+                        }
+                    });
+
+                    input.files = transfer.files;
+                    this.syncSelected();
+                },
+                clearSelected() {
+                    const input = this.$refs.galleryInput;
+                    if (input) {
+                        input.value = '';
+                    }
+                    this.revokeSelected();
+                    this.selected = [];
+                },
+                revokeSelected() {
+                    this.selected.forEach((file) => {
+                        if (file.url) {
+                            URL.revokeObjectURL(file.url);
+                        }
+                    });
+                },
+                formatSize(bytes) {
+                    if (! bytes) {
+                        return '0 KB';
+                    }
+
+                    const units = ['B', 'KB', 'MB'];
+                    let size = bytes;
+                    let unit = 0;
+
+                    while (size >= 1024 && unit < units.length - 1) {
+                        size /= 1024;
+                        unit += 1;
+                    }
+
+                    return `${size.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
+                },
+            };
+        };
+    </script>
 </x-layouts.marketplace>

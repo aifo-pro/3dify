@@ -248,7 +248,10 @@ class ProductController extends Controller
             'commercial_license_description_uk' => ['nullable', 'string', 'max:1500'],
             'commercial_license_description_en' => ['nullable', 'string', 'max:1500'],
             'cover' => ['nullable', 'image', 'max:4096'],
+            'gallery' => ['nullable', 'array', 'max:24'],
             'gallery.*' => ['nullable', 'image', 'max:4096'],
+            'gallery_remove' => ['nullable', 'array'],
+            'gallery_remove.*' => ['integer', 'min:0'],
             'files.*' => ['nullable', 'file', 'max:102400'],
             'preview_file' => ['nullable', 'file', 'max:51200'],
             'tags' => ['array'],
@@ -274,7 +277,22 @@ class ProductController extends Controller
         if ($request->hasFile('cover')) {
             $cover = $request->file('cover')->store('covers', 'public');
         }
-        $gallery = $product?->gallery ?? [];
+        $gallery = array_values(array_filter((array) ($product?->gallery ?? [])));
+        $removeGallery = collect((array) $request->input('gallery_remove', []))
+            ->map(fn ($index) => (int) $index)
+            ->unique()
+            ->sortDesc()
+            ->values();
+
+        foreach ($removeGallery as $index) {
+            if (array_key_exists($index, $gallery)) {
+                Storage::disk('public')->delete($gallery[$index]);
+                unset($gallery[$index]);
+            }
+        }
+
+        $gallery = array_values($gallery);
+
         foreach ((array) $request->file('gallery', []) as $image) {
             $gallery[] = $image->store('gallery', 'public');
         }
