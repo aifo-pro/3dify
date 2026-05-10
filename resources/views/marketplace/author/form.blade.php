@@ -195,12 +195,12 @@
 
                     {{-- Personal price (legacy "price" stays for back-compat) --}}
                     <div class="mt-6 grid gap-4 md:grid-cols-[1fr_180px]">
-                        <x-ui.input type="number" step="0.01" min="0" name="price" value="{{ old('price', $product->price ?? 0) }}" :label="__('Ціна (Personal license)')" :helper="__('0 означає безкоштовну модель.')" :error="$errors->first('price')" />
-                        <x-ui.select name="currency" :label="__('Валюта')" :error="$errors->first('currency')">
-                            @foreach(['EUR', 'USD', 'UAH'] as $currency)
-                                <option value="{{ $currency }}" @selected(old('currency', $product->currency ?? 'EUR') === $currency)>{{ $currency }}</option>
-                            @endforeach
-                        </x-ui.select>
+                        <x-ui.input type="number" step="0.01" min="0" name="price" value="{{ old('price', $product->price ?? 0) }}" :label="__('Ціна (Personal license)')" :helper="__('0 означає безкоштовну модель. Усі ціни — у гривнях (UAH).')" :error="$errors->first('price')" />
+                        <div class="grid gap-1.5">
+                            <span class="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">{{ __('Валюта') }}</span>
+                            <input type="hidden" name="currency" value="UAH">
+                            <div class="flex h-12 items-center rounded-xl border border-white/10 bg-zinc-950/60 px-3 text-sm font-bold text-white">UAH · грн</div>
+                        </div>
                     </div>
 
                     {{-- Commercial license toggle --}}

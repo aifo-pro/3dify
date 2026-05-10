@@ -60,7 +60,7 @@
                     <svg class="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 14.39 8.26 21 9 16 13.74 17.18 20.52 12 17.27 6.82 20.52 8 13.74 3 9 9.61 8.26z"/></svg>
                     {{ __('Premium') }}
                 </span>
-                <span class="absolute right-3 top-3 inline-flex items-center rounded-full bg-emerald-400 px-2.5 py-1 text-[11px] font-black text-zinc-950 shadow-lg shadow-emerald-500/30">€8.50</span>
+                <span class="absolute right-3 top-3 inline-flex items-center rounded-full bg-emerald-400 px-2.5 py-1 text-[11px] font-black text-zinc-950 shadow-lg shadow-emerald-500/30">350 грн</span>
 
                 {{-- Bottom rotation handle (decorative) --}}
                 <div class="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-zinc-950/70 px-3 py-1 backdrop-blur">
@@ -108,7 +108,7 @@
                         <div class="h-5 w-5 rounded-sm bg-gradient-to-br from-violet-300/70 to-indigo-400/50 sm:h-6 sm:w-6"></div>
                     </div>
                 </div>
-                <span class="absolute right-1.5 top-1.5 rounded-full bg-zinc-950/80 px-1.5 py-0.5 text-[9px] font-bold text-violet-100 backdrop-blur">€2.50</span>
+                <span class="absolute right-1.5 top-1.5 rounded-full bg-zinc-950/80 px-1.5 py-0.5 text-[9px] font-bold text-violet-100 backdrop-blur">100 грн</span>
                 <p class="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/80 to-transparent p-2 text-[10px] font-bold text-white">{{ __('Desk Organizer') }}</p>
             </div>
             {{-- Wall Hook --}}
@@ -116,7 +116,7 @@
                 <div class="absolute inset-0 grid place-items-center">
                     <svg class="h-12 w-12 text-sky-300/80 sm:h-14 sm:w-14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M12 8c-3 0-5 2-5 5 0 4 5 7 5 7s5-3 5-7c0-3-2-5-5-5z"/></svg>
                 </div>
-                <span class="absolute right-1.5 top-1.5 rounded-full bg-zinc-950/80 px-1.5 py-0.5 text-[9px] font-bold text-sky-100 backdrop-blur">€1.50</span>
+                <span class="absolute right-1.5 top-1.5 rounded-full bg-zinc-950/80 px-1.5 py-0.5 text-[9px] font-bold text-sky-100 backdrop-blur">60 грн</span>
                 <p class="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/80 to-transparent p-2 text-[10px] font-bold text-white">{{ __('Wall Hook') }}</p>
             </div>
         </div>

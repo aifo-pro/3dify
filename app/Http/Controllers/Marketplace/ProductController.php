@@ -163,7 +163,7 @@ class ProductController extends Controller
         $this->authorize('create', Product::class);
 
         return view('marketplace.author.form', [
-            'product' => new Product(['currency' => 'EUR']),
+            'product' => new Product(['currency' => 'UAH']),
             'categories' => Category::query()->where('is_active', true)->orderBy('sort_order')->get(),
             'licenses' => License::query()->orderBy('slug')->get(),
             'tags' => Tag::query()->orderBy('slug')->get(),
@@ -241,7 +241,7 @@ class ProductController extends Controller
             'category_id' => ['nullable', 'exists:categories,id'],
             'license_id' => ['nullable', 'exists:licenses,id'],
             'price' => ['required', 'numeric', 'min:0', 'max:99999'],
-            'currency' => ['required', Rule::in(['EUR', 'USD', 'UAH'])],
+            'currency' => ['required', Rule::in(['UAH'])],
             'commercial_license_enabled' => ['nullable'],
             'commercial_price' => ['nullable', 'numeric', 'min:0', 'max:99999'],
             'commercial_license_id' => ['nullable', 'exists:licenses,id'],
@@ -347,7 +347,7 @@ class ProductController extends Controller
             'commercial_license_enabled' => $commercialEnabled,
             'commercial_license_id' => $commercialEnabled ? ($data['commercial_license_id'] ?? null) : null,
             'commercial_license_description' => $commercialDescription,
-            'currency' => $data['currency'],
+            'currency' => 'UAH',
             'is_free' => (float) $data['price'] === 0.0,
             'cover_path' => $cover,
             'gallery' => array_values(array_unique($gallery)),

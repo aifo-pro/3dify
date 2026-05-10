@@ -4,7 +4,7 @@
             <x-ui.badge>{{ __('Виплати') }}</x-ui.badge>
             <h1 class="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">{{ __('Баланс автора') }}</h1>
             <p class="mt-2 max-w-2xl text-sm text-zinc-400">
-                {{ __('Платформа утримує :pct% комісії з кожної покупки. Мінімальна сума виплати — :min EUR. Заявки обробляються вручну адміністратором.', ['pct' => $commission, 'min' => number_format($minimum, 2)]) }}
+                {{ __('Платформа утримує :pct% комісії з кожної покупки. Мінімальна сума виплати — :min грн. Заявки обробляються вручну адміністратором.', ['pct' => $commission, 'min' => number_format($minimum, 2)]) }}
             </p>
         </header>
 
@@ -18,15 +18,15 @@
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div class="rounded-2xl border border-emerald-300/30 bg-gradient-to-br from-emerald-300/[0.10] via-emerald-300/[0.04] to-transparent p-5">
                 <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300">{{ __('Доступно') }}</p>
-                <p class="mt-2 text-3xl font-black text-white">{{ number_format($available, 2) }} <span class="text-sm font-bold text-emerald-200">EUR</span></p>
+                <p class="mt-2 text-3xl font-black text-white">{{ number_format($available, 2) }} <span class="text-sm font-bold text-emerald-200">грн</span></p>
             </div>
             <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
                 <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">{{ __('Зарезервовано') }}</p>
-                <p class="mt-2 text-3xl font-black text-white">{{ number_format($reserved, 2) }} <span class="text-sm font-bold text-zinc-400">EUR</span></p>
+                <p class="mt-2 text-3xl font-black text-white">{{ number_format($reserved, 2) }} <span class="text-sm font-bold text-zinc-400">грн</span></p>
             </div>
             <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
                 <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">{{ __('Загалом зароблено') }}</p>
-                <p class="mt-2 text-3xl font-black text-white">{{ number_format($totalEarnings, 2) }} <span class="text-sm font-bold text-zinc-400">EUR</span></p>
+                <p class="mt-2 text-3xl font-black text-white">{{ number_format($totalEarnings, 2) }} <span class="text-sm font-bold text-zinc-400">грн</span></p>
             </div>
             <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
                 <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">{{ __('Продажів') }}</p>
@@ -48,13 +48,13 @@
 
             @if($available < $minimum)
                 <div class="rounded-2xl border border-amber-300/25 bg-amber-300/[0.06] px-4 py-3 text-sm text-amber-100">
-                    {{ __('Накопичіть мінімум :min EUR, щоб подати заявку. Поточний доступний баланс: :avail EUR.', ['min' => number_format($minimum, 2), 'avail' => number_format($available, 2)]) }}
+                    {{ __('Накопичіть мінімум :min грн, щоб подати заявку. Поточний доступний баланс: :avail грн.', ['min' => number_format($minimum, 2), 'avail' => number_format($available, 2)]) }}
                 </div>
             @else
                 <form method="POST" action="{{ route('author.payouts.store') }}" class="grid gap-4 sm:grid-cols-2">
                     @csrf
                     <label class="grid gap-1.5">
-                        <span class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-400">{{ __('Сума, EUR') }} <span class="text-rose-300">*</span></span>
+                        <span class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-400">{{ __('Сума, грн') }} <span class="text-rose-300">*</span></span>
                         <input type="number" name="amount" step="0.01" min="{{ $minimum }}" max="{{ $available }}" value="{{ old('amount', $available) }}" required class="h-10 rounded-xl border border-white/10 bg-zinc-950/60 px-3 text-sm text-white focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40">
                         <span class="text-[11px] text-zinc-500">{{ __('Мінімум :min, доступно :avail', ['min' => $minimum, 'avail' => number_format($available, 2)]) }}</span>
                     </label>

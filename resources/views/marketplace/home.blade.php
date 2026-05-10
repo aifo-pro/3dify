@@ -1,10 +1,10 @@
 @php
     // Placeholder data used when DB is empty.
     $placeholderModels = [
-        ['title' => __('Miniature Dragon'), 'subtitle' => __('Деталізована 32mm міньятюра для tabletop та dnd.'), 'price' => '€4.50', 'free' => false, 'tone' => 'emerald', 'icon' => 'dragon'],
+        ['title' => __('Miniature Dragon'), 'subtitle' => __('Деталізована 32mm міньятюра для tabletop та dnd.'), 'price' => '180 грн', 'free' => false, 'tone' => 'emerald', 'icon' => 'dragon'],
         ['title' => __('Phone Stand'), 'subtitle' => __('Підставка для смартфона під будь-яким кутом.'), 'price' => null, 'free' => true, 'tone' => 'rose', 'icon' => 'phone'],
-        ['title' => __('Desk Organizer'), 'subtitle' => __('Модульний органайзер для робочого стола.'), 'price' => '€2.00', 'free' => false, 'tone' => 'violet', 'icon' => 'organizer'],
-        ['title' => __('Wall Hook'), 'subtitle' => __('Декоративний гачок із сучасним дизайном.'), 'price' => '€1.50', 'free' => false, 'tone' => 'sky', 'icon' => 'hook'],
+        ['title' => __('Desk Organizer'), 'subtitle' => __('Модульний органайзер для робочого стола.'), 'price' => '80 грн', 'free' => false, 'tone' => 'violet', 'icon' => 'organizer'],
+        ['title' => __('Wall Hook'), 'subtitle' => __('Декоративний гачок із сучасним дизайном.'), 'price' => '60 грн', 'free' => false, 'tone' => 'sky', 'icon' => 'hook'],
     ];
 
     $placeholderFree = [

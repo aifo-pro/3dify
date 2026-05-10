@@ -83,7 +83,7 @@ class LegalPagesSeeder extends Seeder
 </ul>
 
 <h2>5. Ціна та ліцензія</h2>
-<p>Автор вільно встановлює ціну в EUR. Маркетплейс утримує комісію згідно з тарифним планом (за замовчуванням 15%). Ви можете обрати одну з ліцензій:</p>
+<p>Автор вільно встановлює ціну в гривнях (UAH). Маркетплейс утримує комісію згідно з тарифним планом (за замовчуванням 15%). Ви можете обрати одну з ліцензій:</p>
 <ul>
     <li><strong>Personal</strong> — для особистого друку без права на перепродаж файлу.</li>
     <li><strong>Commercial</strong> — дозволяє продавати надруковані вироби.</li>
@@ -178,7 +178,7 @@ HTML,
 
 <h2>3. Замовлення та оплата</h2>
 <ul>
-    <li>Ціни вказуються в EUR. Платежі обробляються через інтеграції Stripe / AIFO / Wayforpay.</li>
+    <li>Ціни вказуються в гривнях (UAH). Платежі обробляються через інтеграції Stripe / AIFO / Wayforpay.</li>
     <li>Після успішної оплати ви отримуєте захищене посилання на завантаження файлу та лист з кваитанцією.</li>
     <li>Платформа утримує комісію автора згідно з обраним тарифом (стандарт — 15%).</li>
 </ul>
@@ -292,7 +292,7 @@ HTML,
 
 <details>
     <summary><strong>Як отримати виплату?</strong></summary>
-    <p>Виплати щомісячні, на банківський рахунок, Wise або криптогаманець. Мінімальна сума — 30 EUR. Заявку подаєте у кабінеті автора.</p>
+    <p>Виплати щомісячні, на банківський рахунок, Wise або криптогаманець. Мінімальна сума — 800 грн. Заявку подаєте у кабінеті автора.</p>
 </details>
 
 <details>
@@ -424,7 +424,7 @@ HTML,
 </ul>
 
 <h2>5. Pricing and licensing</h2>
-<p>Authors set their own price in EUR. The marketplace charges a commission per the active plan (default 15%). Choose a license:</p>
+<p>Authors set their own price in Ukrainian hryvnia (UAH). The marketplace charges a commission per the active plan (default 15%). Choose a license:</p>
 <ul>
     <li><strong>Personal</strong> — printing for personal use only, no file resale.</li>
     <li><strong>Commercial</strong> — print and sell physical copies.</li>
@@ -519,7 +519,7 @@ HTML,
 
 <h2>3. Orders and payment</h2>
 <ul>
-    <li>Prices are listed in EUR. Payments are processed via Stripe / AIFO / Wayforpay integrations.</li>
+    <li>Prices are listed in UAH (hryvnia). Payments are processed via Stripe / AIFO / Wayforpay integrations.</li>
     <li>After successful payment you receive a secure download link and an email receipt.</li>
     <li>The Platform retains a commission per the chosen plan (default 15%).</li>
 </ul>
@@ -633,7 +633,7 @@ HTML,
 
 <details>
     <summary><strong>How are payouts processed?</strong></summary>
-    <p>Monthly to bank account, Wise or crypto wallet. Minimum payout is 30 EUR. Submit the request from your author dashboard.</p>
+    <p>Monthly to bank account, Wise or crypto wallet. Minimum payout is 800 UAH. Submit the request from your author dashboard.</p>
 </details>
 
 <details>

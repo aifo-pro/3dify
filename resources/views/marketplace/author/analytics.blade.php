@@ -31,15 +31,15 @@
             @foreach([
                 'views' => ['label' => __('Перегляди'), 'icon' => 'eye', 'fmt' => 'int'],
                 'sales' => ['label' => __('Продажі'), 'icon' => 'bag', 'fmt' => 'int'],
-                'revenue' => ['label' => __('Виторг (брутто)'), 'icon' => 'card', 'fmt' => 'eur'],
-                'tips' => ['label' => __('Чайові'), 'icon' => 'heart', 'fmt' => 'eur'],
+                'revenue' => ['label' => __('Виторг (брутто)'), 'icon' => 'card', 'fmt' => 'uah'],
+                'tips' => ['label' => __('Чайові'), 'icon' => 'heart', 'fmt' => 'uah'],
                 'conversion' => ['label' => __('Конверсія'), 'icon' => 'percent', 'fmt' => 'pct'],
             ] as $k => $meta)
                 @php
                     $kpi = $kpis[$k];
                     $delta = $deltaBadge($kpi['delta']);
                     $value = match($meta['fmt']) {
-                        'eur' => number_format((float) $kpi['value'], 2).' €',
+                        'uah' => number_format((float) $kpi['value'], 2).' грн',
                         'pct' => number_format((float) $kpi['value'], 2).'%',
                         default => number_format((int) $kpi['value']),
                     };
@@ -142,7 +142,7 @@
                                     </td>
                                     <td class="px-4 py-3 text-right text-zinc-200">{{ number_format($row->views) }}</td>
                                     <td class="px-4 py-3 text-right text-zinc-200">{{ number_format($row->sales) }}</td>
-                                    <td class="px-4 py-3 text-right text-zinc-200">{{ number_format($row->revenue, 2) }} €</td>
+                                    <td class="px-4 py-3 text-right text-zinc-200">{{ number_format($row->revenue, 2) }} грн</td>
                                     <td class="px-4 py-3 text-right">
                                         <span class="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-bold text-zinc-300">{{ number_format($row->conversion, 2) }}%</span>
                                     </td>

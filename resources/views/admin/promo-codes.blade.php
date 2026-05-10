@@ -77,7 +77,7 @@
                                 @if($promo->description)<p class="mt-0.5 text-xs text-zinc-500">{{ $promo->description }}</p>@endif
                             </td>
                             <td class="px-4 py-3 align-top text-zinc-300">
-                                {{ $promo->type === 'percent' ? number_format((float) $promo->value, 0).'%' : number_format((float) $promo->value, 2).' EUR' }}
+                                {{ $promo->type === 'percent' ? number_format((float) $promo->value, 0).'%' : number_format((float) $promo->value, 2).' UAH' }}
                                 @if($promo->min_order_amount)<p class="text-xs text-zinc-500">{{ __('мін.') }} {{ number_format((float) $promo->min_order_amount, 2) }}</p>@endif
                             </td>
                             <td class="px-4 py-3 align-top text-zinc-300">

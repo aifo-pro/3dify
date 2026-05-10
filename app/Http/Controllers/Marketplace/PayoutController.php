@@ -36,8 +36,8 @@ class PayoutController extends Controller
             'method' => ['required', 'string', Rule::in(array_keys(Payout::METHODS))],
             'details' => ['required', 'string', 'max:2000'],
         ], [
-            'amount.max' => __('Сума перевищує доступний баланс :max EUR.', ['max' => number_format($available, 2)]),
-            'amount.min' => __('Мінімальна сума виплати — :min EUR.', ['min' => number_format(PayoutService::MIN_PAYOUT_AMOUNT, 2)]),
+            'amount.max' => __('Сума перевищує доступний баланс :max грн.', ['max' => number_format($available, 2)]),
+            'amount.min' => __('Мінімальна сума виплати — :min грн.', ['min' => number_format(PayoutService::MIN_PAYOUT_AMOUNT, 2)]),
         ]);
 
         $payouts->requestPayout($author, (float) $data['amount'], $data['method'], $data['details']);

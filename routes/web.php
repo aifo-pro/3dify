@@ -56,6 +56,8 @@ Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::redirect('/catalog', '/models')->name('catalog');
 Route::get('/models', [ProductController::class, 'index'])->name('products.index');
 Route::get('/models/{product:slug}', [ProductController::class, 'show'])->name('products.show');
+// Tip shortcut URL (bookmark/share): works for guests — redirects to product page where the tip form lives.
+Route::get('/models/{product:slug}/tip', [TipController::class, 'redirect'])->name('products.tip.redirect');
 
 // Public report submit (anonymous allowed) — auth optional, captured if present.
 Route::post('/models/{product:slug}/report', [ReportController::class, 'store'])->name('products.report');
@@ -150,7 +152,7 @@ Route::middleware('auth')->group(function () {
     // Promo codes (apply at product page before checkout)
     Route::post('/models/{product:slug}/promo', [PromoCodeController::class, 'apply'])->name('products.promo.apply');
 
-    // Tips (donate to author for any model, free or paid).
+    // Tips (donate to author for any model, free or paid); POST requires login.
     Route::post('/models/{product:slug}/tip', [TipController::class, 'store'])->name('products.tip');
 
     // Refund requests

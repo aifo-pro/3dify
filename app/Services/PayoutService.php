@@ -16,12 +16,14 @@ class PayoutService
      */
     public const COMMISSION_PERCENT = 15;
 
-    public const MIN_PAYOUT_AMOUNT = 20.00;
+    public const MIN_PAYOUT_AMOUNT = 800.00;
+
+    public const DEFAULT_CURRENCY = 'UAH';
 
     /**
      * Total earnings (lifetime, after commission) from paid orders.
      */
-    public function totalEarnings(User $author, string $currency = 'EUR'): float
+    public function totalEarnings(User $author, string $currency = self::DEFAULT_CURRENCY): float
     {
         $gross = (float) OrderItem::query()
             ->where('author_id', $author->id)
@@ -41,7 +43,7 @@ class PayoutService
     /**
      * Sum of approved/paid/pending payouts (everything that is reserved or paid out).
      */
-    public function reservedTotal(User $author, string $currency = 'EUR'): float
+    public function reservedTotal(User $author, string $currency = self::DEFAULT_CURRENCY): float
     {
         return (float) $author->payouts()
             ->where('currency', $currency)
@@ -52,7 +54,7 @@ class PayoutService
     /**
      * Available balance ready to be requested.
      */
-    public function availableBalance(User $author, string $currency = 'EUR'): float
+    public function availableBalance(User $author, string $currency = self::DEFAULT_CURRENCY): float
     {
         return round(max(0, $this->totalEarnings($author, $currency) - $this->reservedTotal($author, $currency)), 2);
     }
@@ -68,7 +70,7 @@ class PayoutService
             ->count();
     }
 
-    public function requestPayout(User $author, float $amount, string $method, ?string $details = null, string $currency = 'EUR'): Payout
+    public function requestPayout(User $author, float $amount, string $method, ?string $details = null, string $currency = self::DEFAULT_CURRENCY): Payout
     {
         return DB::transaction(function () use ($author, $amount, $method, $details, $currency) {
             return Payout::create([

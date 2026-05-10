@@ -18,7 +18,7 @@
         <div class="rounded-2xl border border-amber-300/30 bg-amber-300/[0.05] p-5">
             <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-300">{{ __('Очікують') }}</p>
             <p class="mt-2 text-3xl font-black text-white">{{ $counts['pending'] }}</p>
-            <p class="mt-1 text-xs text-amber-200/80">{{ number_format($totals['pending'], 2) }} EUR</p>
+            <p class="mt-1 text-xs text-amber-200/80">{{ number_format($totals['pending'], 2) }} UAH</p>
         </div>
         <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
             <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">{{ __('Затверджено') }}</p>
@@ -27,7 +27,7 @@
         <div class="rounded-2xl border border-emerald-300/30 bg-emerald-300/[0.05] p-5">
             <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300">{{ __('Виплачено') }}</p>
             <p class="mt-2 text-3xl font-black text-white">{{ $counts['paid'] }}</p>
-            <p class="mt-1 text-xs text-emerald-200/80">{{ number_format($totals['paid'], 2) }} EUR</p>
+            <p class="mt-1 text-xs text-emerald-200/80">{{ number_format($totals['paid'], 2) }} UAH</p>
         </div>
         <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
             <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">{{ __('Відхилено') }}</p>

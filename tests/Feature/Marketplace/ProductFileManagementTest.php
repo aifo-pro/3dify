@@ -26,7 +26,7 @@ class ProductFileManagementTest extends TestCase
             'description' => ['uk' => 'Description', 'en' => 'Description'],
             'status' => 'pending',
             'price' => 10,
-            'currency' => 'EUR',
+            'currency' => 'UAH',
             'is_free' => false,
         ]);
         Storage::disk('private')->put('models/1/source.stl', 'solid test');
@@ -60,7 +60,7 @@ class ProductFileManagementTest extends TestCase
             'description' => ['uk' => 'Description', 'en' => 'Description'],
             'status' => 'pending',
             'price' => 10,
-            'currency' => 'EUR',
+            'currency' => 'UAH',
             'is_free' => false,
         ]);
         $oldPreview = $product->files()->create([
@@ -78,7 +78,7 @@ class ProductFileManagementTest extends TestCase
                 'title_uk' => 'Preview model',
                 'description_uk' => 'Description',
                 'price' => 10,
-                'currency' => 'EUR',
+                'currency' => 'UAH',
                 'tags' => [],
                 'preview_file' => UploadedFile::fake()->create('new.glb', 12, 'model/gltf-binary'),
             ])
@@ -101,7 +101,7 @@ class ProductFileManagementTest extends TestCase
             'description' => ['uk' => 'Description', 'en' => 'Description'],
             'status' => 'pending',
             'price' => 10,
-            'currency' => 'EUR',
+            'currency' => 'UAH',
             'is_free' => false,
         ]);
 
@@ -110,7 +110,7 @@ class ProductFileManagementTest extends TestCase
                 'title_uk' => 'Gallery model',
                 'description_uk' => 'Description',
                 'price' => 10,
-                'currency' => 'EUR',
+                'currency' => 'UAH',
                 'tags' => [],
                 'gallery' => [
                     UploadedFile::fake()->image('one.jpg'),
@@ -143,7 +143,7 @@ class ProductFileManagementTest extends TestCase
             'description' => ['uk' => 'Description', 'en' => 'Description'],
             'status' => 'pending',
             'price' => 10,
-            'currency' => 'EUR',
+            'currency' => 'UAH',
             'is_free' => false,
             'gallery' => ['gallery/keep.jpg', 'gallery/remove.jpg'],
         ]);
@@ -153,7 +153,7 @@ class ProductFileManagementTest extends TestCase
                 'title_uk' => 'Gallery remove model',
                 'description_uk' => 'Description',
                 'price' => 10,
-                'currency' => 'EUR',
+                'currency' => 'UAH',
                 'tags' => [],
                 'gallery_remove' => [1],
             ])

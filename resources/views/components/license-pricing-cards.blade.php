@@ -10,7 +10,7 @@
 
     $personalPrice = $product->personalPrice();
     $commercialPrice = $product->commercialPrice();
-    $currency = $product->currency ?? 'EUR';
+    $currency = $product->currency ?? 'UAH';
 
     $personalDescription = is_array($product->commercial_license_description ?? null) ? null : null;
     $commercialDescriptionLocale = null;

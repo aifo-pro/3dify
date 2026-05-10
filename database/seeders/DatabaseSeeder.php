@@ -70,7 +70,7 @@ class DatabaseSeeder extends Seeder
             'description' => ['uk' => 'Ця модель показує сторінку продукту, оплату, захист файлів і viewer.', 'en' => 'This model demonstrates product pages, payment, protected files and viewer.'],
             'status' => 'published',
             'price' => 0,
-            'currency' => 'EUR',
+            'currency' => 'UAH',
             'is_free' => true,
             'is_featured' => true,
             'published_at' => now(),

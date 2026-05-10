@@ -70,8 +70,8 @@
                 @if($filters['min_price'] !== null || $filters['max_price'] !== null)
                     <span class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs text-zinc-200">
                         {{ __('Ціна') }}:
-                        {{ $filters['min_price'] !== null ? number_format($filters['min_price'], 0).' EUR' : '—' }}
-                        … {{ $filters['max_price'] !== null ? number_format($filters['max_price'], 0).' EUR' : '—' }}
+                        {{ $filters['min_price'] !== null ? number_format($filters['min_price'], 0).' грн' : '—' }}
+                        … {{ $filters['max_price'] !== null ? number_format($filters['max_price'], 0).' грн' : '—' }}
                     </span>
                 @endif
                 <a href="{{ route('products.index') }}" class="ml-auto inline-flex h-8 items-center gap-1 rounded-full border border-rose-300/30 bg-rose-300/[0.08] px-3 text-xs font-bold text-rose-200 hover:bg-rose-300/[0.14]">
@@ -143,14 +143,14 @@
 
                     {{-- Price range --}}
                     <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                        <p class="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Ціна, EUR') }}</p>
+                        <p class="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Ціна, грн') }}</p>
                         <div class="grid grid-cols-2 gap-2">
                             <div class="relative">
-                                <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-emerald-300/70">€</span>
+                                <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-emerald-300/70">₴</span>
                                 <input type="number" name="min_price" min="0" step="0.5" value="{{ $filters['min_price'] }}" placeholder="{{ __('від') }}" class="h-9 w-full rounded-xl border border-white/10 bg-zinc-950/60 pl-6 pr-2 font-mono text-xs tabular-nums text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/30">
                             </div>
                             <div class="relative">
-                                <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-emerald-300/70">€</span>
+                                <span class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-emerald-300/70">₴</span>
                                 <input type="number" name="max_price" min="0" step="0.5" value="{{ $filters['max_price'] }}" placeholder="{{ __('до') }}" class="h-9 w-full rounded-xl border border-white/10 bg-zinc-950/60 pl-6 pr-2 font-mono text-xs tabular-nums text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/30">
                             </div>
                         </div>

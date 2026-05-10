@@ -35,7 +35,7 @@
                     <svg class="h-4 w-4 text-emerald-300/60 group-hover:text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                 </div>
                 <p class="mt-2 text-3xl font-black text-white">{{ $stats['purchases_count'] }}</p>
-                <p class="mt-0.5 text-xs text-zinc-400">{{ number_format($stats['purchases_total'], 2) }} EUR {{ __('загалом') }}</p>
+                <p class="mt-0.5 text-xs text-zinc-400">{{ number_format($stats['purchases_total'], 2) }} грн {{ __('загалом') }}</p>
             </a>
 
             <a href="{{ route('author.products.index') }}" class="group rounded-2xl border border-white/10 bg-gradient-to-br from-sky-500/[0.10] to-transparent p-5 transition hover:border-sky-300/40">
@@ -53,7 +53,7 @@
                     <svg class="h-4 w-4 text-amber-300/60 group-hover:text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                 </div>
                 <p class="mt-2 text-3xl font-black text-white">{{ $stats['sales_count'] }}</p>
-                <p class="mt-0.5 text-xs text-zinc-400">{{ number_format($stats['sales_total'], 2) }} EUR</p>
+                <p class="mt-0.5 text-xs text-zinc-400">{{ number_format($stats['sales_total'], 2) }} грн</p>
             </a>
 
             <a href="{{ route('wishlist.index') }}" class="group rounded-2xl border border-white/10 bg-gradient-to-br from-rose-500/[0.10] to-transparent p-5 transition hover:border-rose-300/40">

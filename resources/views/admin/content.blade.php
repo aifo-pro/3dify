@@ -130,8 +130,8 @@
                             <option value="en" @selected($val('site.default_language', 'uk') === 'en')>English</option>
                         </x-admin.field>
                         <x-admin.field as="select" name="settings[site.currency]" :label="__('Валюта')">
-                            @foreach(['EUR', 'USD', 'UAH', 'PLN'] as $cur)
-                                <option value="{{ $cur }}" @selected($val('site.currency', 'EUR') === $cur)>{{ $cur }}</option>
+                            @foreach(['UAH'] as $cur)
+                                <option value="{{ $cur }}" @selected($val('site.currency', 'UAH') === $cur)>{{ $cur }}</option>
                             @endforeach
                         </x-admin.field>
                         <x-admin.field as="select" name="settings[site.timezone]" :label="__('Часовий пояс')">

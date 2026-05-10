@@ -78,7 +78,7 @@
         'offers' => [
             '@type' => 'Offer',
             'price' => (float) $product->price,
-            'priceCurrency' => $product->currency ?? 'EUR',
+            'priceCurrency' => $product->currency ?? 'UAH',
             'availability' => 'https://schema.org/InStock',
             'url' => route('products.show', $product),
         ],
@@ -173,7 +173,7 @@
                         licenseType: '{{ $product->commercial_license_enabled ? 'personal' : 'personal' }}',
                         personalPrice: {{ (float) $product->personalPrice() }},
                         commercialPrice: {{ (float) $product->commercialPrice() }},
-                        currency: '{{ $product->currency ?? 'EUR' }}',
+                        currency: '{{ $product->currency ?? 'UAH' }}',
                         get currentPrice() { return this.licenseType === 'commercial' ? this.commercialPrice : this.personalPrice; },
                         get displayPrice() {
                             if (this.currentPrice <= 0) return @js(__('Безкоштовно'));
@@ -233,7 +233,7 @@
                                 </div>
                                 @error('promo')<p x-show="open" class="col-span-2 text-xs text-rose-300">{{ $message }}</p>@enderror
                                 @if($promoSession)
-                                    <p x-show="open" class="col-span-2 text-xs text-emerald-200">{{ __('Знижка') }}: {{ $promoSession['code'] }} (−{{ number_format($promoSession['discount'], 2) }} EUR)</p>
+                                    <p x-show="open" class="col-span-2 text-xs text-emerald-200">{{ __('Знижка') }}: {{ $promoSession['code'] }} (−{{ number_format($promoSession['discount'], 2, '.', ' ') }} грн)</p>
                                 @endif
                             </form>
                         @endif
@@ -297,7 +297,7 @@
                     {{-- Tip jar (any logged-in user except the author can tip) --}}
                     @auth
                         @if($product->user_id !== auth()->id())
-                            <div class="mt-4 rounded-2xl border border-amber-300/30 bg-gradient-to-br from-amber-500/[0.08] to-rose-500/[0.06] p-4" x-data="{ open: false, amount: 3, msg: '' }">
+                            <div class="mt-4 rounded-2xl border border-amber-300/30 bg-gradient-to-br from-amber-500/[0.08] to-rose-500/[0.06] p-4" x-data="{ open: false, amount: 100, msg: '' }">
                                 <div class="flex items-center justify-between gap-3">
                                     <div class="flex items-center gap-2 text-sm font-bold text-amber-100">
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
@@ -309,13 +309,13 @@
                                 <form x-show="open" x-cloak method="POST" action="{{ route('products.tip', $product) }}" class="mt-3 grid gap-2">
                                     @csrf
                                     <div class="flex gap-1.5">
-                                        @foreach([1, 3, 5, 10] as $preset)
-                                            <button type="button" @click="amount = {{ $preset }}" :class="amount == {{ $preset }} ? 'border-amber-300 bg-amber-300/[0.18] text-amber-100' : 'border-white/10 bg-white/[0.04] text-zinc-300 hover:border-amber-300/40'" class="h-9 flex-1 rounded-xl border text-xs font-bold transition">{{ $preset }} €</button>
+                                        @foreach([50, 100, 200, 500] as $preset)
+                                            <button type="button" @click="amount = {{ $preset }}" :class="amount == {{ $preset }} ? 'border-amber-300 bg-amber-300/[0.18] text-amber-100' : 'border-white/10 bg-white/[0.04] text-zinc-300 hover:border-amber-300/40'" class="h-9 flex-1 rounded-xl border text-xs font-bold transition">{{ $preset }} грн</button>
                                         @endforeach
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <span class="shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-200/70">{{ __('Сума, €') }}</span>
-                                        <input type="number" name="amount" min="1" max="1000" step="0.5" x-model.number="amount" class="h-10 flex-1 rounded-xl border border-white/10 bg-zinc-950/60 px-3 text-center font-mono text-sm font-bold text-white focus:border-amber-300 focus:ring-1 focus:ring-amber-300/40">
+                                        <span class="shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-200/70">{{ __('Сума, грн') }}</span>
+                                        <input type="number" name="amount" min="10" max="50000" step="1" x-model.number="amount" class="h-10 flex-1 rounded-xl border border-white/10 bg-zinc-950/60 px-3 text-center font-mono text-sm font-bold text-white focus:border-amber-300 focus:ring-1 focus:ring-amber-300/40">
                                     </div>
                                     <input type="text" name="message" maxlength="280" x-model="msg" placeholder="{{ __('Повідомлення (необов\'язково)') }}" class="h-10 rounded-xl border border-white/10 bg-zinc-950/60 px-3 text-xs text-white placeholder:text-zinc-500">
                                     <button class="h-10 rounded-xl bg-amber-300 text-xs font-bold text-zinc-900 hover:bg-amber-200">{{ __('Надіслати подяку') }}</button>
@@ -952,10 +952,10 @@
                 </div>
             @else
                 <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                    <x-ui.placeholder-card :title="__('Miniature Dragon')" :subtitle="__('Деталізована 32mm міньятюра.')" price="€4.50" tone="emerald" icon="dragon" />
+                    <x-ui.placeholder-card :title="__('Miniature Dragon')" :subtitle="__('Деталізована 32mm міньятюра.')" price="180 грн" tone="emerald" icon="dragon" />
                     <x-ui.placeholder-card :title="__('Phone Stand')" :subtitle="__('Підставка для смартфона.')" :free="true" tone="rose" icon="phone" />
-                    <x-ui.placeholder-card :title="__('Desk Organizer')" :subtitle="__('Модульний органайзер.')" price="€2.00" tone="violet" icon="organizer" />
-                    <x-ui.placeholder-card :title="__('Wall Hook')" :subtitle="__('Декоративний гачок.')" price="€1.50" tone="sky" icon="hook" />
+                    <x-ui.placeholder-card :title="__('Desk Organizer')" :subtitle="__('Модульний органайзер.')" price="80 грн" tone="violet" icon="organizer" />
+                    <x-ui.placeholder-card :title="__('Wall Hook')" :subtitle="__('Декоративний гачок.')" price="60 грн" tone="sky" icon="hook" />
                 </div>
             @endif
         </div>
