@@ -45,6 +45,8 @@ class ProfileUpdateRequest extends FormRequest
             'github_url' => ['nullable', 'url', 'max:255'],
             'twitter_url' => ['nullable', 'url', 'max:255'],
             'location' => ['nullable', 'string', 'max:120'],
+            'country_code' => ['nullable', 'string', 'size:2', Rule::in(array_keys(config('countries', [])))],
+            'city' => ['nullable', 'string', 'max:120'],
             'contact_enabled' => ['nullable', 'boolean'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],

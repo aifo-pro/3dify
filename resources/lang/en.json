@@ -234,9 +234,6 @@
     "активних авторів|активний автор|активних авторів": "active authors|active author|active authors",
     "авторів публікують|автор публікує|авторів публікують": "authors publishing|author publishing|authors publishing",
     "drag · zoom · rotate": "drag · zoom · rotate",
-    "Преміальні": "Premium",
-    "3D-моделі": "3D models",
-    "для якісного друку": "for high-quality printing",
     "Добірка якісних моделей для 3D-друку.": "A curated set of quality models for 3D printing.",
     "Перейти": "Open",
     "Завантажте модель": "Upload a model",
@@ -337,5 +334,9 @@
     "Скасувати": "Cancel",
     "Надіслати": "Send",
     "Ви підписалися на автора.": "You followed the author.",
-    "Ви відписалися від автора.": "You unfollowed the author."
+    "Ви відписалися від автора.": "You unfollowed the author.",
+    "Країна": "Country",
+    "Оберіть країну": "Select country",
+    "Країна буде показана на сторінці автора з прапором.": "The country will be shown on the author page with a flag.",
+    "Місто": "City"
 }

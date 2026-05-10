@@ -32,12 +32,12 @@
         <div class="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
             <label class="group relative overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/70 p-5 shadow-2xl shadow-black/20">
                 <span class="text-sm font-bold text-white">{{ __('Обкладинка профілю') }}</span>
-                <span class="mt-1 block text-xs leading-5 text-zinc-500">{{ __('JPG, PNG або WebP до 4MB. Оптимальна пропорція ~ 3:1 (наприклад 1500×500 px). Уникайте важливих деталей у нижній смузі — там ляже край картки профілю.') }}</span>
+                <span class="mt-1 block text-xs leading-5 text-zinc-500">{{ __('JPG, PNG або WebP до 4MB. Оптимальна пропорція ~ 3:1, наприклад 1500×500 px.') }}</span>
                 <div class="mt-4 aspect-[3/1] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-400/20 via-sky-400/10 to-zinc-900">
                     @if($user->coverUrl())
                         <img src="{{ $user->coverUrl() }}" alt="{{ __('Обкладинка профілю') }}" class="h-full w-full object-cover object-center">
                     @else
-                        <div class="flex h-full items-center justify-center text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">{{ __('Додати обкладинку (3:1)') }}</div>
+                        <div class="flex h-full items-center justify-center text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">{{ __('Додати обкладинку') }}</div>
                     @endif
                 </div>
                 <input type="file" name="cover" accept="image/jpeg,image/png,image/webp" class="sr-only">
@@ -94,7 +94,15 @@
         <div>
             <p class="text-sm font-bold text-white">{{ __('Контакти та соцмережі') }}</p>
             <div class="mt-4 grid gap-5 md:grid-cols-2">
-                <x-ui.input name="location" type="text" :label="__('Локація')" :value="old('location', $user->location)" :error="$errors->first('location')" placeholder="Kyiv, Ukraine" />
+                <x-ui.select name="country_code" :label="__('Країна')" :helper="__('Країна буде показана на сторінці автора з прапором.')" :error="$errors->first('country_code')">
+                    <option value="">{{ __('Оберіть країну') }}</option>
+                    @foreach(($countries ?? config('countries', [])) as $code => $country)
+                        <option value="{{ $code }}" @selected(old('country_code', $user->country_code) === $code)>
+                            {{ $country['flag'] }} {{ $country[app()->getLocale()] ?? $country['en'] }}
+                        </option>
+                    @endforeach
+                </x-ui.select>
+                <x-ui.input name="city" type="text" :label="__('Місто')" :value="old('city', $user->city)" :error="$errors->first('city')" placeholder="Kyiv" />
                 <x-ui.input name="website_url" type="url" :label="__('Website')" :value="old('website_url', $user->website_url)" :error="$errors->first('website_url')" placeholder="https://example.com" />
                 <x-ui.input name="telegram_url" type="url" :label="__('Telegram')" :value="old('telegram_url', $user->telegram_url)" :error="$errors->first('telegram_url')" placeholder="https://t.me/username" />
                 <x-ui.input name="instagram_url" type="url" :label="__('Instagram')" :value="old('instagram_url', $user->instagram_url)" :error="$errors->first('instagram_url')" placeholder="https://instagram.com/username" />

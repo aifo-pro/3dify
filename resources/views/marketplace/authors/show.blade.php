@@ -123,10 +123,13 @@
                         </div>
                         <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-400">
                             <span class="font-mono text-emerald-300/80">{{ '@'.($author->username ?: 'author-'.$author->id) }}</span>
-                            @if($author->location)
+                            @if($author->publicLocation())
                                 <span class="inline-flex items-center gap-1">
                                     <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                    {{ $author->location }}
+                                    @if($author->countryFlag())
+                                        <span aria-hidden="true">{{ $author->countryFlag() }}</span>
+                                    @endif
+                                    {{ $author->publicLocation() }}
                                 </span>
                             @endif
                             @if($author->created_at)

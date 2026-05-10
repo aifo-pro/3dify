@@ -19,7 +19,7 @@ use Illuminate\Notifications\Notifiable;
 #[Fillable([
     'name', 'display_name', 'username', 'email', 'email_verified_at', 'password', 'role',
     'bio', 'bio_uk', 'bio_en', 'avatar_path', 'cover_path', 'website_url', 'telegram_url',
-    'instagram_url', 'youtube_url', 'github_url', 'twitter_url', 'location',
+    'instagram_url', 'youtube_url', 'github_url', 'twitter_url', 'location', 'country_code', 'city',
     'contact_enabled', 'github_id', 'telegram_id', 'telegram_username', 'locale',
     'is_suspended', 'manual_verification',
 ])]
@@ -154,6 +154,42 @@ class User extends Authenticatable
         }
 
         return \Illuminate\Support\Facades\Storage::disk('public')->url($this->cover_path);
+    }
+
+    public function countryMeta(): ?array
+    {
+        if (! $this->country_code) {
+            return null;
+        }
+
+        return config('countries.'.strtoupper($this->country_code));
+    }
+
+    public function countryName(?string $locale = null): ?string
+    {
+        $country = $this->countryMeta();
+        if (! $country) {
+            return null;
+        }
+
+        $locale ??= app()->getLocale();
+
+        return $country[$locale] ?? $country['en'] ?? null;
+    }
+
+    public function countryFlag(): ?string
+    {
+        return $this->countryMeta()['flag'] ?? null;
+    }
+
+    public function publicLocation(): ?string
+    {
+        $parts = array_filter([
+            $this->countryName(),
+            $this->city,
+        ]);
+
+        return $parts ? implode(', ', $parts) : $this->location;
     }
 
     public function isAdmin(): bool
