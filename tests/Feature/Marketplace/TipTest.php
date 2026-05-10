@@ -207,6 +207,46 @@ class TipTest extends TestCase
         Http::assertNotSent(fn ($request) => str_starts_with($request->url(), 'https://3dify.dev/'));
     }
 
+    public function test_v2_endpoint_without_hmac_credentials_does_not_send_legacy_request_to_v2_url(): void
+    {
+        Http::fake([
+            '*' => Http::response('<html>404</html>', 404),
+        ]);
+
+        Setting::query()->create([
+            'group' => 'payments',
+            'key' => 'payments.aifo_endpoint',
+            'value' => 'https://aifo.pro/api/v2/invoices/create',
+        ]);
+        Setting::query()->create([
+            'group' => 'payments',
+            'key' => 'payments.api_key',
+            'value' => 'legacy-token',
+        ]);
+
+        $author = User::factory()->create();
+        $buyer = User::factory()->create();
+        $product = Product::query()->create([
+            'user_id' => $author->id,
+            'slug' => 'tip-v2-without-hmac',
+            'title' => ['uk' => 'V2', 'en' => 'V2'],
+            'description' => ['uk' => 'D', 'en' => 'D'],
+            'status' => 'published',
+            'price' => 0,
+            'currency' => 'UAH',
+            'is_free' => true,
+            'published_at' => now(),
+        ]);
+
+        $this->actingAs($buyer)
+            ->post(route('products.tip', $product), ['amount' => 50])
+            ->assertRedirect(route('products.show', $product))
+            ->assertSessionHas('error');
+
+        Http::assertNothingSent();
+        $this->assertSame(0, Tip::query()->count());
+    }
+
     public function test_when_aifo_not_configured_redirects_to_product_with_error(): void
     {
         $author = User::factory()->create();

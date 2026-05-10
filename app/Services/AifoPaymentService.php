@@ -312,7 +312,8 @@ class AifoPaymentService
         }
 
         $apiKey = $this->apiToken();
-        if ($checkoutUrl === null && $endpoint !== '' && $apiKey !== '' && $order->total > 0) {
+        $useLegacy = $apiKey !== '' && $endpoint !== '' && ! $this->usesInvoiceCreateV2($endpoint);
+        if ($checkoutUrl === null && $useLegacy && $order->total > 0) {
             try {
                 $response = Http::withToken($apiKey)->acceptJson()
                     ->timeout(30)
@@ -380,10 +381,20 @@ class AifoPaymentService
         $secret = $this->apiSigningSecret();
         $apiKey = $this->apiToken();
 
-        $useV2 = $shopId !== null && $secret !== '' && $this->usesInvoiceCreateV2($endpoint);
-        $useLegacy = $apiKey !== '' && $endpoint !== '';
+        $endpointIsV2 = $this->usesInvoiceCreateV2($endpoint);
+        $useV2 = $shopId !== null && $secret !== '' && $endpointIsV2;
+        $useLegacy = $apiKey !== '' && $endpoint !== '' && ! $endpointIsV2;
 
         if (! $useV2 && ! $useLegacy) {
+            if ($endpointIsV2) {
+                Log::warning('AIFO tip checkout skipped: v2 endpoint requires numeric Merchant ID and HMAC secret.', [
+                    'tip_id' => $tip->id,
+                    'endpoint' => $endpoint,
+                    'has_shop_id' => $shopId !== null,
+                    'has_secret' => $secret !== '',
+                ]);
+            }
+
             return null;
         }
 
