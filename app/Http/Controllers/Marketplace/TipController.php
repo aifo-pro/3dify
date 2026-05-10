@@ -17,10 +17,14 @@ class TipController extends Controller
         try {
             return redirect()->route('products.show', $product);
         } catch (\Throwable $e) {
-            Log::error('Tip shortcut redirect failed', [
-                'product_id' => $product->id,
-                'message' => $e->getMessage(),
-            ]);
+            try {
+                Log::error('Tip shortcut redirect failed', [
+                    'product_id' => $product->id,
+                    'message' => $e->getMessage(),
+                ]);
+            } catch (\Throwable) {
+            }
+            error_log('[3dify-tip-redirect] '.$e->getMessage());
 
             return redirect()->route('products.index');
         }
@@ -40,6 +44,12 @@ class TipController extends Controller
         $tipPayment = null;
 
         try {
+            logger()->info('tip.store.start', [
+                'product_id' => $product->id,
+                'slug' => $product->slug,
+                'user_id' => $request->user()->id,
+            ]);
+
             $tip = Tip::create([
                 'product_id' => $product->id,
                 'author_id' => $product->user_id,
@@ -72,14 +82,31 @@ class TipController extends Controller
 
             return redirect()->away($checkoutUrl);
         } catch (\Throwable $e) {
-            Log::error('Tip checkout failed', [
-                'product_id' => $product->id,
-                'tip_id' => $tip?->id,
-                'message' => $e->getMessage(),
-                'exception' => $e::class,
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-            ]);
+            try {
+                Log::error('Tip checkout failed', [
+                    'product_id' => $product->id,
+                    'tip_id' => $tip?->id,
+                    'message' => $e->getMessage(),
+                    'exception' => $e::class,
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]);
+            } catch (\Throwable) {
+                // Avoid secondary 500 if logging path is not writable.
+            }
+
+            try {
+                report($e);
+            } catch (\Throwable) {
+            }
+
+            error_log(sprintf(
+                '[3dify-tip] %s: %s @ %s:%d',
+                $e::class,
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine()
+            ));
 
             try {
                 if ($tipPayment instanceof TipPayment) {
@@ -95,27 +122,39 @@ class TipController extends Controller
             } catch (\Throwable) {
             }
 
-            return redirect()
-                ->route('products.show', $product)
-                ->with('error', __('Тимчасова помилка при оплаті подяки. Якщо вона повторюється, перевірте лог сервера та міграції бази (таблиці tips / tip_payments).'));
+            try {
+                return redirect()
+                    ->route('products.show', $product)
+                    ->with('error', __('Тимчасова помилка при оплаті подяки. Якщо вона повторюється, перевірте лог сервера та міграції бази (таблиці tips / tip_payments).'));
+            } catch (\Throwable $redirectException) {
+                error_log('[3dify-tip] redirect failed: '.$redirectException->getMessage());
+
+                return response(
+                    __('Тимчасова помилка сервера. Перевірте права на storage/logs та php artisan migrate.'),
+                    503
+                );
+            }
         }
     }
 
     /**
-     * Only http(s) URLs — avoids Throwable from redirect()->away() on malformed strings.
+     * Only http(s) with a host — avoids Throwable from redirect()->away().
+     * We avoid FILTER_VALIDATE_URL alone: some gateways return URLs that fail strict validation.
      */
     private function isAllowedPaymentRedirectUrl(string $url): bool
     {
+        $url = trim($url);
         if ($url === '') {
             return false;
         }
 
-        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+        if (! in_array($scheme, ['http', 'https'], true)) {
             return false;
         }
 
-        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+        $host = parse_url($url, PHP_URL_HOST);
 
-        return in_array($scheme, ['http', 'https'], true);
+        return is_string($host) && $host !== '';
     }
 }
