@@ -36,12 +36,20 @@ class AifoPaymentService
         $settings = app(SiteSettings::class);
         $v = $this->rejectMisconfiguredInvoiceEndpoint(trim($settings->string('payments.aifo_endpoint')));
         if ($v !== '') {
-            return $v;
+            return $this->normalizeInvoiceApiUrl($v);
         }
 
         $legacy = $this->rejectMisconfiguredInvoiceEndpoint(trim($settings->string('payments.api_endpoint')));
 
-        return $legacy !== '' ? $legacy : 'https://aifo.pro/api/v2/invoices/create';
+        return $this->normalizeInvoiceApiUrl($legacy !== '' ? $legacy : 'https://aifo.pro/api/v2/invoices/create');
+    }
+
+    /**
+     * Trailing slashes sometimes hit a different vhost/route and return 404 with an empty body.
+     */
+    private function normalizeInvoiceApiUrl(string $url): string
+    {
+        return rtrim(trim($url), '/');
     }
 
     /**
@@ -124,13 +132,34 @@ class AifoPaymentService
     }
 
     /**
-     * Canonical JSON for signing: UTF-8, keys sorted lexicographically (top level).
+     * Canonical JSON for the HTTP body (same field values as used for signing).
      */
     private function canonicalBodyJson(array $body): string
     {
         ksort($body);
 
         return json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * SORTED_PARAMS for HMAC per aifo.pro docs: alphabetical keys, URL-encoded query string
+     * (same semantics as form-urlencoded body). Override with AIFO_V2_HMAC_USE_SORTED_JSON_BODY=true
+     * if your merchant backend expects the raw sorted JSON string instead.
+     */
+    private function signingSortedParamsForV2Invoice(array $body): string
+    {
+        if (filter_var(env('AIFO_V2_HMAC_USE_SORTED_JSON_BODY', false), FILTER_VALIDATE_BOOL)) {
+            return $this->canonicalBodyJson($body);
+        }
+
+        return $this->canonicalSortedParamsForSignature($body);
+    }
+
+    private function canonicalSortedParamsForSignature(array $body): string
+    {
+        ksort($body);
+
+        return http_build_query($body, '', '&', PHP_QUERY_RFC3986);
     }
 
     private function pathForSigning(string $endpointUrl): string
@@ -151,10 +180,11 @@ class AifoPaymentService
         }
 
         $bodyJson = $this->canonicalBodyJson($body);
+        $sortedParams = $this->signingSortedParamsForV2Invoice($body);
         $path = $this->pathForSigning($endpoint);
         $timestamp = (string) time();
         $nonce = bin2hex(random_bytes(16));
-        $canonical = "POST\n{$path}\n{$timestamp}\n{$nonce}\n{$bodyJson}";
+        $canonical = "POST\n{$path}\n{$timestamp}\n{$nonce}\n{$sortedParams}";
         $signature = hash_hmac('sha256', $canonical, $secret);
 
         try {
@@ -178,10 +208,27 @@ class AifoPaymentService
             return [null, null];
         }
 
+        $rawBody = $response->body();
+
         if (! $response->successful()) {
             Log::warning('AIFO v2 invoice request failed', [
+                'endpoint' => $endpoint,
+                'sign_path' => $path,
                 'status' => $response->status(),
-                'body' => $response->body(),
+                'content_type' => $response->header('Content-Type'),
+                'body_preview' => $this->truncateForLog($rawBody),
+                'looks_like_html' => $this->responseBodyLooksLikeHtml($rawBody),
+            ]);
+
+            return [$response, null];
+        }
+
+        if ($this->responseBodyLooksLikeHtml($rawBody)) {
+            Log::warning('AIFO v2 invoice returned HTML instead of JSON (wrong endpoint or gateway error)', [
+                'status' => $response->status(),
+                'endpoint' => $endpoint,
+                'content_type' => $response->header('Content-Type'),
+                'body_preview' => $this->truncateForLog($rawBody),
             ]);
 
             return [$response, null];
@@ -193,6 +240,26 @@ class AifoPaymentService
         }
 
         return [$response, is_string($url) && $url !== '' ? $url : null];
+    }
+
+    private function truncateForLog(string $body, int $max = 2000): string
+    {
+        if (strlen($body) <= $max) {
+            return $body;
+        }
+
+        return substr($body, 0, $max).'…';
+    }
+
+    private function responseBodyLooksLikeHtml(string $body): bool
+    {
+        $sample = strtolower(substr(ltrim($body), 0, 800));
+
+        return str_contains($sample, '<html')
+            || str_contains($sample, '<!doctype')
+            || str_contains($sample, 'aifo-error')
+            || str_contains($sample, 'не знайдено')
+            || str_contains($sample, 'page not found');
     }
 
     private function extractInvoiceId(?Response $response): ?string
@@ -349,7 +416,7 @@ class AifoPaymentService
                 Log::warning('AIFO tip checkout request failed', [
                     'tip_id' => $tip->id,
                     'status' => $response->status(),
-                    'body' => $response->body(),
+                    'body_preview' => $this->truncateForLog($response->body()),
                 ]);
             }
         } elseif ($checkoutUrl === null && $useV2) {
