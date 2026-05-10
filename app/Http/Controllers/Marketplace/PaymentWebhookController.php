@@ -62,7 +62,12 @@ class PaymentWebhookController extends Controller
 
     private function referenceFromRequest(Request $request): ?string
     {
-        $ref = $request->input('payment_id') ?? $request->input('invoice') ?? $request->input('invoice_id') ?? $request->input('pay_id');
+        $ref = $request->input('orderReference')
+            ?? $request->input('external_id')
+            ?? $request->input('payment_id')
+            ?? $request->input('invoice')
+            ?? $request->input('invoice_id')
+            ?? $request->input('pay_id');
         if ($ref === null || $ref === '') {
             return null;
         }

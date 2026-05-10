@@ -6,13 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\TipPayment;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
 class HomeController extends Controller
 {
-    public function __invoke()
+    public function __invoke(Request $request)
     {
+        if ($redirect = $this->redirectAifoTipReturn($request)) {
+            return $redirect;
+        }
+
         $emptyStats = [
             'products' => 0,
             'free_products' => 0,
@@ -58,5 +64,42 @@ class HomeController extends Controller
             'categories' => Category::query()->where('is_active', true)->orderBy('sort_order')->take(8)->get(),
             'stats' => $stats,
         ]);
+    }
+
+    private function redirectAifoTipReturn(Request $request)
+    {
+        $reference = $request->query('orderReference')
+            ?? $request->query('external_id')
+            ?? $request->query('pay_id');
+
+        if (! is_string($reference) || ! str_starts_with($reference, 'TIP-') || ! Schema::hasTable('tip_payments')) {
+            return null;
+        }
+
+        $tipId = (int) substr($reference, 4);
+        $payment = TipPayment::query()
+            ->with('tip.product')
+            ->where(function ($query) use ($reference, $tipId) {
+                $query->where('provider_payment_id', $reference);
+                if ($tipId > 0) {
+                    $query->orWhere('tip_id', $tipId);
+                }
+            })
+            ->latest('id')
+            ->first();
+
+        $product = $payment?->tip?->product;
+        if (! $product) {
+            return null;
+        }
+
+        $status = strtolower((string) $request->query('status'));
+        $message = in_array($status, ['paid', 'success', 'completed'], true)
+            ? __('Дякуємо! Оплату подяки успішно прийнято. Після підтвердження AIFO кошти зарахуються на баланс автора.')
+            : __('Повернення з AIFO отримано. Статус подяки оновиться після підтвердження платежу.');
+
+        return redirect()
+            ->route('products.show', $product)
+            ->with('status', $message);
     }
 }

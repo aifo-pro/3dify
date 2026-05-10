@@ -365,6 +365,103 @@ class TipTest extends TestCase
         Notification::assertSentTo($author, NewTipNotification::class);
     }
 
+    public function test_aifo_success_return_on_home_redirects_back_to_tipped_product(): void
+    {
+        $author = User::factory()->create();
+        $buyer = User::factory()->create();
+        $product = Product::query()->create([
+            'user_id' => $author->id,
+            'slug' => 'tip-return-product',
+            'title' => ['uk' => 'Tip return product', 'en' => 'Tip return product'],
+            'description' => ['uk' => 'D', 'en' => 'D'],
+            'status' => 'published',
+            'price' => 0,
+            'currency' => 'UAH',
+            'is_free' => true,
+            'published_at' => now(),
+        ]);
+        $tip = Tip::query()->create([
+            'product_id' => $product->id,
+            'author_id' => $author->id,
+            'user_id' => $buyer->id,
+            'amount' => 50,
+            'currency' => 'UAH',
+            'status' => Tip::STATUS_PENDING,
+        ]);
+        TipPayment::query()->create([
+            'tip_id' => $tip->id,
+            'provider' => 'aifo',
+            'provider_payment_id' => 'TIP-'.$tip->id,
+            'status' => 'created',
+            'amount' => 50,
+            'currency' => 'UAH',
+            'payload' => [],
+        ]);
+
+        $this->get('/?invoice=423&status=paid&orderReference=TIP-'.$tip->id)
+            ->assertRedirect(route('products.show', $product))
+            ->assertSessionHas('status');
+    }
+
+    public function test_direct_aifo_webhook_can_resolve_tip_by_order_reference_when_invoice_is_gateway_id(): void
+    {
+        Notification::fake();
+
+        Setting::query()->create([
+            'group' => 'payments',
+            'key' => 'payments.aifo_webhook_secret',
+            'value' => 'direct-secret',
+        ]);
+
+        $author = User::factory()->create();
+        $buyer = User::factory()->create();
+        $product = Product::query()->create([
+            'user_id' => $author->id,
+            'slug' => 'tip-order-reference-webhook',
+            'title' => ['uk' => 'Order reference webhook', 'en' => 'Order reference webhook'],
+            'description' => ['uk' => 'D', 'en' => 'D'],
+            'status' => 'published',
+            'price' => 0,
+            'currency' => 'UAH',
+            'is_free' => true,
+            'published_at' => now(),
+        ]);
+        $tip = Tip::query()->create([
+            'product_id' => $product->id,
+            'author_id' => $author->id,
+            'user_id' => $buyer->id,
+            'amount' => 50,
+            'currency' => 'UAH',
+            'status' => Tip::STATUS_PENDING,
+        ]);
+        TipPayment::query()->create([
+            'tip_id' => $tip->id,
+            'provider' => 'aifo',
+            'provider_payment_id' => 'TIP-'.$tip->id,
+            'status' => 'created',
+            'amount' => 50,
+            'currency' => 'UAH',
+            'payload' => [],
+        ]);
+
+        $payload = [
+            'shop_id' => '34',
+            'invoice' => '423',
+            'orderReference' => 'TIP-'.$tip->id,
+            'sum' => '50.00',
+            'status' => 'paid',
+            'http_auth_signature' => hash('sha256', '34:50.00:direct-secret:423'),
+        ];
+
+        $this->post(route('payments.aifo.webhook'), $payload)->assertOk();
+
+        $this->assertDatabaseHas('tips', [
+            'id' => $tip->id,
+            'status' => Tip::STATUS_PAID,
+        ]);
+        $this->assertSame(50.0, app(PayoutService::class)->availableBalance($author));
+    }
+
     public function test_when_aifo_not_configured_redirects_to_product_with_error(): void
     {
         $author = User::factory()->create();
