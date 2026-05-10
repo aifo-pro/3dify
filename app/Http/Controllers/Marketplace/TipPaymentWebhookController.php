@@ -3,28 +3,17 @@
 namespace App\Http\Controllers\Marketplace;
 
 use App\Http\Controllers\Controller;
-use App\Models\TipPayment;
-use App\Notifications\NewTipNotification;
 use App\Services\AifoPaymentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/**
+ * @deprecated Use {@see PaymentWebhookController} at `/payments/aifo/webhook`. Kept so old URLs keep working.
+ */
 class TipPaymentWebhookController extends Controller
 {
-    public function __invoke(Request $request, AifoPaymentService $payments)
+    public function __invoke(Request $request, AifoPaymentService $payments): JsonResponse
     {
-        $secret = AifoPaymentService::webhookSigningSecret();
-        if ($secret !== '') {
-            $expected = hash_hmac('sha256', $request->getContent(), $secret);
-            abort_unless(hash_equals($expected, (string) $request->header('X-Aifo-Signature')), 403);
-        }
-
-        $payment = TipPayment::where('provider_payment_id', $request->input('payment_id'))->firstOrFail();
-
-        if ($payment->status !== 'paid') {
-            $payments->markTipPaid($payment, $request->all());
-            $payment->tip->author?->notify(new NewTipNotification($payment->tip));
-        }
-
-        return response()->json(['ok' => true]);
+        return app(PaymentWebhookController::class)($request, $payments);
     }
 }

@@ -22,20 +22,23 @@ class TipTest extends TestCase
         Notification::fake();
         Http::fake([
             '*' => Http::response([
-                'checkout_url' => 'https://pay.example/checkout/abc',
-                'payment_id' => 'PAY-123',
+                'status' => 'success',
+                'data' => [
+                    'payment_url' => 'https://pay.example/checkout/abc',
+                    'invoice_id' => 789,
+                ],
             ], 200),
         ]);
 
         Setting::query()->create([
             'group' => 'payments',
-            'key' => 'payments.aifo_endpoint',
-            'value' => json_encode('https://aifo.example/api/pay'),
+            'key' => 'payments.aifo_merchant_id',
+            'value' => '1',
         ]);
         Setting::query()->create([
             'group' => 'payments',
-            'key' => 'payments.aifo_api_key',
-            'value' => json_encode('test_key'),
+            'key' => 'payments.aifo_webhook_secret',
+            'value' => 'test_secret',
         ]);
 
         $author = User::factory()->create();
@@ -70,17 +73,26 @@ class TipTest extends TestCase
         $tip = Tip::query()->firstOrFail();
         $this->assertDatabaseHas('tip_payments', [
             'tip_id' => $tip->id,
-            'provider_payment_id' => 'PAY-123',
+            'provider_payment_id' => '789',
             'status' => 'created',
         ]);
 
         $this->assertSame(0.0, app(PayoutService::class)->availableBalance($author));
         Notification::assertNothingSent();
 
-        $this->postJson(route('payments.aifo.tips.webhook'), [
-            'payment_id' => 'PAY-123',
-            'status' => 'paid',
-        ])->assertOk();
+        $webhookBody = json_encode(['invoice' => '789', 'status' => 'paid'], JSON_UNESCAPED_SLASHES);
+        $this->call(
+            'POST',
+            route('payments.aifo.webhook'),
+            [],
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_X_AIFO_SIGNATURE' => hash_hmac('sha256', $webhookBody, 'test_secret'),
+            ],
+            $webhookBody,
+        )->assertOk();
 
         $this->assertDatabaseHas('tips', [
             'id' => $tip->id,
@@ -88,12 +100,59 @@ class TipTest extends TestCase
         ]);
         $this->assertDatabaseHas('tip_payments', [
             'tip_id' => $tip->id,
-            'provider_payment_id' => 'PAY-123',
+            'provider_payment_id' => '789',
             'status' => 'paid',
         ]);
 
         $this->assertSame(100.0, app(PayoutService::class)->availableBalance($author));
         Notification::assertSentTo($author, NewTipNotification::class);
+    }
+
+    public function test_tip_checkout_ignores_webhook_url_mistakenly_saved_as_api_endpoint(): void
+    {
+        Http::fake([
+            '*' => Http::response([
+                'status' => 'success',
+                'data' => [
+                    'payment_url' => 'https://pay.example/checkout/fixed',
+                    'invoice_id' => 999,
+                ],
+            ], 200),
+        ]);
+
+        Setting::query()->create([
+            'group' => 'payments',
+            'key' => 'payments.aifo_merchant_id',
+            'value' => '2',
+        ]);
+        Setting::query()->create([
+            'group' => 'payments',
+            'key' => 'payments.aifo_webhook_secret',
+            'value' => 'tip_secret',
+        ]);
+        Setting::query()->create([
+            'group' => 'payments',
+            'key' => 'payments.aifo_endpoint',
+            'value' => 'https://3dify.dev/payments/aifo/webhook',
+        ]);
+
+        $author = User::factory()->create();
+        $buyer = User::factory()->create();
+        $product = Product::query()->create([
+            'user_id' => $author->id,
+            'slug' => 'tip-webhook-confusion',
+            'title' => ['uk' => 'W', 'en' => 'W'],
+            'description' => ['uk' => 'D', 'en' => 'D'],
+            'status' => 'published',
+            'price' => 0,
+            'currency' => 'UAH',
+            'is_free' => true,
+            'published_at' => now(),
+        ]);
+
+        $this->actingAs($buyer)
+            ->post(route('products.tip', $product), ['amount' => 50])
+            ->assertRedirect('https://pay.example/checkout/fixed');
     }
 
     public function test_when_aifo_not_configured_redirects_to_product_with_error(): void

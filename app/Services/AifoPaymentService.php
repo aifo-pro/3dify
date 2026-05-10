@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\Setting;
 use App\Models\Tip;
 use App\Models\TipPayment;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -33,12 +34,34 @@ class AifoPaymentService
     private function apiEndpoint(): string
     {
         $settings = app(SiteSettings::class);
-        $v = trim($settings->string('payments.aifo_endpoint'));
+        $v = $this->rejectMisconfiguredInvoiceEndpoint(trim($settings->string('payments.aifo_endpoint')));
         if ($v !== '') {
             return $v;
         }
 
-        return trim($settings->string('payments.api_endpoint'));
+        $legacy = $this->rejectMisconfiguredInvoiceEndpoint(trim($settings->string('payments.api_endpoint')));
+
+        return $legacy !== '' ? $legacy : 'https://aifo.pro/api/v2/invoices/create';
+    }
+
+    /**
+     * Admins sometimes paste the app's webhook URL here — that is not the AIFO invoice API and breaks checkout.
+     */
+    private function rejectMisconfiguredInvoiceEndpoint(string $url): string
+    {
+        if ($url === '') {
+            return '';
+        }
+
+        $lower = strtolower($url);
+        if (str_contains($lower, '/payments/aifo/webhook')
+            || str_contains($lower, '/payments/aifo/tips/webhook')) {
+            Log::warning('payments.aifo_endpoint looks like this site webhook URL, not AIFO invoice API — using default.', ['url' => $url]);
+
+            return '';
+        }
+
+        return $url;
     }
 
     /**
@@ -69,31 +92,185 @@ class AifoPaymentService
         return ($legacy !== null && $legacy !== '') ? (string) $legacy : 'demo';
     }
 
+    /**
+     * Secret used for API v2 HMAC (same material as webhook verification — kassa secret).
+     */
+    private function apiSigningSecret(): string
+    {
+        return trim(self::webhookSigningSecret());
+    }
+
+    private function shopId(): ?int
+    {
+        $raw = trim($this->merchantId());
+        if ($raw === '' || $raw === 'demo') {
+            return null;
+        }
+        if (! ctype_digit($raw)) {
+            return null;
+        }
+
+        $id = (int) $raw;
+
+        return $id > 0 ? $id : null;
+    }
+
+    /**
+     * Official API v2 uses POST .../api/v2/invoices/create with HMAC headers (see aifo.pro/docs).
+     */
+    private function usesInvoiceCreateV2(string $endpoint): bool
+    {
+        return str_contains(strtolower($endpoint), '/api/v2/invoices/create');
+    }
+
+    /**
+     * Canonical JSON for signing: UTF-8, keys sorted lexicographically (top level).
+     */
+    private function canonicalBodyJson(array $body): string
+    {
+        ksort($body);
+
+        return json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    }
+
+    private function pathForSigning(string $endpointUrl): string
+    {
+        $path = parse_url($endpointUrl, PHP_URL_PATH);
+
+        return ($path !== null && $path !== '') ? $path : '/api/v2/invoices/create';
+    }
+
+    /**
+     * @return array{0: Response|null, 1: string|null} Response and checkout URL (payment_url / legacy checkout_url)
+     */
+    private function createInvoiceCheckout(string $endpoint, array $body): array
+    {
+        $secret = $this->apiSigningSecret();
+        if ($secret === '' || ! $this->usesInvoiceCreateV2($endpoint)) {
+            return [null, null];
+        }
+
+        $bodyJson = $this->canonicalBodyJson($body);
+        $path = $this->pathForSigning($endpoint);
+        $timestamp = (string) time();
+        $nonce = bin2hex(random_bytes(16));
+        $canonical = "POST\n{$path}\n{$timestamp}\n{$nonce}\n{$bodyJson}";
+        $signature = hash_hmac('sha256', $canonical, $secret);
+
+        try {
+            $response = Http::acceptJson()
+                ->timeout(30)
+                ->connectTimeout(15)
+                ->withHeaders([
+                    'X-AIFO-Timestamp' => $timestamp,
+                    'X-AIFO-Nonce' => $nonce,
+                    'X-AIFO-Signature' => $signature,
+                    'Content-Type' => 'application/json',
+                ])
+                ->withBody($bodyJson, 'application/json')
+                ->post($endpoint);
+        } catch (\Throwable $e) {
+            Log::error('AIFO v2 invoice request threw', [
+                'endpoint' => $endpoint,
+                'message' => $e->getMessage(),
+            ]);
+
+            return [null, null];
+        }
+
+        if (! $response->successful()) {
+            Log::warning('AIFO v2 invoice request failed', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return [$response, null];
+        }
+
+        $url = $response->json('data.payment_url');
+        if (! is_string($url) || $url === '') {
+            $url = $response->json('checkout_url');
+        }
+
+        return [$response, is_string($url) && $url !== '' ? $url : null];
+    }
+
+    private function extractInvoiceId(?Response $response): ?string
+    {
+        if ($response === null || ! $response->successful()) {
+            return null;
+        }
+
+        $id = $response->json('data.invoice_id');
+        if ($id === null) {
+            $id = $response->json('data.id');
+        }
+        if ($id === null) {
+            $id = $response->json('payment_id');
+        }
+
+        if ($id === null) {
+            return null;
+        }
+
+        return is_scalar($id) ? (string) $id : null;
+    }
+
     public function createPayment(Order $order): Payment
     {
         $checkoutUrl = null;
         $response = null;
 
         $endpoint = $this->apiEndpoint();
-        $apiKey = $this->apiToken();
+        $shopId = $this->shopId();
 
-        if ($endpoint !== '' && $apiKey !== '' && $order->total > 0) {
-            $response = Http::withToken($apiKey)->acceptJson()->post($endpoint, [
-                'order_id' => $order->number,
-                'amount' => (float) $order->total,
-                'currency' => $order->currency,
-                'success_url' => route('checkout.success', $order),
-                'webhook_url' => route('payments.aifo.webhook'),
+        if ($order->total > 0 && $shopId !== null && $this->apiSigningSecret() !== '' && $this->usesInvoiceCreateV2($endpoint)) {
+            [$response, $checkoutUrl] = $this->createInvoiceCheckout($endpoint, [
+                'shop_id' => $shopId,
+                'external_id' => $order->number,
+                'amount_minor' => (int) round(((float) $order->total) * 100),
+                'description' => __('Order :number', ['number' => $order->number]),
             ]);
+        }
 
-            if ($response->successful()) {
+        $apiKey = $this->apiToken();
+        if ($checkoutUrl === null && $endpoint !== '' && $apiKey !== '' && $order->total > 0) {
+            try {
+                $response = Http::withToken($apiKey)->acceptJson()
+                    ->timeout(30)
+                    ->connectTimeout(15)
+                    ->post($endpoint, [
+                        'order_id' => $order->number,
+                        'amount' => (float) $order->total,
+                        'currency' => $order->currency,
+                        'success_url' => route('checkout.success', $order),
+                        'webhook_url' => route('payments.aifo.webhook'),
+                    ]);
+            } catch (\Throwable $e) {
+                Log::error('AIFO legacy order checkout HTTP exception', [
+                    'order_id' => $order->id,
+                    'message' => $e->getMessage(),
+                ]);
+                $response = null;
+            }
+
+            if ($response && $response->successful()) {
                 $checkoutUrl = $response->json('checkout_url');
             }
         }
 
+        $providerPaymentId = 'AIFO-'.strtoupper(str()->random(14));
+        if ($checkoutUrl) {
+            $pid = $this->extractInvoiceId($response);
+            if ($pid === null && $response?->json('payment_id') !== null) {
+                $pid = (string) $response->json('payment_id');
+            }
+            $providerPaymentId = $pid ?? 'AIFO-'.strtoupper(str()->random(14));
+        }
+
         $payment = $order->payment()->create([
             'provider' => 'aifo',
-            'provider_payment_id' => $checkoutUrl ? ($response->json('payment_id') ?? 'AIFO-'.strtoupper(str()->random(14))) : 'AIFO-'.strtoupper(str()->random(14)),
+            'provider_payment_id' => $providerPaymentId,
             'status' => $order->total > 0 ? 'created' : 'paid',
             'amount' => $order->total,
             'currency' => $order->currency,
@@ -118,40 +295,83 @@ class AifoPaymentService
     public function createTipPayment(Tip $tip): ?TipPayment
     {
         $checkoutUrl = null;
+        $response = null;
 
         $endpoint = $this->apiEndpoint();
+        $shopId = $this->shopId();
+        $secret = $this->apiSigningSecret();
         $apiKey = $this->apiToken();
-        if ($endpoint === '' || $apiKey === '') {
+
+        $useV2 = $shopId !== null && $secret !== '' && $this->usesInvoiceCreateV2($endpoint);
+        $useLegacy = $apiKey !== '' && $endpoint !== '';
+
+        if (! $useV2 && ! $useLegacy) {
             return null;
         }
 
         $successUrl = route('tips.success', $tip);
-        $webhookUrl = route('payments.aifo.tips.webhook');
+        $webhookUrl = route('payments.aifo.webhook');
 
-        $response = Http::withToken($apiKey)->acceptJson()->post($endpoint, [
-            'order_id' => 'TIP-'.$tip->id,
-            'amount' => (float) $tip->amount,
-            'currency' => $tip->currency,
-            'success_url' => $successUrl,
-            'webhook_url' => $webhookUrl,
-        ]);
-
-        if ($response->successful()) {
-            $checkoutUrl = $response->json('checkout_url');
-        } else {
-            Log::warning('AIFO tip checkout request failed', [
-                'tip_id' => $tip->id,
-                'status' => $response->status(),
-                'body' => $response->body(),
+        if ($useV2) {
+            [$response, $checkoutUrl] = $this->createInvoiceCheckout($endpoint, [
+                'shop_id' => $shopId,
+                'external_id' => 'TIP-'.$tip->id,
+                'amount_minor' => (int) round(((float) $tip->amount) * 100),
+                'description' => __('Tip for model (:id)', ['id' => $tip->product_id]),
             ]);
+        }
+
+        if ($checkoutUrl === null && $useLegacy) {
+            try {
+                $response = Http::withToken($apiKey)->acceptJson()
+                    ->timeout(30)
+                    ->connectTimeout(15)
+                    ->post($endpoint, [
+                        'order_id' => 'TIP-'.$tip->id,
+                        'amount' => (float) $tip->amount,
+                        'currency' => $tip->currency,
+                        'success_url' => $successUrl,
+                        'webhook_url' => $webhookUrl,
+                    ]);
+            } catch (\Throwable $e) {
+                Log::error('AIFO legacy tip checkout HTTP exception', [
+                    'tip_id' => $tip->id,
+                    'endpoint' => $endpoint,
+                    'message' => $e->getMessage(),
+                ]);
+
+                $response = null;
+            }
+
+            if ($response && $response->successful()) {
+                $checkoutUrl = $response->json('checkout_url');
+            } elseif ($response) {
+                Log::warning('AIFO tip checkout request failed', [
+                    'tip_id' => $tip->id,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+            }
+        } elseif ($checkoutUrl === null && $useV2) {
+            Log::warning('AIFO tip checkout: no payment URL (check response from AIFO / signature)', [
+                'tip_id' => $tip->id,
+                'endpoint' => $endpoint,
+            ]);
+        }
+
+        $providerPaymentId = 'AIFO-TIP-'.strtoupper(str()->random(14));
+        if ($checkoutUrl) {
+            $pid = $this->extractInvoiceId($response);
+            if ($pid === null && $response?->json('payment_id') !== null) {
+                $pid = (string) $response->json('payment_id');
+            }
+            $providerPaymentId = $pid ?? 'AIFO-TIP-'.strtoupper(str()->random(14));
         }
 
         return TipPayment::create([
             'tip_id' => $tip->id,
             'provider' => 'aifo',
-            'provider_payment_id' => $checkoutUrl
-                ? ($response->json('payment_id') ?? 'AIFO-TIP-'.strtoupper(str()->random(14)))
-                : 'AIFO-TIP-'.strtoupper(str()->random(14)),
+            'provider_payment_id' => $providerPaymentId,
             'status' => 'created',
             'amount' => $tip->amount,
             'currency' => $tip->currency,

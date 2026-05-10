@@ -450,8 +450,8 @@
                                 name="settings[payments.aifo_endpoint]"
                                 :label="__('AIFO API endpoint (POST, створення платежу)')"
                                 :value="$val('payments.aifo_endpoint', $val('payments.api_endpoint'))"
-                                :helper="__('Скопіюйте з документації AIFO (наприклад, endpoint «create payment»). Без цього кнопка оплати не відкриє checkout.')"
-                                placeholder="https://..."
+                                :helper="__('Це URL API на aifo.pro для створення інвойсу (наприклад https://aifo.pro/api/v2/invoices/create). Не вставляйте сюди адресу webhook вашого сайту — вона нижче в блоці «Webhook AIFO». Поле можна залишити порожнім: тоді використовується значення за замовчуванням.')"
+                                placeholder="https://aifo.pro/api/v2/invoices/create"
                             />
                         </div>
                         <x-admin.field name="settings[payments.aifo_merchant_id]" label="Merchant ID" :value="$val('payments.aifo_merchant_id', $val('payments.merchant_id'))" />
@@ -463,12 +463,10 @@
 
                 <x-admin.settings-card :title="__('URL-и в кабінеті aifo.pro')" :description="__('У застосунку success/webhook передаються в API при кожному платежі. Нижче — що зазвичай треба вписати в панелі AIFO як базові адреси.')">
                     <div class="mb-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs leading-relaxed text-zinc-400">
-                        <p class="font-bold text-zinc-300">{{ __('Обовʼязкові endpoint-и на 3Dify') }}</p>
-                        <ul class="mt-2 list-disc space-y-1 pl-5">
-                            <li><span class="text-zinc-500">Webhook (замовлення моделей) — POST:</span> <code class="rounded bg-zinc-950/80 px-1.5 py-0.5 font-mono text-[11px] text-emerald-200/90">{{ url('/payments/aifo/webhook') }}</code></li>
-                            <li><span class="text-zinc-500">Webhook (подяки авторам) — POST:</span> <code class="rounded bg-zinc-950/80 px-1.5 py-0.5 font-mono text-[11px] text-emerald-200/90">{{ url('/payments/aifo/tips/webhook') }}</code></li>
-                        </ul>
-                        <p class="mt-3 text-[11px] text-zinc-500">{{ __('Якщо в AIFO можна вказати лише один webhook, орієнтуйтесь на документацію: зазвичай обидва типи платежів проходять через один URL або webhook задається в тілі запиту створення платежу.') }}</p>
+                        <p class="font-bold text-zinc-300">{{ __('Webhook AIFO (один URL на все)') }}</p>
+                        <p class="mt-2">{{ __('У кабінеті AIFO вкажіть лише цей POST webhook — і замовлення моделей, і подяки автору обробляються разом:') }}</p>
+                        <p class="mt-2"><code class="rounded bg-zinc-950/80 px-1.5 py-0.5 font-mono text-[11px] text-emerald-200/90">{{ url('/payments/aifo/webhook') }}</code></p>
+                        <p class="mt-3 text-[11px] text-zinc-500">{{ __('Старий шлях /payments/aifo/tips/webhook ще працює як перенаправлення на той самий обробник, але в панелі AIFO достатньо основного URL.') }}</p>
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <x-admin.field name="settings[payments.webhook_url]" label="Webhook URL (копія для довідки)" :value="$val('payments.webhook_url', url('/payments/aifo/webhook'))" :helper="__('Можна залишити як у кабінеті AIFO.')" />
