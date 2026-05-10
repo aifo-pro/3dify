@@ -69,6 +69,17 @@ class AifoPaymentService
             return '';
         }
 
+        $endpointHost = parse_url($url, PHP_URL_HOST);
+        $appHost = parse_url((string) config('app.url'), PHP_URL_HOST);
+        if (is_string($endpointHost)
+            && is_string($appHost)
+            && $endpointHost !== ''
+            && strcasecmp($endpointHost, $appHost) === 0) {
+            Log::warning('payments.aifo_endpoint points to this application host, not AIFO invoice API — using default.', ['url' => $url]);
+
+            return '';
+        }
+
         return $url;
     }
 
