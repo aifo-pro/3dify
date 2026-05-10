@@ -62,15 +62,54 @@ ssh deploy@YOUR_VPS_IP "3dify-deploy"
 
 This helper does:
 
-1. `php artisan down` (graceful 503)
-2. `git pull --ff-only`
-3. `composer install --no-dev --optimize-autoloader`
-4. `npm ci && npm run build`
-5. `php artisan migrate --force`
-6. cache config/routes/views/events
-7. `systemctl reload php8.3-fpm`
-8. `systemctl restart 3dify-queue.service`
-9. `php artisan up`
+1. checks that tracked server files are clean and stops if they are not
+2. backs up `.env`, `storage/app/public`, and the database when possible
+3. enables `php artisan down` maintenance mode
+4. fetches the selected branch and applies only a fast-forward update
+5. runs `composer install --no-dev --optimize-autoloader`
+6. runs `npm ci && npm run build`
+7. runs `php artisan optimize:clear`, `migrate --force`, `storage:link`
+8. caches config/routes/views/events
+9. restarts Laravel queues and optional systemd services
+10. brings the app back with `php artisan up`
+
+Install/update the deploy command from GitHub:
+
+```bash
+sudo wget -qO /usr/local/bin/3dify-deploy \
+  https://raw.githubusercontent.com/aifo-pro/3dify/main/deploy/3dify-deploy.sh
+sudo chmod +x /usr/local/bin/3dify-deploy
+```
+
+Run with explicit service names if your server uses different ones:
+
+```bash
+sudo APP_DIR=/var/www/3dify \
+  DEPLOY_BRANCH=main \
+  PHP_FPM_SERVICE=php8.4-fpm \
+  QUEUE_SERVICE=3dify-queue.service \
+  3dify-deploy
+```
+
+The generic script can also be run directly from the project directory:
+
+```bash
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh
+```
+
+Useful deploy flags:
+
+| Variable | Default | Notes |
+| -------- | ------- | ----- |
+| `DEPLOY_BRANCH` | `main` | branch to pull |
+| `BACKUP_DIR` | `storage/backups/deploy` | deploy backup location |
+| `SKIP_BACKUP` | `0` | set `1` only if you have external backups |
+| `SKIP_NPM` | `0` | skip frontend build |
+| `SKIP_COMPOSER` | `0` | skip PHP dependencies |
+| `SKIP_MIGRATE` | `0` | skip migrations |
+| `RUN_TESTS` | `0` | run `php artisan test` before app up |
+| `DEPLOY_HEALTH_URL` | empty | URL to check after deploy |
 
 ## Tweaks
 
