@@ -64,13 +64,23 @@
 
     @if (session('status'))
         <div class="mx-auto mt-4 max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100 shadow-lg shadow-emerald-500/10">{{ session('status') }}</div>
+            <div class="flex gap-3 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.07] px-4 py-3.5 text-sm text-emerald-50 shadow-xl shadow-black/15 backdrop-blur-sm">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-emerald-300/30 bg-emerald-400/[0.12] text-emerald-200">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11"/></svg>
+                </span>
+                <p class="min-w-0 flex-1 pt-0.5 leading-relaxed text-emerald-50/95">{{ session('status') }}</p>
+            </div>
         </div>
     @endif
 
     @if (session('error'))
         <div class="mx-auto mt-4 max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="rounded-2xl border border-rose-400/35 bg-rose-500/10 px-4 py-3 text-sm text-rose-100 shadow-lg shadow-rose-500/10">{{ session('error') }}</div>
+            <div role="alert" class="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 shadow-xl shadow-black/25 backdrop-blur-sm">
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-amber-300/25 bg-amber-400/[0.08] text-amber-200">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </span>
+                <p class="min-w-0 flex-1 pt-0.5 text-sm leading-relaxed text-zinc-200">{{ session('error') }}</p>
+            </div>
         </div>
     @endif
 
