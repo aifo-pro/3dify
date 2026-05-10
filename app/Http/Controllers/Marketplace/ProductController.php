@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -82,18 +83,25 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         abort_unless($product->status === 'published' || auth()->id() === $product->user_id || auth()->user()?->canModerate(), 404);
-        $product->increment('views_count');
+        try {
+            $product->increment('views_count');
 
         // Daily aggregate for analytics. Insert-if-missing then increment — works on SQLite/MySQL alike.
-        $today = now()->toDateString();
-        $existing = DB::table('product_view_stats')->where('product_id', $product->id)->where('date', $today)->first();
-        if ($existing) {
-            DB::table('product_view_stats')->where('id', $existing->id)->update(['count' => $existing->count + 1, 'updated_at' => now()]);
-        } else {
-            DB::table('product_view_stats')->insert(['product_id' => $product->id, 'date' => $today, 'count' => 1, 'created_at' => now(), 'updated_at' => now()]);
+            $today = now()->toDateString();
+            $existing = DB::table('product_view_stats')->where('product_id', $product->id)->where('date', $today)->first();
+            if ($existing) {
+                DB::table('product_view_stats')->where('id', $existing->id)->update(['count' => $existing->count + 1, 'updated_at' => now()]);
+            } else {
+                DB::table('product_view_stats')->insert(['product_id' => $product->id, 'date' => $today, 'count' => 1, 'created_at' => now(), 'updated_at' => now()]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Product view analytics failed', [
+                'product_id' => $product->id,
+                'message' => $e->getMessage(),
+            ]);
         }
 
-        $product->load(['author', 'category', 'license', 'tags', 'files']);
+        $product->load(['author', 'category', 'license', 'commercialLicense', 'tags', 'files', 'previewFile']);
 
         // Approved makes for everyone + own pending makes for the uploader.
         $makes = $product->makes()

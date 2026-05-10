@@ -44,17 +44,40 @@
     $avgRating = $reviews->isNotEmpty() ? round($reviews->avg('rating'), 1) : null;
     $reviewsCount = $reviews->count();
     $userReview = auth()->check() ? $reviews->firstWhere('user_id', auth()->id()) : null;
+    $authorName = $product->author?->name ?? __('3Dify author');
+    $publicUrl = function (?string $path): ?string {
+        if (! is_string($path) || trim($path) === '') {
+            return null;
+        }
+
+        try {
+            return Storage::disk('public')->exists($path) ? Storage::disk('public')->url($path) : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    };
+    $diskUrl = function (?string $disk, ?string $path): ?string {
+        if (! is_string($disk) || ! is_string($path) || trim($path) === '') {
+            return null;
+        }
+
+        try {
+            return Storage::disk($disk)->url($path);
+        } catch (\Throwable) {
+            return null;
+        }
+    };
 
     $imagePreview = $product->previewFile && in_array($product->previewFile->extension, ['png', 'jpg', 'jpeg', 'webp', 'gif'], true)
         ? $product->previewFile
         : null;
     $modelPreview = $product->previewFile && ! $imagePreview ? $product->previewFile : null;
-    $galleryImages = collect($product->gallery ?? []);
-    $coverImage = $product->cover_path && Storage::disk('public')->exists($product->cover_path)
-        ? Storage::disk('public')->url($product->cover_path)
-        : ($galleryImages->first() && Storage::disk('public')->exists($galleryImages->first())
-            ? Storage::disk('public')->url($galleryImages->first())
-            : ($imagePreview ? Storage::disk($imagePreview->disk)->url($imagePreview->path) : null));
+    $galleryImages = collect($product->gallery ?? [])
+        ->filter(fn ($image) => is_string($image) && trim($image) !== '')
+        ->values();
+    $coverImage = $publicUrl($product->cover_path)
+        ?: $publicUrl($galleryImages->first())
+        ?: ($imagePreview ? $diskUrl($imagePreview->disk, $imagePreview->path) : null);
 @endphp
 
 <x-layouts.marketplace
@@ -73,7 +96,7 @@
         'description' => $product->localized('short_description') ?: $product->localized('description'),
         'image' => $coverImage,
         'sku' => 'P-'.$product->id,
-        'brand' => ['@type' => 'Brand', 'name' => $product->author->name],
+        'brand' => ['@type' => 'Brand', 'name' => $authorName],
         'category' => $product->category?->localized('name'),
         'offers' => [
             '@type' => 'Offer',
@@ -138,9 +161,10 @@
                             </a>
                         @endif
                         @foreach($galleryImages as $image)
-                            @if(Storage::disk('public')->exists($image))
-                                <a href="{{ Storage::disk('public')->url($image) }}" target="_blank" class="group overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
-                                    <img src="{{ Storage::disk('public')->url($image) }}" alt="{{ $product->localized('title') }}" class="aspect-video w-full object-cover transition group-hover:scale-105">
+                            @php $galleryUrl = $publicUrl($image); @endphp
+                            @if($galleryUrl)
+                                <a href="{{ $galleryUrl }}" target="_blank" class="group overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
+                                    <img src="{{ $galleryUrl }}" alt="{{ $product->localized('title') }}" class="aspect-video w-full object-cover transition group-hover:scale-105">
                                 </a>
                             @endif
                         @endforeach
@@ -198,7 +222,7 @@
                     @endif
 
                     <div class="mt-6 grid gap-3 rounded-3xl border border-white/10 bg-zinc-950/60 p-4 text-sm">
-                        <div class="flex justify-between gap-4"><span class="text-zinc-500">{{ __('Автор') }}</span><span class="text-right text-white">{{ $product->author->name }}</span></div>
+                        <div class="flex justify-between gap-4"><span class="text-zinc-500">{{ __('Автор') }}</span><span class="text-right text-white">{{ $authorName }}</span></div>
                         @if($product->license)
                             <div class="flex items-center justify-between gap-4">
                                 <span class="text-zinc-500">{{ __('Ліцензія') }}</span>
@@ -500,8 +524,8 @@
                         <div>
                             <dt class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">{{ __('Автор') }}</dt>
                             <dd class="mt-1.5 flex items-center gap-2">
-                                <span class="grid h-7 w-7 place-items-center rounded-full bg-emerald-400 text-xs font-black text-zinc-950">{{ mb_strtoupper(mb_substr($product->author->name, 0, 1)) }}</span>
-                                <span class="text-sm font-semibold text-white">{{ $product->author->name }}</span>
+                                <span class="grid h-7 w-7 place-items-center rounded-full bg-emerald-400 text-xs font-black text-zinc-950">{{ mb_strtoupper(mb_substr($authorName, 0, 1)) }}</span>
+                                <span class="text-sm font-semibold text-white">{{ $authorName }}</span>
                             </dd>
                         </div>
                         @if($product->tags->isNotEmpty())
