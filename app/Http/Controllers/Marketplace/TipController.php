@@ -10,6 +10,7 @@ use App\Services\AifoPaymentService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class TipController extends Controller
 {
@@ -150,6 +151,10 @@ class TipController extends Controller
             $userError = __('Тимчасова помилка при оплаті подяки. Якщо вона повторюється, перевірте лог сервера та міграції бази (таблиці tips / tip_payments).');
             if ($e instanceof QueryException) {
                 $userError = __('Помилка бази даних при збереженні оплати. На сервері виконайте: php artisan migrate --force (потрібні таблиці tips та tip_payments). Далі перегляньте storage/logs/laravel.log.');
+            }
+
+            if (config('app.debug')) {
+                $userError .= ' '.Str::limit('['.$e::class.'] '.$e->getMessage(), 400);
             }
 
             try {
