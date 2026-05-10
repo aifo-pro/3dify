@@ -5,6 +5,7 @@ namespace Tests\Feature\Marketplace;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\Tip;
+use App\Models\TipPayment;
 use App\Models\User;
 use App\Notifications\NewTipNotification;
 use App\Services\PayoutService;
@@ -245,6 +246,123 @@ class TipTest extends TestCase
 
         Http::assertNothingSent();
         $this->assertSame(0, Tip::query()->count());
+    }
+
+    public function test_tip_checkout_falls_back_to_direct_aifo_pay_url_when_invoice_api_returns_404(): void
+    {
+        Http::fake([
+            'https://aifo.pro/api/v2/invoices/create' => Http::response('<html>404</html>', 404),
+        ]);
+
+        Setting::query()->create([
+            'group' => 'payments',
+            'key' => 'payments.aifo_endpoint',
+            'value' => 'https://aifo.pro/api/v2/invoices/create',
+        ]);
+        Setting::query()->create([
+            'group' => 'payments',
+            'key' => 'payments.aifo_merchant_id',
+            'value' => '34',
+        ]);
+        Setting::query()->create([
+            'group' => 'payments',
+            'key' => 'payments.aifo_webhook_secret',
+            'value' => 'direct-secret',
+        ]);
+
+        $author = User::factory()->create();
+        $buyer = User::factory()->create();
+        $product = Product::query()->create([
+            'user_id' => $author->id,
+            'slug' => 'tip-direct-pay',
+            'title' => ['uk' => 'Direct', 'en' => 'Direct'],
+            'description' => ['uk' => 'D', 'en' => 'D'],
+            'status' => 'published',
+            'price' => 0,
+            'currency' => 'UAH',
+            'is_free' => true,
+            'published_at' => now(),
+        ]);
+
+        $response = $this->actingAs($buyer)
+            ->post(route('products.tip', $product), ['amount' => 50]);
+
+        $tip = Tip::query()->firstOrFail();
+        $amount = '50.00';
+        $payId = 'TIP-'.$tip->id;
+        $sign = hash('sha256', "34:{$amount}:direct-secret:{$payId}");
+
+        $response->assertRedirect('https://aifo.pro/pay/?'.http_build_query([
+            'shop_id' => 34,
+            'pay_id' => $payId,
+            'amount' => $amount,
+            'sign' => $sign,
+        ], '', '&', PHP_QUERY_RFC3986));
+
+        $this->assertDatabaseHas('tip_payments', [
+            'tip_id' => $tip->id,
+            'provider_payment_id' => $payId,
+            'status' => 'created',
+        ]);
+    }
+
+    public function test_direct_aifo_tip_webhook_marks_tip_paid_and_adds_author_balance(): void
+    {
+        Notification::fake();
+
+        Setting::query()->create([
+            'group' => 'payments',
+            'key' => 'payments.aifo_webhook_secret',
+            'value' => 'direct-secret',
+        ]);
+
+        $author = User::factory()->create();
+        $buyer = User::factory()->create();
+        $product = Product::query()->create([
+            'user_id' => $author->id,
+            'slug' => 'tip-direct-webhook',
+            'title' => ['uk' => 'Direct webhook', 'en' => 'Direct webhook'],
+            'description' => ['uk' => 'D', 'en' => 'D'],
+            'status' => 'published',
+            'price' => 0,
+            'currency' => 'UAH',
+            'is_free' => true,
+            'published_at' => now(),
+        ]);
+        $tip = Tip::query()->create([
+            'product_id' => $product->id,
+            'author_id' => $author->id,
+            'user_id' => $buyer->id,
+            'amount' => 50,
+            'currency' => 'UAH',
+            'status' => Tip::STATUS_PENDING,
+        ]);
+        TipPayment::query()->create([
+            'tip_id' => $tip->id,
+            'provider' => 'aifo',
+            'provider_payment_id' => 'TIP-'.$tip->id,
+            'status' => 'created',
+            'amount' => 50,
+            'currency' => 'UAH',
+            'payload' => [],
+        ]);
+
+        $payload = [
+            'shop_id' => '34',
+            'invoice' => 'TIP-'.$tip->id,
+            'sum' => '50.00',
+            'status' => 'paid',
+            'http_auth_signature' => hash('sha256', '34:50.00:direct-secret:TIP-'.$tip->id),
+        ];
+
+        $this->post(route('payments.aifo.webhook'), $payload)->assertOk();
+
+        $this->assertDatabaseHas('tips', [
+            'id' => $tip->id,
+            'status' => Tip::STATUS_PAID,
+        ]);
+        $this->assertSame(50.0, app(PayoutService::class)->availableBalance($author));
+        Notification::assertSentTo($author, NewTipNotification::class);
     }
 
     public function test_when_aifo_not_configured_redirects_to_product_with_error(): void

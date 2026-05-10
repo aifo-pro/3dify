@@ -43,13 +43,26 @@ class PaymentWebhookController extends Controller
             return;
         }
 
+        $directSignature = $request->input('http_auth_signature');
+        $invoice = $request->input('invoice') ?? $request->input('pay_id');
+        $sum = $request->input('sum') ?? $request->input('amount');
+        $shopId = $request->input('shop_id');
+        if (is_scalar($directSignature) && is_scalar($invoice) && is_scalar($sum) && is_scalar($shopId)) {
+            $sumString = number_format((float) $sum, 2, '.', '');
+            $expected = hash('sha256', "{$shopId}:{$sumString}:{$secret}:{$invoice}");
+
+            abort_unless(hash_equals($expected, (string) $directSignature), 403);
+
+            return;
+        }
+
         $expected = hash_hmac('sha256', $request->getContent(), $secret);
         abort_unless(hash_equals($expected, (string) $request->header('X-Aifo-Signature')), 403);
     }
 
     private function referenceFromRequest(Request $request): ?string
     {
-        $ref = $request->input('payment_id') ?? $request->input('invoice') ?? $request->input('invoice_id');
+        $ref = $request->input('payment_id') ?? $request->input('invoice') ?? $request->input('invoice_id') ?? $request->input('pay_id');
         if ($ref === null || $ref === '') {
             return null;
         }
@@ -77,6 +90,17 @@ class PaymentWebhookController extends Controller
         $ref = $this->referenceFromRequest($request);
         if ($ref === null) {
             return null;
+        }
+
+        if (str_starts_with($ref, 'TIP-')) {
+            $tipId = (int) substr($ref, 4);
+            if ($tipId > 0) {
+                return TipPayment::query()
+                    ->where('tip_id', $tipId)
+                    ->where('provider', 'aifo')
+                    ->latest('id')
+                    ->first();
+            }
         }
 
         return TipPayment::where('provider_payment_id', $ref)->first();

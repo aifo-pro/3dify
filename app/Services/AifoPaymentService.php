@@ -294,10 +294,34 @@ class AifoPaymentService
         return is_scalar($id) ? (string) $id : null;
     }
 
+    /**
+     * AIFO public docs also support direct checkout links:
+     * https://aifo.pro/pay/?shop_id=ID&pay_id=PAY_ID&amount=AMOUNT&sign=SHA256(shop_id:amount:secret:pay_id)
+     */
+    private function directCheckoutUrl(string $payId, float $amount): ?string
+    {
+        $shopId = $this->shopId();
+        $secret = $this->apiSigningSecret();
+        if ($shopId === null || $secret === '' || $amount <= 0) {
+            return null;
+        }
+
+        $amountString = number_format($amount, 2, '.', '');
+        $signature = hash('sha256', "{$shopId}:{$amountString}:{$secret}:{$payId}");
+
+        return 'https://aifo.pro/pay/?'.http_build_query([
+            'shop_id' => $shopId,
+            'pay_id' => $payId,
+            'amount' => $amountString,
+            'sign' => $signature,
+        ], '', '&', PHP_QUERY_RFC3986);
+    }
+
     public function createPayment(Order $order): Payment
     {
         $checkoutUrl = null;
         $response = null;
+        $directPayId = $order->number;
 
         $endpoint = $this->apiEndpoint();
         $shopId = $this->shopId();
@@ -338,7 +362,11 @@ class AifoPaymentService
             }
         }
 
-        $providerPaymentId = 'AIFO-'.strtoupper(str()->random(14));
+        if ($checkoutUrl === null && $order->total > 0) {
+            $checkoutUrl = $this->directCheckoutUrl($directPayId, (float) $order->total);
+        }
+
+        $providerPaymentId = $directPayId ?: 'AIFO-'.strtoupper(str()->random(14));
         if ($checkoutUrl) {
             $pid = $this->extractInvoiceId($response);
             if ($pid === null && $response?->json('payment_id') !== null) {
@@ -375,6 +403,7 @@ class AifoPaymentService
     {
         $checkoutUrl = null;
         $response = null;
+        $directPayId = 'TIP-'.$tip->id;
 
         $endpoint = $this->apiEndpoint();
         $shopId = $this->shopId();
@@ -404,7 +433,7 @@ class AifoPaymentService
         if ($useV2) {
             [$response, $checkoutUrl] = $this->createInvoiceCheckout($endpoint, [
                 'shop_id' => $shopId,
-                'external_id' => 'TIP-'.$tip->id,
+                'external_id' => $directPayId,
                 'amount_minor' => (int) round(((float) $tip->amount) * 100),
                 'description' => __('Tip for model (:id)', ['id' => $tip->product_id]),
             ]);
@@ -416,7 +445,7 @@ class AifoPaymentService
                     ->timeout(30)
                     ->connectTimeout(15)
                     ->post($endpoint, [
-                        'order_id' => 'TIP-'.$tip->id,
+                        'order_id' => $directPayId,
                         'amount' => (float) $tip->amount,
                         'currency' => $tip->currency,
                         'success_url' => $successUrl,
@@ -448,13 +477,17 @@ class AifoPaymentService
             ]);
         }
 
-        $providerPaymentId = 'AIFO-TIP-'.strtoupper(str()->random(14));
+        if ($checkoutUrl === null) {
+            $checkoutUrl = $this->directCheckoutUrl($directPayId, (float) $tip->amount);
+        }
+
+        $providerPaymentId = $directPayId;
         if ($checkoutUrl) {
             $pid = $this->extractInvoiceId($response);
             if ($pid === null && $response?->json('payment_id') !== null) {
                 $pid = (string) $response->json('payment_id');
             }
-            $providerPaymentId = $pid ?? 'AIFO-TIP-'.strtoupper(str()->random(14));
+            $providerPaymentId = $pid ?? $directPayId;
         }
 
         return TipPayment::create([
