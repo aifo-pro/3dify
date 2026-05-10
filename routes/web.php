@@ -41,6 +41,8 @@ use App\Http\Controllers\Marketplace\ReportController;
 use App\Http\Controllers\Marketplace\ReviewController;
 use App\Http\Controllers\Marketplace\SitemapController;
 use App\Http\Controllers\Marketplace\TipController;
+use App\Http\Controllers\Marketplace\TipPaymentWebhookController;
+use App\Http\Controllers\Marketplace\TipSuccessController;
 use App\Http\Controllers\Marketplace\WishlistController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\PromoCodeAdminController;
@@ -72,6 +74,7 @@ Route::get('/page/{slug}', [PageController::class, 'show'])
     ->name('pages.show');
 
 Route::post('/payments/aifo/webhook', PaymentWebhookController::class)->name('payments.aifo.webhook');
+Route::post('/payments/aifo/tips/webhook', TipPaymentWebhookController::class)->name('payments.aifo.tips.webhook');
 
 // Signed download for slicer custom-protocol opens. Auth is via short-lived URL signature
 // (5 min) that is generated server-side only after MarketplaceAccess passes.
@@ -154,6 +157,7 @@ Route::middleware('auth')->group(function () {
 
     // Tips (donate to author for any model, free or paid); POST requires login.
     Route::post('/models/{product:slug}/tip', [TipController::class, 'store'])->name('products.tip');
+    Route::get('/tips/{tip}/success', TipSuccessController::class)->name('tips.success');
 
     // Refund requests
     Route::get('/refunds', [RefundRequestController::class, 'index'])->name('refunds.index');

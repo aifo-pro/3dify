@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Marketplace;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Tip;
-use App\Notifications\NewTipNotification;
+use App\Services\AifoPaymentService;
 use Illuminate\Http\Request;
 
 class TipController extends Controller
@@ -15,7 +15,7 @@ class TipController extends Controller
         return redirect()->route('products.show', $product);
     }
 
-    public function store(Request $request, Product $product)
+    public function store(Request $request, Product $product, AifoPaymentService $payments)
     {
         abort_unless($product->status === 'published', 404);
         abort_if($product->user_id === $request->user()->id, 422, __('Не можна задонатити самому собі.'));
@@ -25,8 +25,6 @@ class TipController extends Controller
             'message' => ['nullable', 'string', 'max:280'],
         ]);
 
-        // Local marketplace mode: mark tips as paid immediately. Paid tips are
-        // included in PayoutService and become available in the author's balance.
         $tip = Tip::create([
             'product_id' => $product->id,
             'author_id' => $product->user_id,
@@ -34,15 +32,13 @@ class TipController extends Controller
             'amount' => $data['amount'],
             'currency' => 'UAH',
             'message' => $data['message'] ?? null,
-            'status' => Tip::STATUS_PAID,
+            'status' => Tip::STATUS_PENDING,
         ]);
 
-        $product->author?->notify(new NewTipNotification($tip));
+        $tipPayment = $payments->createTipPayment($tip);
+        $checkoutUrl = (string) ($tipPayment->payload['checkout_url'] ?? '');
+        abort_if($checkoutUrl === '', 502, __('AIFO не повернув посилання на оплату. Спробуйте ще раз.'));
 
-        return redirect()
-            ->route('products.show', $product)
-            ->with('status', __('Дякуємо! :amount грн зараховано на баланс автора.', [
-                'amount' => number_format((float) $data['amount'], 2, '.', ' '),
-            ]));
+        return redirect()->away($checkoutUrl);
     }
 }

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Tip;
+use App\Models\TipPayment;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 
@@ -50,6 +52,48 @@ class AifoPaymentService
         return $payment;
     }
 
+    public function createTipPayment(Tip $tip): TipPayment
+    {
+        $checkoutUrl = null;
+        $response = null;
+
+        $endpoint = app(SiteSettings::class)->string('payments.aifo_endpoint');
+        $apiKey = app(SiteSettings::class)->string('payments.aifo_api_key');
+        abort_if($endpoint === '' || $apiKey === '', 503, __('Оплата тимчасово недоступна. Адміністратор не налаштував AIFO.'));
+
+        $successUrl = route('tips.success', $tip);
+        $webhookUrl = route('payments.aifo.tips.webhook');
+
+        $response = Http::withToken($apiKey)->acceptJson()->post($endpoint, [
+            'order_id' => 'TIP-'.$tip->id,
+            'amount' => (float) $tip->amount,
+            'currency' => $tip->currency,
+            'success_url' => $successUrl,
+            'webhook_url' => $webhookUrl,
+        ]);
+
+        if ($response->successful()) {
+            $checkoutUrl = $response->json('checkout_url');
+        }
+
+        return TipPayment::create([
+            'tip_id' => $tip->id,
+            'provider' => 'aifo',
+            'provider_payment_id' => $checkoutUrl
+                ? ($response->json('payment_id') ?? 'AIFO-TIP-'.strtoupper(str()->random(14)))
+                : 'AIFO-TIP-'.strtoupper(str()->random(14)),
+            'status' => 'created',
+            'amount' => $tip->amount,
+            'currency' => $tip->currency,
+            'payload' => [
+                'merchant_id' => Setting::value('payments.aifo_merchant_id', 'demo'),
+                'checkout_url' => $checkoutUrl,
+                'success_url' => $successUrl,
+                'webhook_url' => $webhookUrl,
+            ],
+        ]);
+    }
+
     public function markPaid(Payment $payment, array $payload = []): void
     {
         $payment->update([
@@ -60,6 +104,18 @@ class AifoPaymentService
         $payment->order->update([
             'status' => 'paid',
             'paid_at' => now(),
+        ]);
+    }
+
+    public function markTipPaid(TipPayment $payment, array $payload = []): void
+    {
+        $payment->update([
+            'status' => 'paid',
+            'payload' => array_merge($payment->payload ?? [], $payload),
+        ]);
+
+        $payment->tip->update([
+            'status' => Tip::STATUS_PAID,
         ]);
     }
 }
