@@ -8,6 +8,7 @@ use App\Models\LegalPage;
 use App\Models\SeoPage;
 use App\Models\Setting;
 use App\Models\Translation;
+use App\Services\EmailTemplateRenderer;
 use App\Services\SiteSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -26,7 +27,7 @@ class ContentController extends Controller
             'emailTemplates' => EmailTemplate::orderBy('key')->orderBy('locale')->get(),
             'legalPages' => LegalPage::orderBy('slug')->orderBy('locale')->get(),
             'legalSlugs' => LegalPage::defaultSlugs(),
-            'emailPlaceholderMap' => self::emailPlaceholderMap(),
+            'emailPlaceholderMap' => EmailTemplateRenderer::placeholderMap(),
         ]);
     }
 
@@ -37,43 +38,7 @@ class ContentController extends Controller
      */
     public static function emailPlaceholderMap(): array
     {
-        $c = [
-            '{{ site.name }}',
-            '{{ site.url }}',
-        ];
-        $user = [
-            '{{ user.name }}',
-            '{{ user.email }}',
-        ];
-        $order = [
-            '{{ order.number }}',
-            '{{ order.total }}',
-            '{{ order.currency }}',
-        ];
-        $product = [
-            '{{ product.title }}',
-            '{{ product.url }}',
-        ];
-
-        return [
-            'registration' => array_values(array_unique(array_merge($c, $user))),
-            'email_verification' => array_values(array_unique(array_merge($c, $user, [
-                '{{ link }}',
-                '{{ verification.url }}',
-                '{{ verification.expires_minutes }}',
-            ]))),
-            'password_reset' => array_values(array_unique(array_merge($c, $user, [
-                '{{ link }}',
-                '{{ reset.url }}',
-                '{{ reset.expires_minutes }}',
-            ]))),
-            'purchase_success' => array_values(array_unique(array_merge($c, $user, $order))),
-            'model_sold' => array_values(array_unique(array_merge($c, $user, $order, $product))),
-            'model_approved' => array_values(array_unique(array_merge($c, $user, $product))),
-            'model_rejected' => array_values(array_unique(array_merge($c, $user, $product, [
-                '{{ moderation.note }}',
-            ]))),
-        ];
+        return EmailTemplateRenderer::placeholderMap();
     }
 
     /**

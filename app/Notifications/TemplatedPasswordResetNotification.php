@@ -2,9 +2,9 @@
 
 namespace App\Notifications;
 
-use App\Mail\RenderedTemplateMail;
 use App\Services\EmailTemplateRenderer;
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
@@ -27,7 +27,7 @@ class TemplatedPasswordResetNotification extends Notification
         return ['mail'];
     }
 
-    public function toMail(object $notifiable): RenderedTemplateMail
+    public function toMail(object $notifiable): MailMessage
     {
         $locale = $notifiable->locale ?: app()->getLocale();
         $url = url(route('password.reset', [
@@ -48,7 +48,8 @@ class TemplatedPasswordResetNotification extends Notification
             ],
         ], $locale);
 
-        return (new RenderedTemplateMail($rendered['subject'], $rendered['body']))
-            ->to($notifiable->routeNotificationFor('mail'));
+        return (new MailMessage)
+            ->subject($rendered['subject'])
+            ->view('emails.templated', ['body' => $rendered['body']]);
     }
 }
