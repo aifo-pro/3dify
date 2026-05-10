@@ -297,30 +297,82 @@
                     {{-- Tip jar (any logged-in user except the author can tip) --}}
                     @auth
                         @if($product->user_id !== auth()->id())
-                            <div class="mt-4 rounded-2xl border border-amber-300/30 bg-gradient-to-br from-amber-500/[0.08] to-rose-500/[0.06] p-4" x-data="{ open: false, amount: 100, msg: '' }">
-                                <div class="flex items-center justify-between gap-3">
-                                    <div class="flex items-center gap-2 text-sm font-bold text-amber-100">
-                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                                        {{ __('Подякувати автору') }}
+                            <x-ui.card class="mt-4 p-4" x-data="{ open: false, amount: 100, msg: '' }">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-2 text-sm font-bold text-white">
+                                            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-2xl border border-amber-300/25 bg-amber-300/[0.10] text-amber-200 shadow-lg shadow-amber-500/10">
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                            </span>
+                                            <span class="truncate">{{ __('Подякувати автору') }}</span>
+                                        </div>
+                                        <p class="mt-1 text-xs leading-5 text-zinc-400">{{ __('Підтримайте автора, навіть якщо модель безкоштовна.') }}</p>
                                     </div>
-                                    <button type="button" @click="open = !open" class="text-xs font-bold text-amber-200 hover:text-amber-100" x-text="open ? @js(__('Сховати')) : @js(__('Відкрити'))"></button>
+
+                                    <button
+                                        type="button"
+                                        @click="open = !open"
+                                        class="shrink-0 inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 text-xs font-bold text-zinc-200 transition hover:border-amber-300/25 hover:bg-amber-300/[0.08] hover:text-amber-100"
+                                    >
+                                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path x-show="!open" d="M12 5v14"/><path x-show="!open" d="M5 12h14"/>
+                                            <path x-show="open" d="M5 12h14"/>
+                                        </svg>
+                                        <span x-text="open ? @js(__('Сховати')) : @js(__('Підтримати'))"></span>
+                                    </button>
                                 </div>
-                                <p class="mt-1 text-xs text-amber-200/80">{{ __('Підтримайте автора, навіть якщо модель безкоштовна.') }}</p>
-                                <form x-show="open" x-cloak method="POST" action="{{ route('products.tip', $product) }}" class="mt-3 grid gap-2">
+
+                                <form x-show="open" x-cloak method="POST" action="{{ route('products.tip', $product) }}" class="mt-4 grid gap-3">
                                     @csrf
-                                    <div class="flex gap-1.5">
-                                        @foreach([50, 100, 200, 500] as $preset)
-                                            <button type="button" @click="amount = {{ $preset }}" :class="amount == {{ $preset }} ? 'border-amber-300 bg-amber-300/[0.18] text-amber-100' : 'border-white/10 bg-white/[0.04] text-zinc-300 hover:border-amber-300/40'" class="h-9 flex-1 rounded-xl border text-xs font-bold transition">{{ $preset }} грн</button>
-                                        @endforeach
+
+                                    <div class="grid gap-2">
+                                        <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Оберіть суму') }}</p>
+                                        <div class="grid grid-cols-4 gap-2">
+                                            @foreach([50, 100, 200, 500] as $preset)
+                                                <button
+                                                    type="button"
+                                                    @click="amount = {{ $preset }}"
+                                                    :class="amount == {{ $preset }} ? 'border-amber-300/40 bg-amber-300/[0.12] text-amber-100' : 'border-white/10 bg-white/[0.04] text-zinc-300 hover:border-white/20 hover:bg-white/[0.07]'"
+                                                    class="h-10 rounded-2xl border text-xs font-bold transition"
+                                                >{{ $preset }} грн</button>
+                                            @endforeach
+                                        </div>
                                     </div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-200/70">{{ __('Сума, грн') }}</span>
-                                        <input type="number" name="amount" min="10" max="50000" step="1" x-model.number="amount" class="h-10 flex-1 rounded-xl border border-white/10 bg-zinc-950/60 px-3 text-center font-mono text-sm font-bold text-white focus:border-amber-300 focus:ring-1 focus:ring-amber-300/40">
+
+                                    <div class="grid gap-1.5">
+                                        <span class="text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Сума, грн') }}</span>
+                                        <div class="relative">
+                                            <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-amber-300/70">₴</span>
+                                            <input
+                                                type="number"
+                                                name="amount"
+                                                min="10"
+                                                max="50000"
+                                                step="1"
+                                                x-model.number="amount"
+                                                class="h-11 w-full rounded-2xl border border-white/10 bg-zinc-950/40 pl-8 pr-3 text-center font-mono text-sm font-bold text-white placeholder:text-zinc-500 focus:border-amber-300/40 focus:ring-1 focus:ring-amber-300/30"
+                                            >
+                                        </div>
                                     </div>
-                                    <input type="text" name="message" maxlength="280" x-model="msg" placeholder="{{ __('Повідомлення (необов\'язково)') }}" class="h-10 rounded-xl border border-white/10 bg-zinc-950/60 px-3 text-xs text-white placeholder:text-zinc-500">
-                                    <button class="h-10 rounded-xl bg-amber-300 text-xs font-bold text-zinc-900 hover:bg-amber-200">{{ __('Надіслати подяку') }}</button>
+
+                                    <div class="grid gap-1.5">
+                                        <span class="text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Повідомлення (необовʼязково)') }}</span>
+                                        <input
+                                            type="text"
+                                            name="message"
+                                            maxlength="280"
+                                            x-model="msg"
+                                            placeholder="{{ __('Напр. “Дякую за модель!”') }}"
+                                            class="h-11 rounded-2xl border border-white/10 bg-zinc-950/40 px-3 text-sm text-white placeholder:text-zinc-500 focus:border-amber-300/40 focus:ring-1 focus:ring-amber-300/30"
+                                        >
+                                    </div>
+
+                                    <button class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-amber-300 px-5 text-sm font-black text-zinc-950 shadow-lg shadow-amber-500/25 transition hover:bg-amber-200">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                        {{ __('Перейти до оплати') }}
+                                    </button>
                                 </form>
-                            </div>
+                            </x-ui.card>
                         @endif
                     @endauth
 
