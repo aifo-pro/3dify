@@ -100,14 +100,13 @@
             @endphp
             <div
                 x-data="{ country: @js($selectedCountry), countries: @js($countryOptions) }"
-                class="mt-4 rounded-3xl border border-white/10 bg-white/[0.035] p-4"
+                class="mt-4 rounded-3xl border border-white/10 bg-white/[0.035] p-5"
             >
                 <div class="grid gap-4 md:grid-cols-2">
                     <label class="grid gap-2 text-sm font-medium text-zinc-200">
                         <span>{{ __('Країна') }}</span>
-                        <div class="relative">
-                            <span class="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-lg" x-text="countries[country]?.flag || '🌍'">{{ $selectedCountryMeta['flag'] ?? '🌍' }}</span>
-                            <select name="country_code" x-model="country" class="h-13 w-full appearance-none rounded-2xl border border-white/10 bg-zinc-950/80 py-3 pl-12 pr-11 text-white shadow-inner shadow-black/20 transition focus:border-emerald-300 focus:ring-emerald-300">
+                        <div class="relative min-w-0">
+                            <select name="country_code" x-model="country" class="h-14 w-full appearance-none rounded-2xl border border-white/10 bg-zinc-950/80 px-4 py-3 pr-12 text-sm font-semibold text-white shadow-inner shadow-black/20 transition focus:border-emerald-300 focus:ring-emerald-300">
                                 <option value="">{{ __('Оберіть країну') }}</option>
                                 @foreach($countryOptions as $code => $country)
                                     <option value="{{ $code }}">{{ $country[app()->getLocale()] ?? $country['en'] }}</option>
@@ -115,12 +114,20 @@
                             </select>
                             <svg class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
+                        <div
+                            x-show="country"
+                            x-cloak
+                            class="inline-flex min-h-9 max-w-full items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/[0.08] px-3 py-1.5 text-xs font-bold text-emerald-100"
+                        >
+                            <span class="text-base leading-none" x-text="countries[country]?.flag"></span>
+                            <span class="truncate" x-text="countries[country]?.['{{ app()->getLocale() }}'] || countries[country]?.en"></span>
+                        </div>
                         @if($errors->first('country_code'))
                             <span class="text-xs text-red-300">{{ $errors->first('country_code') }}</span>
                         @endif
                     </label>
 
-                    <x-ui.input name="city" type="text" :label="__('Місто')" :value="old('city', $user->city)" :error="$errors->first('city')" placeholder="Kyiv" class="h-13" />
+                    <x-ui.input name="city" type="text" :label="__('Місто')" :value="old('city', $user->city)" :error="$errors->first('city')" placeholder="Kyiv" class="h-14" />
                 </div>
                 <p class="mt-3 text-xs leading-5 text-zinc-500">{{ __('Країна буде показана на сторінці автора з прапором.') }}</p>
             </div>

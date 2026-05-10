@@ -179,7 +179,13 @@ class User extends Authenticatable
 
     public function countryFlag(): ?string
     {
-        return $this->countryMeta()['flag'] ?? null;
+        if (! $this->country_code || ! preg_match('/^[A-Z]{2}$/', strtoupper($this->country_code))) {
+            return null;
+        }
+
+        return collect(str_split(strtoupper($this->country_code)))
+            ->map(fn (string $letter) => mb_chr(127397 + ord($letter), 'UTF-8'))
+            ->implode('');
     }
 
     public function publicLocation(): ?string
