@@ -45,13 +45,19 @@ class PaymentWebhookController extends Controller
 
         $directSignature = $request->input('http_auth_signature');
         $invoice = $request->input('invoice') ?? $request->input('pay_id');
+        $orderReference = $request->input('orderReference') ?? $request->input('external_id');
         $sum = $request->input('sum') ?? $request->input('amount');
         $shopId = $request->input('shop_id');
         if (is_scalar($directSignature) && is_scalar($invoice) && is_scalar($sum) && is_scalar($shopId)) {
             $sumString = number_format((float) $sum, 2, '.', '');
-            $expected = hash('sha256', "{$shopId}:{$sumString}:{$secret}:{$invoice}");
+            $candidates = [
+                hash('sha256', "{$shopId}:{$sumString}:{$secret}:{$invoice}"),
+            ];
+            if (is_scalar($orderReference) && (string) $orderReference !== '') {
+                $candidates[] = hash('sha256', "{$shopId}:{$sumString}:{$secret}:{$orderReference}");
+            }
 
-            abort_unless(hash_equals($expected, (string) $directSignature), 403);
+            abort_unless(collect($candidates)->contains(fn ($expected) => hash_equals($expected, (string) $directSignature)), 403);
 
             return;
         }

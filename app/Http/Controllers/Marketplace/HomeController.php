@@ -8,6 +8,8 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\TipPayment;
 use App\Models\User;
+use App\Notifications\NewTipNotification;
+use App\Services\AifoPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
@@ -94,8 +96,21 @@ class HomeController extends Controller
         }
 
         $status = strtolower((string) $request->query('status'));
-        $message = in_array($status, ['paid', 'success', 'completed'], true)
-            ? __('Дякуємо! Оплату подяки успішно прийнято. Після підтвердження AIFO кошти зарахуються на баланс автора.')
+        $isPaidReturn = in_array($status, ['paid', 'success', 'completed'], true);
+
+        if ($isPaidReturn
+            && $payment->status !== 'paid'
+            && auth()->check()
+            && auth()->id() === $payment->tip->user_id) {
+            app(AifoPaymentService::class)->markTipPaid($payment, [
+                'aifo_return' => $request->query(),
+                'marked_paid_from_return' => true,
+            ]);
+            $payment->tip->author?->notify(new NewTipNotification($payment->tip));
+        }
+
+        $message = $isPaidReturn
+            ? __('Дякуємо! Оплату подяки успішно прийнято. Кошти зараховано на баланс автора.')
             : __('Повернення з AIFO отримано. Статус подяки оновиться після підтвердження платежу.');
 
         return redirect()
