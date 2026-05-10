@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Product;
+use App\Notifications\TemplatedPasswordResetNotification;
+use App\Notifications\TemplatedVerifyEmailNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -210,5 +212,21 @@ class User extends Authenticatable
     public function isVerifiedAuthor(): bool
     {
         return $this->verificationTier() === 'verified';
+    }
+
+    /**
+     * Send password reset mail from DB templates (not Laravel's default notification HTML).
+     */
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        $this->notify(new TemplatedPasswordResetNotification($token));
+    }
+
+    /**
+     * Send verification mail from DB templates.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new TemplatedVerifyEmailNotification);
     }
 }

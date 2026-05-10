@@ -47,7 +47,10 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Mail::to($user)->queue(new DatabaseTemplateMail('registration', $user, [
-            'user' => ['name' => $user->name],
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
         ]));
 
         Auth::login($user);

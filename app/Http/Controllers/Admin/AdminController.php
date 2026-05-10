@@ -226,7 +226,10 @@ class AdminController extends Controller
             $productTitle = $product->localized('title', $locale);
 
             $payload = [
-                'user' => ['name' => $author->displayName()],
+                'user' => [
+                    'name' => $author->displayName(),
+                    'email' => $author->email,
+                ],
                 'product' => [
                     'title' => $productTitle,
                     'url' => route('products.show', $product),

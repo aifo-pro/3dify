@@ -58,4 +58,7 @@ echo "==> [deploy] php artisan queue:restart"
 php artisan queue:restart || true
 
 echo "==> [deploy] готово."
-echo "    Якщо листи/код «старі»: перезавантажте PHP-FPM (opcache), напр.: sudo systemctl reload php8.3-fpm"
+echo "    Opcache: підбери свій сервіс PHP-FPM і перезавантаж:"
+echo "      systemctl list-units --type=service '*php*fpm*'"
+echo "      або: php -v   потім   sudo systemctl reload phpX.Y-fpm"
+echo "    Якщо сервіс називається інакше: sudo service apache2 reload   (mod_php) або sudo systemctl reload lsws / openlitespeed"

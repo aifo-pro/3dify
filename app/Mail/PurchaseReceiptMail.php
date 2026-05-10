@@ -22,7 +22,10 @@ class PurchaseReceiptMail extends Mailable
                 'total' => number_format((float) $this->order->total, 2),
                 'currency' => $this->order->currency,
             ],
-            'user' => ['name' => $this->order->user->name],
+            'user' => [
+                'name' => $this->order->user->name,
+                'email' => $this->order->user->email,
+            ],
         ], $this->order->user->locale);
 
         return $this->subject($rendered['subject'])

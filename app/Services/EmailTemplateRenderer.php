@@ -12,7 +12,10 @@ class EmailTemplateRenderer
 
         $siteName = app(SiteSettings::class)->string('site.name', config('app.name'));
         $data = array_merge([
-            'site' => ['name' => $siteName],
+            'site' => [
+                'name' => $siteName,
+                'url' => rtrim((string) config('app.url'), '/'),
+            ],
         ], $data);
 
         $candidateKeys = $this->candidateKeys($key);

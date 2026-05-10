@@ -586,10 +586,18 @@
         <div x-show="tab === 'email_templates'" x-cloak class="grid gap-5">
             <x-admin.settings-card :title="__('Email-шаблони')" :description="__('Тексти автоматичних листів за кожним типом події.')">
                 <form
-                    x-data="{ id: '', key: 'registration', locale: 'uk', subject: '', body: '', is_active: true }"
                     method="POST"
                     action="{{ route('admin.email-templates.store') }}"
                     class="grid gap-3 rounded-2xl border border-white/10 bg-zinc-950/40 p-4"
+                    x-data="{!! \Illuminate\Support\Js::from([
+                        'id' => '',
+                        'key' => 'registration',
+                        'locale' => 'uk',
+                        'subject' => '',
+                        'body' => '',
+                        'is_active' => true,
+                        'placeholders' => $emailPlaceholderMap,
+                    ]) !!}"
                     @edit-email.window="id = $event.detail.id; key = $event.detail.key; locale = $event.detail.locale; subject = $event.detail.subject; body = $event.detail.body; is_active = !!$event.detail.is_active; $el.scrollIntoView({behavior:'smooth', block:'center'})"
                 >
                     @csrf
@@ -609,8 +617,9 @@
                     <x-admin.field as="textarea" rows="8" name="body" :label="__('Тіло листа')" x-model="body" required :placeholder="__('Привіт, ім\'я! Текст листа...')" />
 
                     <div class="rounded-xl border border-sky-300/20 bg-sky-300/[0.06] p-3 text-xs leading-5 text-sky-100">
-                        <p class="font-semibold">{{ __('Доступні змінні') }}:</p>
-                        <p class="mt-1 font-mono text-[11px]">@{{ user.name }}, @{{ user.email }}, @{{ site.name }}, @{{ site.url }}, @{{ order.number }}, @{{ product.title }}, @{{ link }}</p>
+                        <p class="font-semibold">{{ __('Доступні змінні для обраного типу події') }}</p>
+                        <p class="mt-2 font-mono text-[11px] leading-relaxed text-sky-50/95 break-words" x-text="(placeholders[key] || []).join(' · ')"></p>
+                        <p class="mt-2 text-[11px] text-sky-200/80">{{ __('Приклад') }}: <code class="font-mono text-sky-50">@verbatim{{ order.number }}@endverbatim</code>.</p>
                     </div>
 
                     <div class="flex items-center justify-between gap-3 pt-1">

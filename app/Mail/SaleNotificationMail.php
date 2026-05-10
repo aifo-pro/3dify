@@ -17,14 +17,31 @@ class SaleNotificationMail extends Mailable
 
     public function build()
     {
+        $this->order->loadMissing(['items.product', 'user']);
+
         $locale = $this->seller->locale ?: 'uk';
+        $firstItem = $this->order->items->first();
+        $productTitle = '';
+        $productUrl = '';
+        if ($firstItem && $firstItem->product) {
+            $productTitle = $firstItem->product->localized('title', $locale);
+            $productUrl = route('products.show', $firstItem->product);
+        }
+
         $rendered = app(EmailTemplateRenderer::class)->render('model_sold', [
             'order' => [
                 'number' => $this->order->number,
                 'total' => number_format((float) $this->order->total, 2),
                 'currency' => $this->order->currency,
             ],
-            'user' => ['name' => $this->order->user->name],
+            'user' => [
+                'name' => $this->order->user->name,
+                'email' => $this->order->user->email,
+            ],
+            'product' => [
+                'title' => $productTitle,
+                'url' => $productUrl,
+            ],
         ], $locale);
 
         return $this->subject($rendered['subject'])
