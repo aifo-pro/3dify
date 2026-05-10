@@ -26,7 +26,9 @@ export APP_DIR DEPLOY_BRANCH PHP_FPM_SERVICE QUEUE_SERVICE
 if [[ "$EUID" -eq 0 ]]; then
   if [[ -d "$APP_DIR" ]]; then
     echo "==> Fixing deploy ownership for ${APP_DIR}"
-    chown -R "$APP_USER:$APP_USER" "$APP_DIR/.git" "$APP_DIR/bootstrap/cache" "$APP_DIR/storage" 2>/dev/null || true
+    chown -R "$APP_USER:$APP_USER" "$APP_DIR" 2>/dev/null || true
+    find "$APP_DIR" -type d -exec chmod u+rwx {} \; 2>/dev/null || true
+    find "$APP_DIR" -type f -exec chmod u+rw {} \; 2>/dev/null || true
   fi
 
   exec sudo -u "$APP_USER" -H env \
