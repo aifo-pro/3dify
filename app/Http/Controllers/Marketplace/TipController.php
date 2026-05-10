@@ -60,7 +60,15 @@ class TipController extends Controller
                 'status' => Tip::STATUS_PENDING,
             ]);
 
+            logger()->info('tip.record.created', ['tip_id' => $tip->id]);
+
             $tipPayment = $payments->createTipPayment($tip);
+
+            logger()->info('tip.payment.returned', [
+                'tip_id' => $tip->id,
+                'tip_payment_null' => $tipPayment === null,
+                'tip_payment_id' => $tipPayment?->id,
+            ]);
 
             if ($tipPayment === null) {
                 $tip->delete();
@@ -71,7 +79,18 @@ class TipController extends Controller
             }
 
             $checkoutUrl = trim((string) ($tipPayment->payload['checkout_url'] ?? ''));
+            logger()->info('tip.checkout.url_resolved', [
+                'tip_id' => $tip->id,
+                'checkout_url_length' => strlen($checkoutUrl),
+                'url_scheme' => $checkoutUrl !== '' ? (parse_url($checkoutUrl, PHP_URL_SCHEME) ?: '') : '',
+            ]);
+
             if ($checkoutUrl === '' || ! $this->isAllowedPaymentRedirectUrl($checkoutUrl)) {
+                logger()->warning('tip.checkout.url_invalid_or_empty', [
+                    'tip_id' => $tip->id,
+                    'tip_payment_id' => $tipPayment->id,
+                    'checkout_url_length' => strlen($checkoutUrl),
+                ]);
                 $tipPayment->delete();
                 $tip->delete();
 
@@ -79,6 +98,11 @@ class TipController extends Controller
                     ->route('products.show', $product)
                     ->with('error', __('Не вдалося отримати коректне посилання на оплату від AIFO. Спробуйте ще раз або зверніться до підтримки.'));
             }
+
+            logger()->info('tip.redirect.to_gateway', [
+                'tip_id' => $tip->id,
+                'host' => parse_url($checkoutUrl, PHP_URL_HOST) ?: '',
+            ]);
 
             return redirect()->away($checkoutUrl);
         } catch (\Throwable $e) {
