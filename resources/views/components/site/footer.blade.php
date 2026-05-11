@@ -77,7 +77,12 @@
     <div class="border-t border-white/10">
         <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-zinc-500 sm:flex-row sm:px-6 lg:px-8">
             <p>© {{ date('Y') }} {{ $siteName }}. {{ __('Усі права захищено.') }}</p>
-            <p class="text-zinc-600">{{ __('Зроблено для мейкерів та 3D-друкарів.') }}</p>
+            <img
+                src="{{ asset('img/made-in-ukraine.svg') }}"
+                alt="{{ __('Зроблено в Україні') }}"
+                class="h-[34px] w-auto opacity-80 transition hover:opacity-100"
+                loading="lazy"
+            >
         </div>
     </div>
 </footer>

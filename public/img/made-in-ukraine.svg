@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="52" viewBox="0 0 260 52" role="img" aria-labelledby="title desc">
+  <title id="title">Зроблено в Україні</title>
+  <desc id="desc">Footer badge with a Ukrainian trident icon and the text Зроблено в Україні.</desc>
+  <defs>
+    <linearGradient id="badge" x1="0" y1="0" x2="260" y2="52" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111827"/>
+      <stop offset="0.48" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#071a16"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="8" y1="8" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563eb"/>
+      <stop offset="0.5" stop-color="#2563eb"/>
+      <stop offset="0.501" stop-color="#facc15"/>
+      <stop offset="1" stop-color="#facc15"/>
+    </linearGradient>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.2 0 0 0 0 0.83 0 0 0 0 0.62 0 0 0 0.35 0"/>
+      <feBlend in="SourceGraphic" mode="normal"/>
+    </filter>
+  </defs>
+
+  <rect x="1" y="1" width="258" height="50" rx="18" fill="url(#badge)" stroke="rgba(255,255,255,0.12)"/>
+  <rect x="1" y="1" width="258" height="50" rx="18" fill="none" stroke="rgba(52,211,153,0.16)"/>
+
+  <g filter="url(#softGlow)">
+    <circle cx="27" cy="26" r="17.5" fill="url(#accent)" stroke="rgba(255,255,255,0.22)"/>
+    <path d="M27 12.5c1.6 3.6 3.2 6.3 5.1 8.5 1.6 1.9 3 3.8 3 6.4 0 3.6-2.2 6.3-5.2 7.5v-7.6l2.1-2.2-2.1-2.2-2.9 3.2-2.9-3.2-2.1 2.2 2.1 2.2v7.6c-3-1.2-5.2-3.9-5.2-7.5 0-2.6 1.4-4.5 3-6.4 1.9-2.2 3.5-4.9 5.1-8.5Zm0 0v24.5" fill="none" stroke="#f8fafc" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="55" y="22" fill="#94a3b8" font-family="Manrope, Inter, Arial, sans-serif" font-size="10" font-weight="800" letter-spacing="2.2">3DIFY</text>
+  <text x="55" y="36" fill="#f8fafc" font-family="Manrope, Inter, Arial, sans-serif" font-size="17" font-weight="800">Зроблено в Україні</text>
+  <path d="M219 17h16c6.6 0 12 5.4 12 12v0" fill="none" stroke="rgba(52,211,153,0.28)" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="242" cy="29" r="2.5" fill="#34d399"/>
+</svg>
