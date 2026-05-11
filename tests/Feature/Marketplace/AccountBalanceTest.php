@@ -3,6 +3,7 @@
 namespace Tests\Feature\Marketplace;
 
 use App\Models\AccountBalanceTransaction;
+use App\Models\ModelFile;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Product;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Services\AccountBalanceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class AccountBalanceTest extends TestCase
@@ -129,6 +131,59 @@ class AccountBalanceTest extends TestCase
         $this->assertSame(40.0, app(AccountBalanceService::class)->availableBalance($buyer));
     }
 
+    public function test_refunded_order_no_longer_allows_downloads_or_existing_signed_links(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        [$buyer, $order, $product] = $this->createPaidOrder(price: 120);
+        $file = ModelFile::query()->create([
+            'product_id' => $product->id,
+            'type' => 'source',
+            'disk' => 'private',
+            'path' => 'models/refunded.stl',
+            'original_name' => 'refunded.stl',
+            'extension' => 'stl',
+            'size' => 1024,
+            'is_preview' => false,
+        ]);
+
+        $signedUrl = URL::temporarySignedRoute(
+            'products.download.signed',
+            now()->addMinutes(5),
+            [
+                'product' => $product->slug,
+                'file' => $file->id,
+                'uid' => $buyer->id,
+            ]
+        );
+
+        $this->actingAs($buyer)
+            ->get(route('products.download-options', $product))
+            ->assertOk();
+
+        $refund = RefundRequest::query()->create([
+            'order_id' => $order->id,
+            'user_id' => $buyer->id,
+            'reason' => 'other',
+            'status' => RefundRequest::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.refunds.update', $refund), [
+                'status' => RefundRequest::STATUS_REFUNDED,
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($buyer)
+            ->get(route('products.download-options', $product))
+            ->assertForbidden();
+
+        $this->actingAs($buyer)
+            ->get(route('products.download', [$product, $file]))
+            ->assertForbidden();
+
+        $this->get($signedUrl)->assertForbidden();
+    }
+
     private function createProduct(float $price): Product
     {
         $author = User::factory()->create(['role' => 'author']);
@@ -149,7 +204,7 @@ class AccountBalanceTest extends TestCase
     }
 
     /**
-     * @return array{0: User, 1: Order}
+     * @return array{0: User, 1: Order, 2: Product}
      */
     private function createPaidOrder(float $price): array
     {
@@ -181,6 +236,6 @@ class AccountBalanceTest extends TestCase
             'payload' => [],
         ]);
 
-        return [$buyer, $order->refresh()];
+        return [$buyer, $order->refresh(), $product];
     }
 }
