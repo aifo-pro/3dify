@@ -54,6 +54,7 @@ use App\Http\Controllers\TwoFactorController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('/og-image.png', \App\Http\Controllers\OgImageController::class)->name('og.image');
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])->name('locale.switch');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::redirect('/catalog', '/models')->name('catalog');

@@ -36,7 +36,8 @@
     @php
         $finalTitle = $seoTitle ?? $seo?->title ?? $siteName.' - '.__('маркетплейс 3D-моделей');
         $finalDescription = $seoDescription ?? $seo?->description ?? __('Купуйте, продавайте та завантажуйте якісні 3D-моделі для друку.');
-        $finalImage = $absoluteAssetUrl($seoImage ?? $settings->string('brand.og_image_path'));
+        $finalImage = $absoluteAssetUrl($seoImage ?? $settings->string('brand.og_image_path'))
+            ?: url('/og-image.png');
         $canonical = $seo?->canonical_url ?? url()->current();
         $ogType = $ogType ?? 'website';
     @endphp
@@ -50,23 +51,19 @@
     <meta property="og:title" content="{{ $finalTitle }}">
     <meta property="og:description" content="{{ $finalDescription }}">
     <meta property="og:url" content="{{ $canonical }}">
-    @if($finalImage)
-        <meta property="og:image" content="{{ $finalImage }}">
-        <meta property="og:image:secure_url" content="{{ $finalImage }}">
-        <meta property="og:image:width" content="1200">
-        <meta property="og:image:height" content="630">
-        <meta property="og:image:alt" content="{{ $finalTitle }}">
-    @endif
+    <meta property="og:image" content="{{ $finalImage }}">
+    <meta property="og:image:secure_url" content="{{ $finalImage }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ $finalTitle }}">
     <meta property="og:locale" content="{{ str_replace('-', '_', app()->getLocale()) }}">
 
     {{-- Twitter --}}
-    <meta name="twitter:card" content="{{ $finalImage ? 'summary_large_image' : 'summary' }}">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $finalTitle }}">
     <meta name="twitter:description" content="{{ $finalDescription }}">
-    @if($finalImage)
-        <meta name="twitter:image" content="{{ $finalImage }}">
-        <meta name="twitter:image:alt" content="{{ $finalTitle }}">
-    @endif
+    <meta name="twitter:image" content="{{ $finalImage }}">
+    <meta name="twitter:image:alt" content="{{ $finalTitle }}">
 
     {{-- Hreflang --}}
     <link rel="alternate" hreflang="uk" href="{{ url()->current() }}?lang=uk">
