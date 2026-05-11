@@ -438,16 +438,16 @@
         class="mx-auto max-w-7xl px-4 pb-16 pt-12 sm:px-6 lg:px-8"
     >
         {{-- Tab nav --}}
-        <div class="sticky top-[68px] z-20 -mx-4 mb-8 border-b border-white/[0.07] bg-zinc-950/85 backdrop-blur-xl px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-            <nav class="-mb-px flex gap-1.5 overflow-x-auto py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div class="sticky top-[76px] z-20 mb-8 rounded-[1.5rem] border border-white/10 bg-white/[0.055] p-1.5 shadow-2xl shadow-black/20 backdrop-blur-xl">
+            <nav class="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 @foreach($tabs as $t)
                     <button
                         type="button"
                         @click="setTab('{{ $t['key'] }}')"
                         :class="tab === '{{ $t['key'] }}'
-                            ? 'bg-emerald-300/15 text-emerald-100 shadow-inner shadow-emerald-500/15 ring-1 ring-emerald-300/30'
-                            : 'text-zinc-400 hover:bg-white/[0.05] hover:text-white'"
-                        class="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition"
+                            ? 'bg-emerald-300/18 text-emerald-50 shadow-lg shadow-emerald-950/25 ring-1 ring-emerald-300/30'
+                            : 'text-zinc-400 hover:bg-white/[0.06] hover:text-white'"
+                        class="inline-flex h-10 shrink-0 items-center gap-2 rounded-[1.05rem] px-4 text-sm font-bold transition"
                     >
                         <span>{{ $t['label'] }}</span>
                         @if(isset($t['count']) && $t['count'] > 0)
