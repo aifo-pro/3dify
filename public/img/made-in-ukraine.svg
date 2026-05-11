@@ -1,35 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="260" height="52" viewBox="0 0 260 52" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="214" height="34" viewBox="0 0 214 34" role="img" aria-labelledby="title desc">
   <title id="title">Зроблено в Україні</title>
-  <desc id="desc">Footer badge with a Ukrainian trident icon and the text Зроблено в Україні.</desc>
+  <desc id="desc">Subtle footer mark with a Ukrainian trident icon and text.</desc>
   <defs>
-    <linearGradient id="badge" x1="0" y1="0" x2="260" y2="52" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#111827"/>
-      <stop offset="0.48" stop-color="#0b1220"/>
-      <stop offset="1" stop-color="#071a16"/>
+    <linearGradient id="stroke" x1="0" y1="0" x2="214" y2="34" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34d399" stop-opacity="0.22"/>
+      <stop offset="0.48" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0.16"/>
     </linearGradient>
-    <linearGradient id="accent" x1="8" y1="8" x2="44" y2="44" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#2563eb"/>
-      <stop offset="0.5" stop-color="#2563eb"/>
-      <stop offset="0.501" stop-color="#facc15"/>
-      <stop offset="1" stop-color="#facc15"/>
+    <linearGradient id="icon" x1="12" y1="8" x2="26" y2="26" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#a7f3d0"/>
+      <stop offset="1" stop-color="#34d399"/>
     </linearGradient>
-    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="4" result="blur"/>
-      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.2 0 0 0 0 0.83 0 0 0 0 0.62 0 0 0 0.35 0"/>
-      <feBlend in="SourceGraphic" mode="normal"/>
-    </filter>
   </defs>
 
-  <rect x="1" y="1" width="258" height="50" rx="18" fill="url(#badge)" stroke="rgba(255,255,255,0.12)"/>
-  <rect x="1" y="1" width="258" height="50" rx="18" fill="none" stroke="rgba(52,211,153,0.16)"/>
+  <rect x="0.5" y="0.5" width="213" height="33" rx="16.5" fill="#ffffff" fill-opacity="0.035"/>
+  <rect x="0.5" y="0.5" width="213" height="33" rx="16.5" fill="none" stroke="url(#stroke)"/>
 
-  <g filter="url(#softGlow)">
-    <circle cx="27" cy="26" r="17.5" fill="url(#accent)" stroke="rgba(255,255,255,0.22)"/>
-    <path d="M27 12.5c1.6 3.6 3.2 6.3 5.1 8.5 1.6 1.9 3 3.8 3 6.4 0 3.6-2.2 6.3-5.2 7.5v-7.6l2.1-2.2-2.1-2.2-2.9 3.2-2.9-3.2-2.1 2.2 2.1 2.2v7.6c-3-1.2-5.2-3.9-5.2-7.5 0-2.6 1.4-4.5 3-6.4 1.9-2.2 3.5-4.9 5.1-8.5Zm0 0v24.5" fill="none" stroke="#f8fafc" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <g opacity="0.96">
+    <circle cx="18" cy="17" r="11" fill="#34d399" fill-opacity="0.08" stroke="#34d399" stroke-opacity="0.28"/>
+    <path d="M18 7.8c1.05 2.7 2.18 4.73 3.5 6.33 1.18 1.43 2.1 2.78 2.1 4.7 0 2.48-1.48 4.43-3.58 5.35v-5.1l1.44-1.48-1.43-1.48L18 18.25l-2.03-2.13-1.43 1.48 1.44 1.48v5.1c-2.1-.92-3.58-2.87-3.58-5.35 0-1.92.92-3.27 2.1-4.7 1.32-1.6 2.45-3.63 3.5-6.33Zm0 0v16.7" fill="none" stroke="url(#icon)" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 
-  <text x="55" y="22" fill="#94a3b8" font-family="Manrope, Inter, Arial, sans-serif" font-size="10" font-weight="800" letter-spacing="2.2">3DIFY</text>
-  <text x="55" y="36" fill="#f8fafc" font-family="Manrope, Inter, Arial, sans-serif" font-size="17" font-weight="800">Зроблено в Україні</text>
-  <path d="M219 17h16c6.6 0 12 5.4 12 12v0" fill="none" stroke="rgba(52,211,153,0.28)" stroke-width="1.5" stroke-linecap="round"/>
-  <circle cx="242" cy="29" r="2.5" fill="#34d399"/>
+  <text x="38" y="21.5" fill="#a1a1aa" font-family="Manrope, Inter, Arial, sans-serif" font-size="13.5" font-weight="700" letter-spacing="0">Зроблено в Україні</text>
+  <circle cx="197" cy="17" r="2.2" fill="#34d399" fill-opacity="0.55"/>
 </svg>

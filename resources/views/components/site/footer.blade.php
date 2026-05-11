@@ -80,7 +80,7 @@
             <img
                 src="{{ asset('img/made-in-ukraine.svg') }}"
                 alt="{{ __('Зроблено в Україні') }}"
-                class="h-[34px] w-auto opacity-80 transition hover:opacity-100"
+                class="h-[34px] w-auto opacity-75 transition hover:opacity-95"
                 loading="lazy"
             >
         </div>
