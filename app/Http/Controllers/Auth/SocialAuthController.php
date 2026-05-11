@@ -7,32 +7,58 @@ use App\Models\User;
 use App\Services\SiteSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
 
 class SocialAuthController extends Controller
 {
     public function githubRedirect()
     {
-        abort_unless(class_exists(\Laravel\Socialite\Facades\Socialite::class), 501, 'Install laravel/socialite to enable GitHub login.');
+        abort_unless(class_exists(Socialite::class), 501, 'Install laravel/socialite to enable GitHub login.');
 
-        return \Laravel\Socialite\Facades\Socialite::driver('github')->redirect();
+        return Socialite::driver('github')->redirect();
     }
 
     public function githubCallback()
     {
-        abort_unless(class_exists(\Laravel\Socialite\Facades\Socialite::class), 501, 'Install laravel/socialite to enable GitHub login.');
-        $github = \Laravel\Socialite\Facades\Socialite::driver('github')->user();
+        abort_unless(class_exists(Socialite::class), 501, 'Install laravel/socialite to enable GitHub login.');
 
-        $user = User::updateOrCreate(
-            ['github_id' => $github->getId()],
-            [
-                'name' => $github->getName() ?: $github->getNickname() ?: 'GitHub user',
-                'username' => $github->getNickname(),
-                'email' => $github->getEmail() ?: 'github-'.$github->getId().'@3dify.local',
-                'password' => Str::password(32),
-                'email_verified_at' => now(),
-            ],
-        );
+        try {
+            $github = Socialite::driver('github')->user();
+        } catch (\Throwable $e) {
+            Log::error('GitHub OAuth callback failed', ['message' => $e->getMessage()]);
+
+            return redirect()->route('login')->with('error', __('Не вдалося авторизуватися через GitHub. Спробуйте ще раз.'));
+        }
+
+        $user = User::where('github_id', $github->getId())->first();
+
+        if (! $user) {
+            $email = $github->getEmail() ?: 'github-'.$github->getId().'@3dify.local';
+            $user = User::where('email', $email)->first();
+
+            if ($user) {
+                $user->update([
+                    'github_id' => $github->getId(),
+                    'avatar_path' => $user->avatar_path ?: $github->getAvatar(),
+                ]);
+            } else {
+                $nickname = $github->getNickname();
+                if ($nickname && User::where('username', $nickname)->exists()) {
+                    $nickname = $nickname.'-'.Str::random(4);
+                }
+
+                $user = User::create([
+                    'github_id' => $github->getId(),
+                    'name' => $github->getName() ?: $github->getNickname() ?: 'GitHub user',
+                    'username' => $nickname,
+                    'email' => $email,
+                    'password' => Str::password(32),
+                    'email_verified_at' => now(),
+                ]);
+            }
+        }
 
         Auth::login($user, true);
 
@@ -53,17 +79,34 @@ class SocialAuthController extends Controller
 
         $this->verifyTelegramPayload($request->except('_token'));
 
-        $user = User::firstOrCreate(
-            ['telegram_id' => $data['id']],
-            [
-                'name' => $data['first_name'] ?? $data['username'] ?? 'Telegram user',
-                'username' => $data['username'] ?? null,
-                'telegram_username' => $data['username'] ?? null,
-                'email' => 'telegram-'.$data['id'].'@3dify.local',
-                'password' => Str::password(32),
-                'email_verified_at' => now(),
-            ],
-        );
+        $user = User::where('telegram_id', $data['id'])->first();
+
+        if (! $user) {
+            $email = 'telegram-'.$data['id'].'@3dify.local';
+            $user = User::where('email', $email)->first();
+
+            if ($user) {
+                $user->update([
+                    'telegram_id' => $data['id'],
+                    'telegram_username' => $data['username'] ?? $user->telegram_username,
+                ]);
+            } else {
+                $username = $data['username'] ?? null;
+                if ($username && User::where('username', $username)->exists()) {
+                    $username = $username.'-'.Str::random(4);
+                }
+
+                $user = User::create([
+                    'telegram_id' => $data['id'],
+                    'name' => $data['first_name'] ?? $data['username'] ?? 'Telegram user',
+                    'username' => $username,
+                    'telegram_username' => $data['username'] ?? null,
+                    'email' => $email,
+                    'password' => Str::password(32),
+                    'email_verified_at' => now(),
+                ]);
+            }
+        }
 
         Auth::login($user, true);
 
