@@ -54,6 +54,7 @@ class SocialAuthController extends Controller
                     'name' => $github->getName() ?: $github->getNickname() ?: 'GitHub user',
                     'username' => $nickname,
                     'email' => $email,
+                    'avatar_path' => $github->getAvatar(),
                     'password' => Str::password(32),
                     'email_verified_at' => now(),
                 ]);
@@ -102,6 +103,7 @@ class SocialAuthController extends Controller
                     'username' => $username,
                     'telegram_username' => $data['username'] ?? null,
                     'email' => $email,
+                    'avatar_path' => $data['photo_url'] ?? null,
                     'password' => Str::password(32),
                     'email_verified_at' => now(),
                 ]);

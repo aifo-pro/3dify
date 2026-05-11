@@ -2,19 +2,19 @@
 
 namespace App\Models;
 
-use App\Models\Product;
 use App\Mail\RenderedTemplateMail;
 use App\Services\EmailTemplateRenderer;
 use Database\Factories\UserFactory;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 #[Fillable([
     'name', 'display_name', 'username', 'email', 'email_verified_at', 'password', 'role',
@@ -144,7 +144,11 @@ class User extends Authenticatable
             return null;
         }
 
-        return \Illuminate\Support\Facades\Storage::disk('public')->url($this->avatar_path);
+        if (str_starts_with($this->avatar_path, 'http://') || str_starts_with($this->avatar_path, 'https://')) {
+            return $this->avatar_path;
+        }
+
+        return Storage::disk('public')->url($this->avatar_path);
     }
 
     public function coverUrl(): ?string
@@ -153,7 +157,7 @@ class User extends Authenticatable
             return null;
         }
 
-        return \Illuminate\Support\Facades\Storage::disk('public')->url($this->cover_path);
+        return Storage::disk('public')->url($this->cover_path);
     }
 
     public function countryMeta(): ?array

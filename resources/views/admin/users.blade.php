@@ -165,7 +165,7 @@
                                             <p class="truncate text-xs text-zinc-500">{{ $user->email }}</p>
                                             <div class="mt-1 flex flex-wrap items-center gap-1">
                                                 @if($user->username)
-                                                    <span class="font-mono text-[10px] text-zinc-500">@{{ $user->username }}</span>
+                                                    <span class="font-mono text-[10px] text-zinc-500">{{ '@'.$user->username }}</span>
                                                 @endif
                                                 @if($user->email_verified_at)
                                                     <span class="inline-flex items-center gap-0.5 rounded-full bg-emerald-300/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-200" title="{{ __('Email підтверджено') }}">
