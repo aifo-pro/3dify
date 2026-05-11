@@ -1,8 +1,16 @@
 @php
     use Illuminate\Support\Facades\Storage;
+    use Illuminate\Support\Facades\Schema;
 
     $access = auth()->check() ? app(\App\Services\MarketplaceAccess::class)->canDownload(auth()->user(), $product) : false;
-    $accountBalance = auth()->check() ? app(\App\Services\AccountBalanceService::class)->availableBalance(auth()->user(), $product->currency ?? 'UAH') : 0.0;
+    $accountBalance = 0.0;
+    if (auth()->check() && Schema::hasTable('account_balance_transactions')) {
+        try {
+            $accountBalance = app(\App\Services\AccountBalanceService::class)->availableBalance(auth()->user(), $product->currency ?? 'UAH');
+        } catch (\Throwable) {
+            $accountBalance = 0.0;
+        }
+    }
     $isOwner = auth()->id() === $product->user_id;
     $canModerate = auth()->user()?->canModerate() || $isOwner;
 
