@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\TipPayment;
 use App\Models\User;
 use App\Notifications\NewTipNotification;
+use App\Services\AccountBalanceService;
 use App\Services\AifoPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -200,5 +201,7 @@ class HomeController extends Controller
         if ($order->status !== 'paid') {
             $order->update(['status' => 'failed']);
         }
+
+        app(AccountBalanceService::class)->voidOrderDebit($order);
     }
 }

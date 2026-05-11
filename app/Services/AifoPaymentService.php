@@ -517,6 +517,8 @@ class AifoPaymentService
             'status' => 'paid',
             'paid_at' => now(),
         ]);
+
+        app(AccountBalanceService::class)->settleOrderDebit($payment->order);
     }
 
     public function markTipPaid(TipPayment $payment, array $payload = []): void

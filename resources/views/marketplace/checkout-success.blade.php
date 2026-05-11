@@ -2,6 +2,7 @@
     use Illuminate\Support\Facades\Storage;
 
     $formatMoney = fn ($amount, $currency = 'UAH') => number_format((float) $amount, 2, '.', ' ') . ' ' . ($currency ?: 'UAH');
+    $balanceApplied = app(\App\Services\AccountBalanceService::class)->orderDebitAmount($order);
     $imageUrl = function ($product): ?string {
         $path = $product?->cover_path ?: collect($product?->gallery ?? [])->first();
         if (! is_string($path) || trim($path) === '') {
@@ -43,6 +44,12 @@
                             <dt class="text-zinc-500">{{ __('Сума') }}</dt>
                             <dd class="font-black text-emerald-200">{{ $formatMoney($order->total, $order->currency) }}</dd>
                         </div>
+                        @if($balanceApplied > 0)
+                            <div class="flex items-center justify-between gap-4">
+                                <dt class="text-zinc-500">{{ __('Оплачено балансом') }}</dt>
+                                <dd class="font-bold text-emerald-200">{{ $formatMoney($balanceApplied, $order->currency) }}</dd>
+                            </div>
+                        @endif
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-zinc-500">{{ __('Статус') }}</dt>
                             <dd class="rounded-full border border-emerald-300/25 bg-emerald-400/10 px-3 py-1 text-xs font-black uppercase tracking-wide text-emerald-200">{{ __('Оплачено') }}</dd>

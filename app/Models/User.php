@@ -102,6 +102,11 @@ class User extends Authenticatable
         return $this->hasMany(Payout::class, 'author_id');
     }
 
+    public function accountBalanceTransactions()
+    {
+        return $this->hasMany(AccountBalanceTransaction::class);
+    }
+
     public function printers()
     {
         return $this->hasMany(PrinterProfile::class);

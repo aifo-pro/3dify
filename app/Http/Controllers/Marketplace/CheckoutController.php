@@ -7,6 +7,7 @@ use App\Mail\PurchaseReceiptMail;
 use App\Mail\SaleNotificationMail;
 use App\Models\Order;
 use App\Models\Product;
+use App\Services\AccountBalanceService;
 use App\Notifications\NewSaleNotification;
 use App\Services\AifoPaymentService;
 use App\Services\PromoCodeService;
@@ -15,9 +16,13 @@ use Illuminate\Support\Facades\Mail;
 
 class CheckoutController extends Controller
 {
-    public function store(Request $request, Product $product, AifoPaymentService $payments, PromoCodeService $promoService)
+    public function store(Request $request, Product $product, AifoPaymentService $payments, PromoCodeService $promoService, AccountBalanceService $balances)
     {
         abort_unless($product->status === 'published', 404);
+
+        $data = $request->validate([
+            'balance_amount' => ['nullable', 'numeric', 'min:0'],
+        ]);
 
         // Resolve license type. Falls back to "personal" if commercial isn't offered.
         $requestedType = (string) $request->input('license_type', 'personal');
@@ -47,7 +52,13 @@ class CheckoutController extends Controller
             }
         }
 
-        $total = max(0.0, round($subtotal - $discount, 2));
+        $itemTotal = max(0.0, round($subtotal - $discount, 2));
+        $availableBalance = $balances->availableBalance($request->user(), $product->currency ?: AccountBalanceService::DEFAULT_CURRENCY);
+        $requestedBalance = $request->boolean('use_balance')
+            ? (float) ($data['balance_amount'] ?? $availableBalance)
+            : 0.0;
+        $balanceAmount = round(min(max(0, $requestedBalance), $availableBalance, $itemTotal), 2);
+        $total = max(0.0, round($itemTotal - $balanceAmount, 2));
 
         $order = Order::create([
             'number' => 'ORD-'.now()->format('YmdHis').'-'.strtoupper(str()->random(5)),
@@ -61,17 +72,28 @@ class CheckoutController extends Controller
         $order->items()->create([
             'product_id' => $product->id,
             'author_id' => $product->user_id,
-            'price' => $total,
+            'price' => $itemTotal,
             'currency' => $product->currency,
             'license_type' => $licenseType,
             'license_snapshot' => $licenseSnapshot,
         ]);
+
+        $balanceHold = $balances->reserveForOrder($request->user(), $order, $balanceAmount, $product->currency);
 
         if ($promoApplied) {
             $promoService->redeem($promoApplied, auth()->user(), $order, $discount);
         }
 
         $payment = $payments->createPayment($order);
+        if ($balanceHold) {
+            $payment->update([
+                'payload' => array_merge($payment->payload ?? [], [
+                    'balance_applied' => (float) $balanceHold->amount,
+                    'balance_transaction_id' => $balanceHold->id,
+                    'order_item_total' => $itemTotal,
+                ]),
+            ]);
+        }
 
         if ($payment->status === 'paid') {
             Mail::to($order->user)->queue(new PurchaseReceiptMail($order));

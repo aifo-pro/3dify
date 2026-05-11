@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\RefundRequest;
+use App\Services\AccountBalanceService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -36,7 +37,7 @@ class RefundAdminController extends Controller
         ]);
     }
 
-    public function update(Request $request, RefundRequest $refundRequest, \App\Services\AuditLogger $audit)
+    public function update(Request $request, RefundRequest $refundRequest, \App\Services\AuditLogger $audit, AccountBalanceService $balances)
     {
         $data = $request->validate([
             'status' => ['required', Rule::in(['pending', 'approved', 'rejected', 'refunded'])],
@@ -52,6 +53,7 @@ class RefundAdminController extends Controller
         // If marked refunded, also flip the order status.
         if ($data['status'] === 'refunded' && $refundRequest->order) {
             $refundRequest->order->update(['status' => 'refunded']);
+            $balances->creditRefund($refundRequest->fresh(['order']));
         }
 
         $audit->record('refund.update', $refundRequest, ['status' => $data['status']]);

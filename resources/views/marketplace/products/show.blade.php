@@ -2,6 +2,7 @@
     use Illuminate\Support\Facades\Storage;
 
     $access = auth()->check() ? app(\App\Services\MarketplaceAccess::class)->canDownload(auth()->user(), $product) : false;
+    $accountBalance = auth()->check() ? app(\App\Services\AccountBalanceService::class)->availableBalance(auth()->user(), $product->currency ?? 'UAH') : 0.0;
     $isOwner = auth()->id() === $product->user_id;
     $canModerate = auth()->user()?->canModerate() || $isOwner;
 
@@ -198,10 +199,21 @@
                         personalPrice: {{ (float) $product->personalPrice() }},
                         commercialPrice: {{ (float) $product->commercialPrice() }},
                         currency: '{{ $product->currency ?? 'UAH' }}',
+                        accountBalance: {{ (float) $accountBalance }},
+                        useBalance: false,
+                        balanceAmount: {{ (float) min($accountBalance, max($product->personalPrice(), 0)) }},
                         get currentPrice() { return this.licenseType === 'commercial' ? this.commercialPrice : this.personalPrice; },
+                        get maxBalanceAmount() { return Math.max(0, Math.min(this.accountBalance, this.currentPrice)); },
+                        get payableAmount() {
+                            const amount = this.useBalance ? Math.min(Math.max(Number(this.balanceAmount || 0), 0), this.maxBalanceAmount) : 0;
+                            return Math.max(0, this.currentPrice - amount);
+                        },
+                        money(value) {
+                            return new Intl.NumberFormat(@js(app()->getLocale() === 'uk' ? 'uk-UA' : 'en-US'), { style: 'currency', currency: this.currency, minimumFractionDigits: 2 }).format(value);
+                        },
                         get displayPrice() {
                             if (this.currentPrice <= 0) return @js(__('Безкоштовно'));
-                            return new Intl.NumberFormat(@js(app()->getLocale() === 'uk' ? 'uk-UA' : 'en-US'), { style: 'currency', currency: this.currency, minimumFractionDigits: 2 }).format(this.currentPrice);
+                            return this.money(this.currentPrice);
                         }
                     }"
                     @license-changed="licenseType = $event.detail.type"
@@ -275,9 +287,39 @@
                                     {{ __('Скачати / друкувати') }}
                                 </button>
                             @else
-                                <form method="POST" action="{{ route('checkout.store', $product) }}">
+                                <form method="POST" action="{{ route('checkout.store', $product) }}" class="grid gap-3">
                                     @csrf
                                     <input type="hidden" name="license_type" :value="licenseType">
+                                    @if($accountBalance > 0 && ! $product->is_free)
+                                        <div class="rounded-2xl border border-emerald-300/20 bg-emerald-400/[0.07] p-4">
+                                            <label class="flex items-start gap-3">
+                                                <input type="checkbox" name="use_balance" value="1" x-model="useBalance" @change="balanceAmount = maxBalanceAmount" class="mt-1 rounded border-white/20 bg-zinc-950 text-emerald-400 focus:ring-emerald-300">
+                                                <span class="min-w-0">
+                                                    <span class="block text-sm font-black text-white">{{ __('Використати баланс') }}</span>
+                                                    <span class="mt-1 block text-xs leading-5 text-zinc-400">
+                                                        {{ __('Доступно на балансі') }}:
+                                                        <strong class="text-emerald-200">{{ number_format($accountBalance, 2, '.', ' ') }} {{ $product->currency ?? 'UAH' }}</strong>
+                                                    </span>
+                                                </span>
+                                            </label>
+                                            <div x-show="useBalance" x-cloak class="mt-3 grid gap-2">
+                                                <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-200">{{ __('Списати з балансу') }}</label>
+                                                <input
+                                                    type="number"
+                                                    name="balance_amount"
+                                                    step="0.01"
+                                                    min="0"
+                                                    :max="maxBalanceAmount"
+                                                    x-model.number="balanceAmount"
+                                                    class="h-11 rounded-xl border border-white/10 bg-zinc-950/60 px-3 text-sm font-bold text-white focus:border-emerald-300"
+                                                >
+                                                <p class="text-xs text-zinc-400">
+                                                    {{ __('До оплати через платіжний сервіс') }}:
+                                                    <strong class="text-white" x-text="money(payableAmount)"></strong>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    @endif
                                     <button class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-5 text-sm font-black text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-300">
                                         @if($product->is_free)
                                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>

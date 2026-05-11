@@ -4,6 +4,7 @@
     $item = $order->items->first();
     $product = $item?->product;
     $checkoutUrl = data_get($payment->payload, 'checkout_url');
+    $balanceApplied = app(\App\Services\AccountBalanceService::class)->orderDebitAmount($order);
     $formatMoney = fn ($amount, $currency = 'UAH') => number_format((float) $amount, 2, '.', ' ') . ' ' . ($currency ?: 'UAH');
 
     $coverUrl = null;
@@ -82,6 +83,12 @@
                         <dt class="text-zinc-500">{{ __('Модель') }}</dt>
                         <dd class="font-bold text-zinc-200">{{ $formatMoney($item?->price ?? $order->subtotal, $order->currency) }}</dd>
                     </div>
+                    @if($balanceApplied > 0)
+                        <div class="flex items-center justify-between gap-4">
+                            <dt class="text-zinc-500">{{ __('Списано з балансу') }}</dt>
+                            <dd class="font-bold text-emerald-200">-{{ $formatMoney($balanceApplied, $order->currency) }}</dd>
+                        </div>
+                    @endif
                     <div class="border-t border-white/10 pt-4">
                         <div class="flex items-center justify-between gap-4">
                             <dt class="text-zinc-300">{{ __('Разом') }}</dt>
