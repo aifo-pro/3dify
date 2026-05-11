@@ -572,13 +572,25 @@
         window.galleryUploadPicker = function () {
             return {
                 selected: [],
+                selectedFiles: [],
                 syncSelected() {
+                    const input = this.$refs.galleryInput;
+                    const incomingFiles = input ? Array.from(input.files || []) : [];
+
+                    incomingFiles.forEach((file) => {
+                        const exists = this.selectedFiles.some((selectedFile) => this.fileKey(selectedFile) === this.fileKey(file));
+                        if (! exists) {
+                            this.selectedFiles.push(file);
+                        }
+                    });
+
+                    this.refreshInputFiles();
+                    this.refreshSelectedPreview();
+                },
+                refreshSelectedPreview() {
                     this.revokeSelected();
 
-                    const input = this.$refs.galleryInput;
-                    const files = input ? Array.from(input.files || []) : [];
-
-                    this.selected = files.map((file, index) => ({
+                    this.selected = this.selectedFiles.map((file, index) => ({
                         key: `${file.name}-${file.size}-${file.lastModified}-${index}`,
                         name: file.name,
                         size: this.formatSize(file.size),
@@ -586,21 +598,9 @@
                     }));
                 },
                 removeSelected(index) {
-                    const input = this.$refs.galleryInput;
-
-                    if (! input || typeof DataTransfer === 'undefined') {
-                        return;
-                    }
-
-                    const transfer = new DataTransfer();
-                    Array.from(input.files || []).forEach((file, fileIndex) => {
-                        if (fileIndex !== index) {
-                            transfer.items.add(file);
-                        }
-                    });
-
-                    input.files = transfer.files;
-                    this.syncSelected();
+                    this.selectedFiles.splice(index, 1);
+                    this.refreshInputFiles();
+                    this.refreshSelectedPreview();
                 },
                 clearSelected() {
                     const input = this.$refs.galleryInput;
@@ -608,7 +608,21 @@
                         input.value = '';
                     }
                     this.revokeSelected();
+                    this.selectedFiles = [];
                     this.selected = [];
+                },
+                refreshInputFiles() {
+                    const input = this.$refs.galleryInput;
+                    if (! input || typeof DataTransfer === 'undefined') {
+                        return;
+                    }
+
+                    const transfer = new DataTransfer();
+                    this.selectedFiles.forEach((file) => transfer.items.add(file));
+                    input.files = transfer.files;
+                },
+                fileKey(file) {
+                    return `${file.name}-${file.size}-${file.lastModified}`;
                 },
                 revokeSelected() {
                     this.selected.forEach((file) => {
