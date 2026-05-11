@@ -89,11 +89,15 @@
                     @else
                         <ul class="space-y-3">
                             @foreach($orders->take(8) as $order)
+                                @php
+                                    $orderStatus = method_exists($order, 'effectiveStatus') ? $order->effectiveStatus() : (string) $order->status;
+                                    $orderCanDownload = $orderStatus === 'paid';
+                                @endphp
                                 <li class="rounded-2xl border border-white/10 bg-zinc-950/40 p-4 transition hover:border-white/20">
                                     {{-- Order header --}}
                                     <div class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-3">
                                         <div class="flex items-center gap-2">
-                                            <x-ui.status :status="$order->status" size="xs" />
+                                            <x-ui.status :status="$orderStatus" size="xs" />
                                             <code class="font-mono text-[11px] text-zinc-500">{{ $order->number }}</code>
                                         </div>
                                         <strong class="text-sm font-black text-white">{{ number_format((float) $order->total, 2) }} {{ $order->currency }}</strong>
@@ -145,7 +149,7 @@
                                                         </div>
 
                                                         {{-- Action --}}
-                                                        @if($order->status === 'paid')
+                                                        @if($orderCanDownload)
                                                             <button
                                                                 type="button"
                                                                 data-download-trigger
@@ -165,7 +169,7 @@
                                     @endif
 
                                     {{-- Order footer (refund link) --}}
-                                    @if($order->status === 'paid' && ($order->updated_at ?? $order->created_at)?->diffInDays(now()) <= 14)
+                                    @if($orderCanDownload && ($order->updated_at ?? $order->created_at)?->diffInDays(now()) <= 14)
                                         <div class="mt-3 flex items-center justify-end border-t border-white/5 pt-2">
                                             <a href="{{ route('refunds.index') }}" class="text-[10px] text-zinc-500 hover:text-rose-200">{{ __('Запросити повернення') }}</a>
                                         </div>

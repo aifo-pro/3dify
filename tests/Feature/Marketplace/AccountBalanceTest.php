@@ -48,6 +48,34 @@ class AccountBalanceTest extends TestCase
         ]);
     }
 
+    public function test_approved_refund_action_is_completed_as_balance_refund(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        [$buyer, $order] = $this->createPaidOrder(price: 80);
+        $refund = RefundRequest::query()->create([
+            'order_id' => $order->id,
+            'user_id' => $buyer->id,
+            'reason' => 'other',
+            'status' => RefundRequest::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.refunds.update', $refund), [
+                'status' => RefundRequest::STATUS_APPROVED,
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(80.0, app(AccountBalanceService::class)->availableBalance($buyer));
+        $this->assertDatabaseHas('refund_requests', [
+            'id' => $refund->id,
+            'status' => RefundRequest::STATUS_REFUNDED,
+        ]);
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'refunded',
+        ]);
+    }
+
     public function test_checkout_can_partially_use_account_balance_and_settles_it_after_payment_return(): void
     {
         Mail::fake();

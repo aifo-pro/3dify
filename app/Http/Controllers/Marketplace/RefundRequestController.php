@@ -39,7 +39,11 @@ class RefundRequestController extends Controller
 
         $exists = RefundRequest::query()
             ->where('order_id', $order->id)
-            ->whereIn('status', ['pending', 'approved'])
+            ->whereIn('status', [
+                RefundRequest::STATUS_PENDING,
+                RefundRequest::STATUS_APPROVED,
+                RefundRequest::STATUS_REFUNDED,
+            ])
             ->exists();
         if ($exists) {
             return back()->withErrors(['order' => __('Заявка на повернення вже існує.')]);

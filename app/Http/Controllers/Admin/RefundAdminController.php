@@ -44,19 +44,23 @@ class RefundAdminController extends Controller
             'admin_notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
+        $finalStatus = $data['status'] === RefundRequest::STATUS_APPROVED
+            ? RefundRequest::STATUS_REFUNDED
+            : $data['status'];
+
         $refundRequest->update([
-            'status' => $data['status'],
+            'status' => $finalStatus,
             'admin_notes' => $data['admin_notes'] ?? $refundRequest->admin_notes,
-            'processed_at' => in_array($data['status'], ['approved', 'rejected', 'refunded'], true) ? now() : null,
+            'processed_at' => in_array($finalStatus, ['rejected', 'refunded'], true) ? now() : null,
         ]);
 
-        // If marked refunded, also flip the order status.
-        if ($data['status'] === 'refunded' && $refundRequest->order) {
+        // A confirmed refund is completed inside 3Dify balance: block downloads and credit the buyer.
+        if ($finalStatus === RefundRequest::STATUS_REFUNDED && $refundRequest->order) {
             $refundRequest->order->update(['status' => 'refunded']);
             $balances->creditRefund($refundRequest->fresh(['order']));
         }
 
-        $audit->record('refund.update', $refundRequest, ['status' => $data['status']]);
+        $audit->record('refund.update', $refundRequest, ['status' => $finalStatus]);
 
         return back()->with('status', __('Статус заявки оновлено.'));
     }

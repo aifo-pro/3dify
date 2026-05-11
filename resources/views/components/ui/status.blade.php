@@ -64,7 +64,18 @@
         'neutral'     => ['label' => '—',                  'tone' => 'zinc',    'icon' => null],
     ];
 
+    $labelOverrides = [
+        'paid' => __('Оплачено'),
+        'refunded' => __('Повернуто'),
+        'approved' => __('Підтверджено'),
+        'pending' => __('Очікує'),
+        'rejected' => __('Відхилено'),
+    ];
+
     $entry = $catalog[$key] ?? ['label' => Str::headline($key), 'tone' => 'zinc', 'icon' => null];
+    if (isset($labelOverrides[$key])) {
+        $entry['label'] = $labelOverrides[$key];
+    }
 
     $tones = [
         'emerald' => 'border-emerald-300/30 bg-emerald-300/[0.10] text-emerald-100 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.05)]',

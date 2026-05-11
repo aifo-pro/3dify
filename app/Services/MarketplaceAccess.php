@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Product;
+use App\Models\RefundRequest;
 use App\Models\User;
 
 class MarketplaceAccess
@@ -20,6 +21,9 @@ class MarketplaceAccess
         return $user->orders()
             ->where('status', 'paid')
             ->whereHas('items', fn ($query) => $query->where('product_id', $product->id))
+            ->whereDoesntHave('refundRequests', function ($query) {
+                $query->whereIn('status', [RefundRequest::STATUS_APPROVED, RefundRequest::STATUS_REFUNDED]);
+            })
             ->exists();
     }
 }
