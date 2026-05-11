@@ -56,7 +56,7 @@ class AccountBalanceService
                 return $existing;
             }
 
-            return AccountBalanceTransaction::create([
+            $transaction = AccountBalanceTransaction::create([
                 'user_id' => $refundRequest->user_id,
                 'order_id' => $order->id,
                 'refund_request_id' => $refundRequest->id,
@@ -67,6 +67,16 @@ class AccountBalanceService
                 'description' => __('Повернення за замовлення :number', ['number' => $order->number]),
                 'metadata' => ['source' => 'refund_request'],
             ]);
+
+            app(AuditLogger::class)->record('balance.credit_refund', $transaction, [
+                'user_id' => $refundRequest->user_id,
+                'order_id' => $order->id,
+                'refund_request_id' => $refundRequest->id,
+                'amount' => round($amount, 2),
+                'currency' => $order->currency ?: self::DEFAULT_CURRENCY,
+            ]);
+
+            return $transaction;
         });
     }
 
@@ -88,7 +98,7 @@ class AccountBalanceService
                 return null;
             }
 
-            return AccountBalanceTransaction::create([
+            $transaction = AccountBalanceTransaction::create([
                 'user_id' => $user->id,
                 'order_id' => $order->id,
                 'type' => AccountBalanceTransaction::TYPE_DEBIT,
@@ -98,6 +108,15 @@ class AccountBalanceService
                 'description' => __('Списання балансу для замовлення :number', ['number' => $order->number]),
                 'metadata' => ['source' => 'checkout'],
             ]);
+
+            app(AuditLogger::class)->record('balance.reserve_checkout', $transaction, [
+                'user_id' => $user->id,
+                'order_id' => $order->id,
+                'amount' => $amount,
+                'currency' => $currency,
+            ]);
+
+            return $transaction;
         });
     }
 
@@ -107,11 +126,15 @@ class AccountBalanceService
             return;
         }
 
-        AccountBalanceTransaction::query()
+        $count = AccountBalanceTransaction::query()
             ->where('order_id', $order->id)
             ->where('type', AccountBalanceTransaction::TYPE_DEBIT)
             ->where('status', AccountBalanceTransaction::STATUS_PENDING)
             ->update(['status' => AccountBalanceTransaction::STATUS_SETTLED]);
+
+        if ($count > 0) {
+            app(AuditLogger::class)->record('balance.settle_checkout', $order, ['order_id' => $order->id]);
+        }
     }
 
     public function voidOrderDebit(Order $order): void
@@ -120,11 +143,15 @@ class AccountBalanceService
             return;
         }
 
-        AccountBalanceTransaction::query()
+        $count = AccountBalanceTransaction::query()
             ->where('order_id', $order->id)
             ->where('type', AccountBalanceTransaction::TYPE_DEBIT)
             ->where('status', AccountBalanceTransaction::STATUS_PENDING)
             ->update(['status' => AccountBalanceTransaction::STATUS_VOID]);
+
+        if ($count > 0) {
+            app(AuditLogger::class)->record('balance.void_checkout', $order, ['order_id' => $order->id]);
+        }
     }
 
     public function orderDebitAmount(Order $order): float

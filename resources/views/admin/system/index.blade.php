@@ -38,6 +38,22 @@
         <x-admin.kpi-card :label="__('Failed jobs')" :value="$failedJobsCount" :tone="$failedJobsCount > 0 ? 'amber' : 'emerald'" />
     </div>
 
+    <x-admin.section class="mt-8" :title="__('Health check')">
+        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            @foreach($checks as $check)
+                <div class="rounded-2xl border {{ $check['ok'] ? 'border-emerald-300/25 bg-emerald-300/[0.06]' : 'border-amber-300/30 bg-amber-300/[0.07]' }} p-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <p class="text-sm font-black text-white">{{ $check['label'] }}</p>
+                        <span class="rounded-full px-2.5 py-1 text-[10px] font-black uppercase {{ $check['ok'] ? 'bg-emerald-300/15 text-emerald-100' : 'bg-amber-300/15 text-amber-100' }}">
+                            {{ $check['ok'] ? __('OK') : __('Увага') }}
+                        </span>
+                    </div>
+                    <p class="mt-2 break-words text-xs leading-5 text-zinc-400">{{ $check['detail'] }}</p>
+                </div>
+            @endforeach
+        </div>
+    </x-admin.section>
+
     <div class="mt-8 grid gap-4 lg:grid-cols-2">
         {{-- Maintenance --}}
         <x-admin.section :title="__('Режим обслуговування')">

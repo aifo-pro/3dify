@@ -41,71 +41,7 @@ class EmailTemplateRenderer
      */
     public static function placeholderMap(): array
     {
-        $site = [
-            '{{ site.name }}',
-            '{{ site.url }}',
-            '{{ site_name }}',
-            '{{ site_url }}',
-        ];
-        $user = [
-            '{{ user.name }}',
-            '{{ user.email }}',
-            '{{ user.username }}',
-            '{{ user.display_name }}',
-            '{{ user.locale }}',
-            '{{ user_name }}',
-            '{{ user_email }}',
-            '{{ user_username }}',
-        ];
-        $order = [
-            '{{ order.number }}',
-            '{{ order.total }}',
-            '{{ order.currency }}',
-            '{{ order.url }}',
-            '{{ order_number }}',
-            '{{ order_total }}',
-            '{{ order_currency }}',
-            '{{ order_url }}',
-        ];
-        $product = [
-            '{{ product.title }}',
-            '{{ product.url }}',
-            '{{ product.slug }}',
-            '{{ product.price }}',
-            '{{ product.currency }}',
-            '{{ product.status }}',
-            '{{ product_title }}',
-            '{{ product_url }}',
-            '{{ product_slug }}',
-        ];
-        $authLink = [
-            '{{ link }}',
-        ];
-
-        return [
-            'registration' => self::uniqueTokens($site, $user),
-            'email_verification' => self::uniqueTokens($site, $user, $authLink, [
-                '{{ verification.url }}',
-                '{{ verification.expires_minutes }}',
-            ]),
-            'password_reset' => self::uniqueTokens($site, $user, $authLink, [
-                '{{ reset.url }}',
-                '{{ reset.expires_minutes }}',
-            ]),
-            'purchase_success' => self::uniqueTokens($site, $user, $order, [
-                '{{ download.url }}',
-                '{{ downloads.url }}',
-            ]),
-            'model_sold' => self::uniqueTokens($site, $user, $order, $product, [
-                '{{ seller.name }}',
-                '{{ buyer.name }}',
-            ]),
-            'model_approved' => self::uniqueTokens($site, $user, $product),
-            'model_rejected' => self::uniqueTokens($site, $user, $product, [
-                '{{ moderation.note }}',
-                '{{ moderation.reason }}',
-            ]),
-        ];
+        return EmailTemplateCatalog::placeholderMap();
     }
 
     /**
@@ -223,6 +159,11 @@ class EmailTemplateRenderer
 
     private function fallbackSubject(string $key): string
     {
+        $template = EmailTemplateCatalog::templates()[$key]['defaults'][app()->getLocale()] ?? null;
+        if ($template) {
+            return $template['subject'];
+        }
+
         return match ($key) {
             'purchase', 'purchase_success' => 'Ваше замовлення 3Dify',
             'sale', 'model_sold' => 'Новий продаж на 3Dify',
@@ -237,6 +178,11 @@ class EmailTemplateRenderer
 
     private function fallbackBody(string $key): string
     {
+        $template = EmailTemplateCatalog::templates()[$key]['defaults'][app()->getLocale()] ?? null;
+        if ($template) {
+            return $template['body'];
+        }
+
         return match ($key) {
             'purchase', 'purchase_success' => 'Дякуємо за покупку. Замовлення {{ order.number }} оплачено.',
             'sale', 'model_sold' => 'Вашу модель купили. Замовлення {{ order.number }} оплачено.',

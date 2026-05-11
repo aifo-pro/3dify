@@ -262,6 +262,21 @@
                         @endif
                     </div>
 
+                    <div class="mt-4 grid gap-2">
+                        <div class="rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.06] p-4">
+                            <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-200">{{ __('Що входить') }}</p>
+                            <ul class="mt-3 grid gap-2 text-sm text-zinc-300">
+                                <li class="flex gap-2"><span class="text-emerald-300">✓</span><span>{{ __('Захищені файли моделі після оплати') }}</span></li>
+                                <li class="flex gap-2"><span class="text-emerald-300">✓</span><span>{{ __('Доступ до download center і slicer-посилань') }}</span></li>
+                                <li class="flex gap-2"><span class="text-emerald-300">✓</span><span>{{ __('Покупка привʼязується до вашого акаунта') }}</span></li>
+                            </ul>
+                        </div>
+                        <div class="rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-xs leading-5 text-zinc-400">
+                            <strong class="text-zinc-200">{{ __('Повернення') }}:</strong>
+                            {{ __('якщо файл пошкоджений або не відповідає опису, заявку можна подати з кабінету. Після підтвердження кошти повертаються на баланс, а скачування цього замовлення блокується.') }}
+                        </div>
+                    </div>
+
                     @auth
                         @php $promoSession = session('promo.'.$product->id); @endphp
                         @if(! $product->is_free && ! ($access ?? false))

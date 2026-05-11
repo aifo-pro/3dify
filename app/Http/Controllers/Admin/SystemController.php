@@ -44,7 +44,40 @@ class SystemController extends Controller
             }
         }
 
-        return view('admin.system.index', compact('stats', 'failedJobsCount', 'jobsCount', 'diskUsage'));
+        $checks = [
+            'app_key' => [
+                'label' => 'APP_KEY',
+                'ok' => (string) config('app.key') !== '',
+                'detail' => (string) config('app.key') !== '' ? __('Налаштовано') : __('Порожній ключ застосунку'),
+            ],
+            'storage_writable' => [
+                'label' => 'storage writable',
+                'ok' => is_writable(storage_path()),
+                'detail' => storage_path(),
+            ],
+            'cache_writable' => [
+                'label' => 'bootstrap/cache writable',
+                'ok' => is_writable(base_path('bootstrap/cache')),
+                'detail' => base_path('bootstrap/cache'),
+            ],
+            'public_storage' => [
+                'label' => 'public/storage',
+                'ok' => is_link(public_path('storage')) || is_dir(public_path('storage')),
+                'detail' => __('Потрібно для локальних фото та файлів'),
+            ],
+            'mail_from' => [
+                'label' => 'MAIL_FROM',
+                'ok' => (string) config('mail.from.address') !== '',
+                'detail' => (string) config('mail.from.address'),
+            ],
+            'aifo_secret' => [
+                'label' => 'AIFO secret',
+                'ok' => \App\Services\AifoPaymentService::webhookSigningSecret() !== '',
+                'detail' => \App\Services\AifoPaymentService::webhookSigningSecret() !== '' ? __('Є ключ webhook/HMAC') : __('Ключ не задано'),
+            ],
+        ];
+
+        return view('admin.system.index', compact('stats', 'failedJobsCount', 'jobsCount', 'diskUsage', 'checks'));
     }
 
     public function toggleMaintenance(Request $request, AuditLogger $audit)

@@ -36,4 +36,9 @@ class RefundRequest extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function balanceTransactions()
+    {
+        return $this->hasMany(AccountBalanceTransaction::class);
+    }
 }

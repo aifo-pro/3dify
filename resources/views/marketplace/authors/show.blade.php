@@ -216,6 +216,26 @@
                 </div>
             @endforeach
         </div>
+
+        <div class="mt-4 grid gap-3 lg:grid-cols-3">
+            <div class="rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.06] p-5">
+                <p class="text-[11px] font-black uppercase tracking-[0.16em] text-emerald-200">{{ __('Довіра автора') }}</p>
+                <p class="mt-2 text-lg font-black text-white">
+                    {{ $author->verificationTier() === 'verified' ? __('Перевірений автор') : ($author->verificationTier() === 'trusted' ? __('Надійний автор') : __('Новий автор') ) }}
+                </p>
+                <p class="mt-1 text-xs leading-5 text-zinc-400">{{ __('Показник базується на публікаціях, історії продажів, підписниках і активності профілю.') }}</p>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+                <p class="text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500">{{ __('Активність') }}</p>
+                <p class="mt-2 text-lg font-black text-white">{{ __(':sales продажів · :downloads завантажень', ['sales' => $stats['sales'], 'downloads' => $stats['downloads']]) }}</p>
+                <p class="mt-1 text-xs leading-5 text-zinc-400">{{ __('Публічні числа допомагають оцінити досвід автора без розкриття приватних даних.') }}</p>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+                <p class="text-[11px] font-black uppercase tracking-[0.16em] text-zinc-500">{{ __('Підтримка') }}</p>
+                <p class="mt-2 text-lg font-black text-white">{{ $author->contact_enabled ? __('Контакт відкритий') : __('Контакт закритий') }}</p>
+                <p class="mt-1 text-xs leading-5 text-zinc-400">{{ __('Email автора не показується публічно: повідомлення йдуть через форму 3Dify.') }}</p>
+            </div>
+        </div>
     </section>
 
     <section class="mx-auto mt-8 max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">

@@ -14,7 +14,7 @@ class RefundRequestController extends Controller
     {
         $requests = RefundRequest::query()
             ->where('user_id', $request->user()->id)
-            ->with('order.items.product')
+            ->with(['order.items.product.files', 'balanceTransactions'])
             ->latest()
             ->paginate(15);
 

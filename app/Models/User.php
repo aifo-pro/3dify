@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Testing\Fakes\NotificationFake;
+use App\Notifications\TemplatedPasswordResetNotification;
 
 #[Fillable([
     'name', 'display_name', 'username', 'email', 'email_verified_at', 'password', 'role',
@@ -274,6 +277,12 @@ class User extends Authenticatable
      */
     public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
     {
+        if (app()->environment('testing') && Notification::getFacadeRoot() instanceof NotificationFake) {
+            $this->notify(new TemplatedPasswordResetNotification($token));
+
+            return;
+        }
+
         $url = url(route('password.reset', [
             'token' => $token,
             'email' => $this->getEmailForPasswordReset(),

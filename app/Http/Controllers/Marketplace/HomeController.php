@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Notifications\NewTipNotification;
 use App\Services\AccountBalanceService;
 use App\Services\AifoPaymentService;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
@@ -161,6 +162,10 @@ class HomeController extends Controller
                     'aifo_return' => $request->query(),
                     'marked_paid_from_return' => true,
                 ]);
+                app(AuditLogger::class)->record('payment.return_paid', $order, [
+                    'order_id' => $order->id,
+                    'reference' => $reference,
+                ]);
 
                 Mail::to($order->user)->queue(new PurchaseReceiptMail($order));
                 foreach ($order->items as $item) {
@@ -200,6 +205,10 @@ class HomeController extends Controller
 
         if ($order->status !== 'paid') {
             $order->update(['status' => 'failed']);
+            app(AuditLogger::class)->record('payment.return_failed', $order, [
+                'order_id' => $order->id,
+                'query' => $request->query(),
+            ]);
         }
 
         app(AccountBalanceService::class)->voidOrderDebit($order);

@@ -8,6 +8,7 @@ use App\Models\LegalPage;
 use App\Models\SeoPage;
 use App\Models\Setting;
 use App\Models\Translation;
+use App\Services\EmailTemplateCatalog;
 use App\Services\EmailTemplateRenderer;
 use App\Services\SiteSettings;
 use Illuminate\Http\Request;
@@ -28,6 +29,8 @@ class ContentController extends Controller
             'legalPages' => LegalPage::orderBy('slug')->orderBy('locale')->get(),
             'legalSlugs' => LegalPage::defaultSlugs(),
             'emailPlaceholderMap' => EmailTemplateRenderer::placeholderMap(),
+            'emailTemplateCatalog' => EmailTemplateCatalog::templates(),
+            'emailTypes' => EmailTemplateCatalog::labels(),
         ]);
     }
 

@@ -21,6 +21,7 @@ class PurchaseReceiptMail extends Mailable
                 'number' => $this->order->number,
                 'total' => number_format((float) $this->order->total, 2),
                 'currency' => $this->order->currency,
+                'url' => route('checkout.success', $this->order),
             ],
             'user' => [
                 'name' => $this->order->user->name,

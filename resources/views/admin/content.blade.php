@@ -51,6 +51,8 @@
         'model_approved' => __('Модель схвалено'),
         'model_rejected' => __('Модель відхилено'),
     ];
+    $emailTypes = \App\Services\EmailTemplateCatalog::labels();
+    $emailTemplateCatalog = \App\Services\EmailTemplateCatalog::templates();
 @endphp
 
 <x-layouts.admin
@@ -530,6 +532,43 @@
         {{-- ============================================================ --}}
         <div x-show="tab === 'translations'" x-cloak class="grid gap-5">
             <x-admin.settings-card :title="__('Переклади інтерфейсу')" :description="__('Власні рядки для замін стандартних повідомлень.')">
+                <div class="mb-4 grid gap-3 lg:grid-cols-2">
+                    @foreach($emailTemplateCatalog as $tplKey => $meta)
+                        @php
+                            $hasUk = $emailTemplates->contains(fn ($tpl) => $tpl->key === $tplKey && $tpl->locale === 'uk');
+                            $hasEn = $emailTemplates->contains(fn ($tpl) => $tpl->key === $tplKey && $tpl->locale === 'en');
+                        @endphp
+                        <div class="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <p class="text-sm font-black text-white">{{ $emailTypes[$tplKey] ?? $tplKey }}</p>
+                                    <p class="mt-1 text-xs leading-5 text-zinc-400">{{ __($meta['description'] ?? '') }}</p>
+                                </div>
+                                <div class="flex shrink-0 gap-1">
+                                    <span class="rounded-full px-2 py-0.5 text-[10px] font-black {{ $hasUk ? 'bg-emerald-300/15 text-emerald-200' : 'bg-amber-300/15 text-amber-200' }}">UK</span>
+                                    <span class="rounded-full px-2 py-0.5 text-[10px] font-black {{ $hasEn ? 'bg-emerald-300/15 text-emerald-200' : 'bg-amber-300/15 text-amber-200' }}">EN</span>
+                                </div>
+                            </div>
+                            <p class="mt-3 line-clamp-2 font-mono text-[10px] leading-relaxed text-zinc-500">{{ implode(' · ', $meta['variables'] ?? []) }}</p>
+                            <button
+                                type="button"
+                                x-data
+                                @click="$dispatch('edit-email', {
+                                    id: '',
+                                    key: '{{ $tplKey }}',
+                                    locale: 'uk',
+                                    subject: @js($meta['defaults']['uk']['subject'] ?? ''),
+                                    body: @js($meta['defaults']['uk']['body'] ?? ''),
+                                    is_active: true
+                                })"
+                                class="mt-3 inline-flex h-8 items-center rounded-xl border border-emerald-300/20 bg-emerald-300/[0.08] px-3 text-xs font-bold text-emerald-100 transition hover:bg-emerald-300/[0.14]"
+                            >
+                                {{ __('Вставити базовий UK шаблон') }}
+                            </button>
+                        </div>
+                    @endforeach
+                </div>
+
                 <form
                     x-data="{ id: '', locale: 'uk', group: 'messages', key: '', value: '' }"
                     method="POST"

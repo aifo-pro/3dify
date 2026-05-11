@@ -124,6 +124,7 @@
                             <a href="{{ route('two-factor.show') }}" class="flex items-center px-4 py-2.5 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">{{ __('Двофакторний захист') }}</a>
                             <a href="{{ route('saved-searches.index') }}" class="flex items-center px-4 py-2.5 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">{{ __('Збережені пошуки') }}</a>
                             <a href="{{ route('refunds.index') }}" class="flex items-center px-4 py-2.5 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">{{ __('Повернення') }}</a>
+                            <a href="{{ route('balance.index') }}" class="flex items-center px-4 py-2.5 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">{{ __('Баланс') }}</a>
                             <a href="{{ route('author.products.create') }}" class="flex items-center px-4 py-2.5 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">{{ __('Опублікувати модель') }}</a>
                             <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-2.5 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">{{ __('Покупки') }}</a>
                             @if(auth()->user()->canModerate())
@@ -174,6 +175,7 @@
             @auth
                 <a href="{{ route('profile.edit') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">{{ __('Профіль') }}</a>
                 <a href="{{ route('dashboard') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">{{ __('Покупки') }}</a>
+                <a href="{{ route('balance.index') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">{{ __('Баланс') }}</a>
                 @if(auth()->user()->canModerate())
                     <a href="{{ route('admin.index') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">{{ __('Адмінпанель') }}</a>
                 @endif

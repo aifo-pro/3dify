@@ -20,6 +20,7 @@ use App\Http\Controllers\Marketplace\AuthorAnalyticsController;
 use App\Http\Controllers\Marketplace\AuthorContactController;
 use App\Http\Controllers\Marketplace\AuthorController;
 use App\Http\Controllers\Marketplace\AuthorFollowController;
+use App\Http\Controllers\Marketplace\BalanceController;
 use App\Http\Controllers\Marketplace\PrinterProfileController;
 use App\Http\Controllers\Marketplace\PrintProfileDownloadController;
 use App\Http\Controllers\Marketplace\SavedSearchController;
@@ -164,6 +165,9 @@ Route::middleware('auth')->group(function () {
     // Refund requests
     Route::get('/refunds', [RefundRequestController::class, 'index'])->name('refunds.index');
     Route::post('/orders/{order}/refund', [RefundRequestController::class, 'store'])->name('refunds.store');
+
+    // Account balance from refunds and checkout credits.
+    Route::get('/balance', BalanceController::class)->name('balance.index');
 
     // Author follow / unfollow / contact.
     Route::post('/authors/{user}/follow', [AuthorFollowController::class, 'store'])->name('authors.follow');

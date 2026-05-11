@@ -10,13 +10,14 @@ use App\Models\Product;
 use App\Services\AccountBalanceService;
 use App\Notifications\NewSaleNotification;
 use App\Services\AifoPaymentService;
+use App\Services\AuditLogger;
 use App\Services\PromoCodeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
 class CheckoutController extends Controller
 {
-    public function store(Request $request, Product $product, AifoPaymentService $payments, PromoCodeService $promoService, AccountBalanceService $balances)
+    public function store(Request $request, Product $product, AifoPaymentService $payments, PromoCodeService $promoService, AccountBalanceService $balances, AuditLogger $audit)
     {
         abort_unless($product->status === 'published', 404);
 
@@ -78,6 +79,15 @@ class CheckoutController extends Controller
             'license_snapshot' => $licenseSnapshot,
         ]);
 
+        $audit->record('checkout.order_created', $order, [
+            'product_id' => $product->id,
+            'subtotal' => $subtotal,
+            'discount' => $discount,
+            'balance_amount' => $balanceAmount,
+            'total' => $total,
+            'currency' => $product->currency,
+        ]);
+
         $balanceHold = $balances->reserveForOrder($request->user(), $order, $balanceAmount, $product->currency);
 
         if ($promoApplied) {
@@ -129,12 +139,13 @@ class CheckoutController extends Controller
         return view('marketplace.checkout-failed', compact('order'));
     }
 
-    public function demoConfirm(Order $order, AifoPaymentService $payments)
+    public function demoConfirm(Order $order, AifoPaymentService $payments, AuditLogger $audit)
     {
         abort_unless($order->user_id === auth()->id(), 403);
         abort_unless($order->status === 'pending' && $order->payment, 404);
 
         $payments->markPaid($order->payment, ['demo_confirmed_by_user' => true]);
+        $audit->record('payment.demo_confirmed', $order, ['order_id' => $order->id]);
 
         Mail::to($order->user)->queue(new PurchaseReceiptMail($order));
         foreach ($order->items as $item) {

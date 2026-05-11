@@ -33,6 +33,7 @@ class SaleNotificationMail extends Mailable
                 'number' => $this->order->number,
                 'total' => number_format((float) $this->order->total, 2),
                 'currency' => $this->order->currency,
+                'url' => route('admin.orders'),
             ],
             'user' => [
                 'name' => $this->order->user->name,

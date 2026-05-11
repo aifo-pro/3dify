@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\TipPayment;
 use App\Notifications\NewTipNotification;
 use App\Services\AifoPaymentService;
+use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -144,6 +145,11 @@ class PaymentWebhookController extends Controller
     {
         if ($payment->status !== 'paid') {
             $payments->markTipPaid($payment, $request->all());
+            app(AuditLogger::class)->record('tip.webhook_paid', $payment, [
+                'tip_id' => $payment->tip_id,
+                'amount' => $payment->amount,
+                'currency' => $payment->currency,
+            ]);
             $payment->tip->author?->notify(new NewTipNotification($payment->tip));
         }
 
@@ -154,6 +160,11 @@ class PaymentWebhookController extends Controller
     {
         if ($payment->status !== 'paid') {
             $payments->markPaid($payment, $request->all());
+            app(AuditLogger::class)->record('payment.webhook_paid', $payment->order, [
+                'order_id' => $payment->order_id,
+                'amount' => $payment->amount,
+                'currency' => $payment->currency,
+            ]);
 
             Mail::to($payment->order->user)->queue(new PurchaseReceiptMail($payment->order));
             foreach ($payment->order->items as $item) {
