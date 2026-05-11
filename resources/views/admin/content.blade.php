@@ -237,7 +237,7 @@
                         <x-admin.asset-upload
                             name="assets[brand.og_image_path]"
                             :label="__('OG image')"
-                            :description="__('Для shares в соцмережах. 1200×630.')"
+                            :description="__('Для соцмереж і месенджерів. Рекомендовано 1200×630, JPG/PNG/WebP до 8MB.')"
                             :currentPath="$val('brand.og_image_path')"
                             tab="branding"
                         />

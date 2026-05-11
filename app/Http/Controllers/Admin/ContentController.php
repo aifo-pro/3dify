@@ -79,7 +79,7 @@ class ContentController extends Controller
             'lists' => ['nullable', 'array'],
             'lists.*' => ['nullable', 'array'],
             'assets' => ['nullable', 'array'],
-            'assets.*' => ['nullable', 'file', 'mimes:png,jpg,jpeg,svg,ico,webp', 'max:4096'],
+            'assets.*' => ['nullable', 'file', 'mimes:png,jpg,jpeg,svg,ico,webp', 'max:8192'],
         ]);
 
         $group = $request->input('group');

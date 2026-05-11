@@ -9,6 +9,23 @@
     $siteName = $settings->string('site.name', '3Dify');
     $logoPath = $settings->string('brand.logo_path');
     $faviconPath = $settings->string('brand.favicon_path');
+    $absoluteAssetUrl = function (?string $path): ?string {
+        if (! is_string($path) || trim($path) === '') {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        $url = str_starts_with($path, '/')
+            ? $path
+            : \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+
+        return \Illuminate\Support\Str::startsWith($url, ['http://', 'https://'])
+            ? $url
+            : url($url);
+    };
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -19,7 +36,7 @@
     @php
         $finalTitle = $seoTitle ?? $seo?->title ?? $siteName.' - '.__('маркетплейс 3D-моделей');
         $finalDescription = $seoDescription ?? $seo?->description ?? __('Купуйте, продавайте та завантажуйте якісні 3D-моделі для друку.');
-        $finalImage = $seoImage ?? ($settings->string('brand.og_image_path') ? Storage::disk('public')->url($settings->string('brand.og_image_path')) : null);
+        $finalImage = $absoluteAssetUrl($seoImage ?? $settings->string('brand.og_image_path'));
         $canonical = $seo?->canonical_url ?? url()->current();
         $ogType = $ogType ?? 'website';
     @endphp
@@ -33,14 +50,23 @@
     <meta property="og:title" content="{{ $finalTitle }}">
     <meta property="og:description" content="{{ $finalDescription }}">
     <meta property="og:url" content="{{ $canonical }}">
-    @if($finalImage)<meta property="og:image" content="{{ $finalImage }}">@endif
+    @if($finalImage)
+        <meta property="og:image" content="{{ $finalImage }}">
+        <meta property="og:image:secure_url" content="{{ $finalImage }}">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:alt" content="{{ $finalTitle }}">
+    @endif
     <meta property="og:locale" content="{{ str_replace('-', '_', app()->getLocale()) }}">
 
     {{-- Twitter --}}
     <meta name="twitter:card" content="{{ $finalImage ? 'summary_large_image' : 'summary' }}">
     <meta name="twitter:title" content="{{ $finalTitle }}">
     <meta name="twitter:description" content="{{ $finalDescription }}">
-    @if($finalImage)<meta name="twitter:image" content="{{ $finalImage }}">@endif
+    @if($finalImage)
+        <meta name="twitter:image" content="{{ $finalImage }}">
+        <meta name="twitter:image:alt" content="{{ $finalTitle }}">
+    @endif
 
     {{-- Hreflang --}}
     <link rel="alternate" hreflang="uk" href="{{ url()->current() }}?lang=uk">
