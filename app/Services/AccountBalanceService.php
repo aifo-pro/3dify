@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\RefundRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AccountBalanceService
 {
@@ -14,6 +15,10 @@ class AccountBalanceService
 
     public function availableBalance(User $user, string $currency = self::DEFAULT_CURRENCY): float
     {
+        if (! Schema::hasTable('account_balance_transactions')) {
+            return 0.0;
+        }
+
         $settledCredits = (float) $user->accountBalanceTransactions()
             ->where('currency', $currency)
             ->where('type', AccountBalanceTransaction::TYPE_CREDIT)
@@ -31,6 +36,10 @@ class AccountBalanceService
 
     public function creditRefund(RefundRequest $refundRequest): ?AccountBalanceTransaction
     {
+        if (! Schema::hasTable('account_balance_transactions')) {
+            return null;
+        }
+
         $order = $refundRequest->order;
         $amount = $order ? (float) $order->items()->sum('price') : 0.0;
         if (! $order || ! $refundRequest->user_id || $amount <= 0) {
@@ -63,6 +72,10 @@ class AccountBalanceService
 
     public function reserveForOrder(User $user, Order $order, float $amount, string $currency = self::DEFAULT_CURRENCY): ?AccountBalanceTransaction
     {
+        if (! Schema::hasTable('account_balance_transactions')) {
+            return null;
+        }
+
         $amount = round(max(0, $amount), 2);
         if ($amount <= 0) {
             return null;
@@ -90,6 +103,10 @@ class AccountBalanceService
 
     public function settleOrderDebit(Order $order): void
     {
+        if (! Schema::hasTable('account_balance_transactions')) {
+            return;
+        }
+
         AccountBalanceTransaction::query()
             ->where('order_id', $order->id)
             ->where('type', AccountBalanceTransaction::TYPE_DEBIT)
@@ -99,6 +116,10 @@ class AccountBalanceService
 
     public function voidOrderDebit(Order $order): void
     {
+        if (! Schema::hasTable('account_balance_transactions')) {
+            return;
+        }
+
         AccountBalanceTransaction::query()
             ->where('order_id', $order->id)
             ->where('type', AccountBalanceTransaction::TYPE_DEBIT)
@@ -108,6 +129,10 @@ class AccountBalanceService
 
     public function orderDebitAmount(Order $order): float
     {
+        if (! Schema::hasTable('account_balance_transactions')) {
+            return 0.0;
+        }
+
         return (float) AccountBalanceTransaction::query()
             ->where('order_id', $order->id)
             ->where('type', AccountBalanceTransaction::TYPE_DEBIT)
