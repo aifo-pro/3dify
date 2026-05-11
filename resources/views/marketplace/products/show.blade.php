@@ -97,6 +97,11 @@
 >
 
 @push('head')
+    @if($coverImage)
+        <link rel="preload" as="image" href="{{ $coverImage }}">
+    @elseif($imagePreview)
+        <link rel="preload" as="image" href="{{ Storage::disk($imagePreview->disk)->url($imagePreview->path) }}">
+    @endif
     <script type="application/ld+json">
     {!! json_encode([
         '@context' => 'https://schema.org/',
@@ -152,11 +157,11 @@
             <div class="grid gap-8">
                 <div class="overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900 shadow-2xl shadow-black/30">
                     @if($imagePreview)
-                        <img src="{{ Storage::disk($imagePreview->disk)->url($imagePreview->path) }}" alt="{{ $product->localized('title') }}" class="h-[420px] w-full bg-zinc-950 object-contain sm:h-[560px]">
+                        <img src="{{ Storage::disk($imagePreview->disk)->url($imagePreview->path) }}" alt="{{ $product->localized('title') }}" width="960" height="560" fetchpriority="high" class="h-[420px] w-full bg-zinc-950 object-contain sm:h-[560px]">
                     @elseif($modelPreview)
                         <div id="viewer" data-model-url="{{ Storage::disk($modelPreview->disk)->url($modelPreview->path) }}" class="h-[420px] bg-zinc-950 sm:h-[560px]"></div>
                     @elseif($coverImage)
-                        <img src="{{ $coverImage }}" alt="{{ $product->localized('title') }}" class="h-[420px] w-full bg-zinc-950 object-contain sm:h-[560px]">
+                        <img src="{{ $coverImage }}" alt="{{ $product->localized('title') }}" width="960" height="560" fetchpriority="high" class="h-[420px] w-full bg-zinc-950 object-contain sm:h-[560px]">
                     @else
                         <div id="viewer" data-model-url="" class="h-[420px] bg-zinc-950 sm:h-[560px]"></div>
                     @endif
@@ -166,14 +171,14 @@
                     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                         @if($coverImage)
                             <a href="{{ $coverImage }}" target="_blank" class="group overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
-                                <img src="{{ $coverImage }}" alt="{{ $product->localized('title') }}" class="aspect-video w-full object-cover transition group-hover:scale-105">
+                                <img src="{{ $coverImage }}" alt="{{ $product->localized('title') }}" width="240" height="135" loading="lazy" class="aspect-video w-full object-cover transition group-hover:scale-105">
                             </a>
                         @endif
                         @foreach($galleryImages as $image)
                             @php $galleryUrl = $publicUrl($image); @endphp
                             @if($galleryUrl)
                                 <a href="{{ $galleryUrl }}" target="_blank" class="group overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
-                                    <img src="{{ $galleryUrl }}" alt="{{ $product->localized('title') }}" class="aspect-video w-full object-cover transition group-hover:scale-105">
+                                    <img src="{{ $galleryUrl }}" alt="{{ $product->localized('title') }}" width="240" height="135" loading="lazy" class="aspect-video w-full object-cover transition group-hover:scale-105">
                                 </a>
                             @endif
                         @endforeach
@@ -183,15 +188,15 @@
                 {{-- Quick stats --}}
                 <div class="grid gap-3 sm:grid-cols-3">
                     <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-                        <span class="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{{ __('Перегляди') }}</span>
+                        <span class="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">{{ __('Перегляди') }}</span>
                         <strong class="mt-2 block text-2xl font-black text-white">{{ number_format((int) $product->views_count) }}</strong>
                     </div>
                     <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-                        <span class="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{{ __('Завантаження') }}</span>
+                        <span class="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">{{ __('Завантаження') }}</span>
                         <strong class="mt-2 block text-2xl font-black text-white">{{ number_format((int) $product->downloads_count) }}</strong>
                     </div>
                     <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-                        <span class="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{{ __('Формати') }}</span>
+                        <span class="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">{{ __('Формати') }}</span>
                         <strong class="mt-2 block text-base font-bold text-white">
                             {{ $product->files->pluck('extension')->unique()->map(fn ($ext) => strtoupper($ext))->join(' · ') ?: '3D' }}
                         </strong>
@@ -202,33 +207,22 @@
             <aside class="self-start lg:sticky lg:top-28">
                 <x-ui.card
                     class="p-6"
-                    x-data="{
-                        licenseType: '{{ $product->commercial_license_enabled ? 'personal' : 'personal' }}',
+                    x-data="productPricing()"
+                    x-init="Object.assign($data, {
+                        licenseType: {{ $product->commercial_license_enabled ? "'personal'" : "'personal'" }},
                         personalPrice: {{ (float) $product->personalPrice() }},
                         commercialPrice: {{ (float) $product->commercialPrice() }},
-                        currency: '{{ $product->currency ?? 'UAH' }}',
+                        currency: {{ @js($product->currency ?? 'UAH') }},
                         accountBalance: {{ (float) $accountBalance }},
-                        useBalance: false,
                         balanceAmount: {{ (float) min($accountBalance, max($product->personalPrice(), 0)) }},
-                        get currentPrice() { return this.licenseType === 'commercial' ? this.commercialPrice : this.personalPrice; },
-                        get maxBalanceAmount() { return Math.max(0, Math.min(this.accountBalance, this.currentPrice)); },
-                        get payableAmount() {
-                            const amount = this.useBalance ? Math.min(Math.max(Number(this.balanceAmount || 0), 0), this.maxBalanceAmount) : 0;
-                            return Math.max(0, this.currentPrice - amount);
-                        },
-                        money(value) {
-                            return new Intl.NumberFormat(@js(app()->getLocale() === 'uk' ? 'uk-UA' : 'en-US'), { style: 'currency', currency: this.currency, minimumFractionDigits: 2 }).format(value);
-                        },
-                        get displayPrice() {
-                            if (this.currentPrice <= 0) return @js(__('Безкоштовно'));
-                            return this.money(this.currentPrice);
-                        }
-                    }"
-                    @license-changed="licenseType = $event.detail.type"
+                        locale: {{ @js(app()->getLocale() === 'uk' ? 'uk-UA' : 'en-US') }},
+                        freeLabel: {{ @js(__('Безкоштовно')) }}
+                    })"
+                    x-on:license-changed="licenseType = $event.detail.type"
                 >
                     <div class="flex items-start justify-between gap-4">
                         <div>
-                            <p class="text-sm text-zinc-500">{{ __('Ціна') }}</p>
+                            <p class="text-sm text-zinc-400">{{ __('Ціна') }}</p>
                             <strong class="mt-1 block text-3xl text-white" x-text="displayPrice">{{ $product->display_price }}</strong>
                         </div>
                         <x-ui.badge>{{ $product->category?->localized('name') ?? __('3D model') }}</x-ui.badge>
@@ -242,10 +236,10 @@
                     @endif
 
                     <div class="mt-6 grid gap-3 rounded-3xl border border-white/10 bg-zinc-950/60 p-4 text-sm">
-                        <div class="flex justify-between gap-4"><span class="text-zinc-500">{{ __('Автор') }}</span><span class="text-right text-white">{{ $authorName }}</span></div>
+                        <div class="flex justify-between gap-4"><span class="text-zinc-400">{{ __('Автор') }}</span><span class="text-right text-white">{{ $authorName }}</span></div>
                         @if($product->license)
                             <div class="flex items-center justify-between gap-4">
-                                <span class="text-zinc-500">{{ __('Ліцензія') }}</span>
+                                <span class="text-zinc-400">{{ __('Ліцензія') }}</span>
                                 <span x-show="licenseType === 'personal'">
                                     <x-license-badge :license="$product->license" size="sm" :tooltip="false" />
                                 </span>
@@ -256,9 +250,9 @@
                                 @endif
                             </div>
                         @endif
-                        <div class="flex justify-between gap-4"><span class="text-zinc-500">{{ __('Статус') }}</span><span class="text-right text-emerald-200">{{ __('Опубліковано') }}</span></div>
+                        <div class="flex justify-between gap-4"><span class="text-zinc-400">{{ __('Статус') }}</span><span class="text-right text-emerald-200">{{ __('Опубліковано') }}</span></div>
                         @if($product->published_at)
-                            <div class="flex justify-between gap-4"><span class="text-zinc-500">{{ __('Опубліковано') }}</span><span class="text-right text-zinc-300">{{ $product->published_at->format('d.m.Y') }}</span></div>
+                            <div class="flex justify-between gap-4"><span class="text-zinc-400">{{ __('Опубліковано') }}</span><span class="text-right text-zinc-300">{{ $product->published_at->format('d.m.Y') }}</span></div>
                         @endif
                     </div>
 
@@ -531,6 +525,7 @@
         {{-- ============================================================== --}}
         <div x-show="tab === 'info'" x-cloak class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div class="grid gap-6">
+                <h2 class="sr-only">{{ __('Інформація') }}</h2>
                 {{-- Description --}}
                 <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-xl shadow-black/20 sm:p-8">
                     <header class="mb-5 flex items-center gap-3 border-b border-white/5 pb-4">
@@ -1193,7 +1188,7 @@
 
     <script>
         if (typeof window.productTabs === 'undefined') {
-            const VALID = ['info', 'reviews', 'makes', 'comments', 'similar'];
+            const VALID = ['info', 'profile', 'reviews', 'makes', 'comments', 'similar'];
             window.productTabs = function () {
                 return {
                     tab: VALID.includes((location.hash || '').replace('#', '')) ? location.hash.replace('#', '') : 'info',

@@ -11,4 +11,4 @@ Disallow: /password
 Disallow: /verify-email
 Allow: /
 
-Sitemap: /sitemap.xml
+Sitemap: https://3dify.dev/sitemap.xml
