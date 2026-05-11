@@ -233,6 +233,7 @@
                 error: null,
                 title: '',
                 files: [],
+                slicerLogUrl: null,
                 selectedFileId: null,
                 lastTried: null,
                 slicers: [
@@ -303,6 +304,7 @@
                         if (!res.ok) throw new Error('HTTP ' + res.status);
                         const data = await res.json();
                         this.files = data.files || [];
+                        this.slicerLogUrl = data.slicer_log_url || null;
                         this.selectedFileId = this.slicerFiles[0]?.id ?? null;
                     } catch (e) {
                         this.error = e.message || 'Network error';
@@ -322,6 +324,7 @@
 
                     const protoUrl = `${slicer.protocol}://open?file=${encodeURIComponent(file.signed_url)}`;
                     this.lastTried = slicer.name;
+                    this.logSlicerOpen(slicer, file);
 
                     // Try the custom protocol via a transient anchor — most reliable
                     // way to dispatch the URL without changing window.location.
@@ -331,6 +334,34 @@
                     document.body.appendChild(a);
                     a.click();
                     setTimeout(() => a.remove(), 100);
+                },
+                logSlicerOpen(slicer, file) {
+                    if (!this.slicerLogUrl) return;
+
+                    const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                    const params = new URLSearchParams({
+                        _token: csrf,
+                        slicer: slicer.name,
+                        file_id: file.id,
+                    });
+
+                    if (navigator.sendBeacon) {
+                        const blob = new Blob([params.toString()], {type: 'application/x-www-form-urlencoded;charset=UTF-8'});
+                        navigator.sendBeacon(this.slicerLogUrl, blob);
+                        return;
+                    }
+
+                    fetch(this.slicerLogUrl, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        keepalive: true,
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrf,
+                        },
+                        body: params,
+                    }).catch(() => {});
                 },
             };
         };

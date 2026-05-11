@@ -34,6 +34,7 @@
                         @php
                             $order = $r->order;
                             $amount = (float) ($order?->items?->sum('price') ?: $order?->total ?: 0);
+                            $refundEvidence = $evidence[$r->id] ?? null;
                         @endphp
                         <tr>
                             <td class="px-4 py-3 align-top">
@@ -71,6 +72,97 @@
                                 </form>
                             </td>
                         </tr>
+                        @if($refundEvidence)
+                            <tr class="bg-white/[0.015]">
+                                <td colspan="6" class="px-4 pb-5">
+                                    <div class="rounded-2xl border border-white/10 bg-zinc-950/50 p-4">
+                                        <div class="flex flex-wrap items-center justify-between gap-3">
+                                            <div>
+                                                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">{{ __('Перевірка доступу до повернення') }}</p>
+                                                <p class="mt-1 text-sm text-zinc-300">{{ $refundEvidence['summary'] }}</p>
+                                            </div>
+                                            <span class="inline-flex h-8 items-center rounded-xl border px-3 text-xs font-bold {{ $refundEvidence['risk'] === 'high' ? 'border-amber-300/30 bg-amber-300/[0.10] text-amber-100' : 'border-emerald-300/30 bg-emerald-300/[0.10] text-emerald-100' }}">
+                                                {{ $refundEvidence['risk'] === 'high' ? __('Є використання файлів') : __('Використання не знайдено') }}
+                                            </span>
+                                        </div>
+
+                                        <div class="mt-4 grid gap-3 lg:grid-cols-2">
+                                            @foreach($refundEvidence['items'] as $itemEvidence)
+                                                <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                                                    <div class="flex items-start justify-between gap-3">
+                                                        <div class="min-w-0">
+                                                            <p class="truncate text-sm font-bold text-white">{{ $itemEvidence['product']->localized('title') }}</p>
+                                                            <p class="mt-1 text-xs text-zinc-500">{{ __('Остання активність') }}:
+                                                                <span class="text-zinc-300">
+                                                                    {{ $itemEvidence['last_activity_at'] ? $itemEvidence['last_activity_at']->translatedFormat('d M Y · H:i') : __('не зафіксовано') }}
+                                                                </span>
+                                                            </p>
+                                                        </div>
+                                                        <div class="grid grid-cols-3 gap-1 text-center">
+                                                            <div class="rounded-xl border border-white/10 bg-zinc-950/60 px-2 py-1.5">
+                                                                <p class="text-sm font-black text-white">{{ $itemEvidence['download_count'] }}</p>
+                                                                <p class="text-[9px] uppercase tracking-wider text-zinc-500">{{ __('скач.') }}</p>
+                                                            </div>
+                                                            <div class="rounded-xl border border-white/10 bg-zinc-950/60 px-2 py-1.5">
+                                                                <p class="text-sm font-black text-white">{{ $itemEvidence['slicer_count'] }}</p>
+                                                                <p class="text-[9px] uppercase tracking-wider text-zinc-500">slicer</p>
+                                                            </div>
+                                                            <div class="rounded-xl border border-white/10 bg-zinc-950/60 px-2 py-1.5">
+                                                                <p class="text-sm font-black text-white">{{ $itemEvidence['print_profile_count'] }}</p>
+                                                                <p class="text-[9px] uppercase tracking-wider text-zinc-500">{{ __('проф.') }}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    @if($itemEvidence['download_files']->isNotEmpty())
+                                                        <div class="mt-3 space-y-1.5">
+                                                            @foreach($itemEvidence['download_files'] as $file)
+                                                                <div class="rounded-xl border border-white/10 bg-zinc-950/50 px-3 py-2 text-xs">
+                                                                    <div class="flex items-center justify-between gap-3">
+                                                                        <span class="truncate font-semibold text-zinc-200">{{ $file['name'] }}</span>
+                                                                        <span class="shrink-0 text-emerald-200">{{ $file['count'] }}×</span>
+                                                                    </div>
+                                                                    <p class="mt-0.5 text-zinc-500">
+                                                                        {{ __('останнє') }}: {{ $file['last_at']?->translatedFormat('d M Y · H:i') ?? '—' }}
+                                                                        @if($file['ips']->isNotEmpty())
+                                                                            · IP: {{ $file['ips']->implode(', ') }}
+                                                                        @endif
+                                                                    </p>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
+
+                                                    @if($itemEvidence['slicer_targets']->isNotEmpty())
+                                                        <p class="mt-3 text-xs text-zinc-400">
+                                                            {{ __('Відкривали у застосунках') }}:
+                                                            <span class="text-zinc-200">{{ $itemEvidence['slicer_targets']->map(fn ($count, $name) => $name.' ×'.$count)->implode(', ') }}</span>
+                                                        </p>
+                                                    @endif
+
+                                                    @if($itemEvidence['events']->isNotEmpty())
+                                                        <details class="mt-3 rounded-xl border border-white/10 bg-zinc-950/40 px-3 py-2">
+                                                            <summary class="cursor-pointer text-xs font-bold text-zinc-300">{{ __('Технічні події') }}</summary>
+                                                            <div class="mt-2 space-y-1 text-[11px] text-zinc-500">
+                                                                @foreach($itemEvidence['events'] as $event)
+                                                                    <p>
+                                                                        <span class="text-zinc-300">{{ $event->occurred_at?->translatedFormat('d M Y · H:i') }}</span>
+                                                                        · {{ $event->event }}
+                                                                        @if($event->target) · {{ $event->target }} @endif
+                                                                        @if($event->file) · {{ $event->file->original_name }} @endif
+                                                                        @if($event->ip_address) · {{ $event->ip_address }} @endif
+                                                                    </p>
+                                                                @endforeach
+                                                            </div>
+                                                        </details>
+                                                    @endif
+                                                </article>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endif
                     @empty
                         <tr><td colspan="6" class="px-4 py-12 text-center text-sm text-zinc-500">{{ __('Заявок немає.') }}</td></tr>
                     @endforelse

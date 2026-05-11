@@ -5,16 +5,17 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\RefundRequest;
 use App\Services\AccountBalanceService;
+use App\Services\RefundEvidenceService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class RefundAdminController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, RefundEvidenceService $evidence)
     {
         $status = $request->input('status', 'pending');
 
-        $query = RefundRequest::query()->with(['user', 'order.items.product'])->latest();
+        $query = RefundRequest::query()->with(['user', 'order.items.product.files'])->latest();
         if (in_array($status, ['pending', 'approved', 'rejected', 'refunded'], true)) {
             $query->where('status', $status);
         }
@@ -34,6 +35,8 @@ class RefundAdminController extends Controller
             'counts' => $counts,
             'status' => $status,
             'reasons' => RefundRequest::REASONS,
+            'evidence' => $requests->getCollection()
+                ->mapWithKeys(fn (RefundRequest $refund) => [$refund->id => $evidence->forRequest($refund)]),
         ]);
     }
 

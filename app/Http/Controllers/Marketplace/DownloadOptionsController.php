@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Marketplace;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\ProductAccessEvent;
 use App\Services\MarketplaceAccess;
+use App\Services\ProductAccessLogger;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 
 class DownloadOptionsController extends Controller
@@ -14,10 +17,11 @@ class DownloadOptionsController extends Controller
      * Returns the file list and short-lived signed URLs that can be fed into
      * slicer custom-protocol handlers (e.g. orcaslicer://open?file=...).
      */
-    public function show(Product $product, MarketplaceAccess $access)
+    public function show(Product $product, MarketplaceAccess $access, ProductAccessLogger $logger)
     {
         $user = auth()->user();
         abort_unless($access->canDownload($user, $product), 403);
+        $logger->log($product, $user, ProductAccessEvent::EVENT_DOWNLOAD_MODAL_OPEN);
 
         // Hide preview-only files; only downloadable source files are returned.
         $files = $product->files
@@ -54,6 +58,7 @@ class DownloadOptionsController extends Controller
                 'title' => $product->localized('title'),
             ],
             'files' => $files,
+            'slicer_log_url' => route('products.download-options.slicer-log', $product),
             'expires_in_seconds' => 5 * 60,
         ]);
     }
@@ -69,5 +74,30 @@ class DownloadOptionsController extends Controller
         $i = min($i, count($units) - 1);
 
         return round($bytes / (1024 ** $i), $i === 0 ? 0 : 1).' '.$units[$i];
+    }
+
+    public function logSlicer(Request $request, Product $product, MarketplaceAccess $access, ProductAccessLogger $logger)
+    {
+        abort_unless($access->canDownload($request->user(), $product), 403);
+
+        $data = $request->validate([
+            'file_id' => ['nullable', 'integer'],
+            'slicer' => ['nullable', 'string', 'max:80'],
+        ]);
+
+        $file = isset($data['file_id'])
+            ? $product->files()->whereKey($data['file_id'])->first()
+            : null;
+
+        $logger->log(
+            $product,
+            $request->user(),
+            ProductAccessEvent::EVENT_SLICER_OPEN,
+            $file,
+            $request,
+            $data['slicer'] ?? null
+        );
+
+        return response()->noContent();
     }
 }

@@ -6,6 +6,7 @@ use App\Models\AccountBalanceTransaction;
 use App\Models\ModelFile;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\ProductAccessEvent;
 use App\Models\Product;
 use App\Models\RefundRequest;
 use App\Models\User;
@@ -210,6 +211,60 @@ class AccountBalanceTest extends TestCase
             ->assertForbidden();
 
         $this->get($signedUrl)->assertForbidden();
+    }
+
+    public function test_refund_admin_sees_download_and_slicer_evidence(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        [$buyer, $order, $product] = $this->createPaidOrder(price: 60);
+        $file = ModelFile::query()->create([
+            'product_id' => $product->id,
+            'type' => 'source',
+            'disk' => 'private',
+            'path' => 'models/evidence.stl',
+            'original_name' => 'evidence.stl',
+            'extension' => 'stl',
+            'size' => 1024,
+            'is_preview' => false,
+        ]);
+
+        $product->downloads()->create([
+            'user_id' => $buyer->id,
+            'model_file_id' => $file->id,
+            'ip_address' => '127.0.0.1',
+            'downloaded_at' => now(),
+        ]);
+
+        $this->actingAs($buyer)
+            ->post(route('products.download-options.slicer-log', $product), [
+                'file_id' => $file->id,
+                'slicer' => 'OrcaSlicer',
+            ])
+            ->assertNoContent();
+
+        $refund = RefundRequest::query()->create([
+            'order_id' => $order->id,
+            'user_id' => $buyer->id,
+            'reason' => 'other',
+            'status' => RefundRequest::STATUS_PENDING,
+            'created_at' => now()->addMinute(),
+            'updated_at' => now()->addMinute(),
+        ]);
+
+        $this->assertDatabaseHas('product_access_events', [
+            'user_id' => $buyer->id,
+            'product_id' => $product->id,
+            'model_file_id' => $file->id,
+            'event' => ProductAccessEvent::EVENT_SLICER_OPEN,
+            'target' => 'OrcaSlicer',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.refunds', ['status' => 'pending']))
+            ->assertOk()
+            ->assertSee('evidence.stl')
+            ->assertSee('OrcaSlicer')
+            ->assertSee('Є використання файлів');
     }
 
     private function createProduct(float $price): Product

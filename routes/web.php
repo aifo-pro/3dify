@@ -102,6 +102,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/checkout/{order}/demo-confirm', [CheckoutController::class, 'demoConfirm'])->name('checkout.demo-confirm');
     Route::get('/models/{product:slug}/download/{file}', DownloadController::class)->name('products.download');
     Route::get('/models/{product:slug}/download-options', [DownloadOptionsController::class, 'show'])->name('products.download-options');
+    Route::post('/models/{product:slug}/download-options/slicer-log', [DownloadOptionsController::class, 'logSlicer'])->name('products.download-options.slicer-log');
 
     // Engagement: comments + makes (photos of prints)
     Route::post('/models/{product:slug}/comments', [CommentController::class, 'store'])->name('products.comments.store');
