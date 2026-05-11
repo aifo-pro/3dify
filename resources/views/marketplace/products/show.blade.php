@@ -263,17 +263,32 @@
                         @endif
 
                         <div class="mt-3 grid grid-cols-[1fr_auto] gap-2">
-                            <form method="POST" action="{{ route('checkout.store', $product) }}">
-                                @csrf
-                                <input type="hidden" name="license_type" :value="licenseType">
-                                <button class="h-12 w-full rounded-2xl bg-emerald-400 px-5 font-bold text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-300">
-                                    @if($product->is_free)
-                                        {{ __('Отримати файли') }}
-                                    @else
-                                        <span x-text="licenseType === 'commercial' ? @js(__('Купити Commercial')) : @js(__('Купити Personal'))">{{ __('Купити модель') }}</span>
-                                    @endif
+                            @if($access)
+                                <button
+                                    type="button"
+                                    data-download-trigger
+                                    data-download-url="{{ route('products.download-options', $product) }}"
+                                    data-download-title="{{ $product->localized('title') }}"
+                                    class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-5 text-sm font-black text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-300"
+                                >
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                                    {{ __('Скачати / друкувати') }}
                                 </button>
-                            </form>
+                            @else
+                                <form method="POST" action="{{ route('checkout.store', $product) }}">
+                                    @csrf
+                                    <input type="hidden" name="license_type" :value="licenseType">
+                                    <button class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-5 text-sm font-black text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-300">
+                                        @if($product->is_free)
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                                            <span>{{ __('Отримати файли') }}</span>
+                                        @else
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                                            <span x-text="licenseType === 'commercial' ? @js(__('Купити Commercial')) : @js(__('Купити Personal'))">{{ __('Купити модель') }}</span>
+                                        @endif
+                                    </button>
+                                </form>
+                            @endif
                             <x-ui.wishlist-button :product="$product" variant="icon" size="lg" class="self-stretch [&_button]:h-12 [&_button]:w-12" />
                         </div>
                     @else
@@ -299,7 +314,7 @@
                     @endif
 
                     @auth
-                        @if($access)
+                        @if(false && $access)
                             <div class="mt-6">
                                 <button
                                     type="button"
