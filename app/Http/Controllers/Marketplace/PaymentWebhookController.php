@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Marketplace;
 use App\Http\Controllers\Controller;
 use App\Mail\PurchaseReceiptMail;
 use App\Mail\SaleNotificationMail;
+use App\Models\Order;
 use App\Models\Payment;
 use App\Models\TipPayment;
 use App\Notifications\NewTipNotification;
@@ -127,6 +128,13 @@ class PaymentWebhookController extends Controller
         $ref = $this->referenceFromRequest($request);
         if ($ref === null) {
             return null;
+        }
+
+        if (str_starts_with($ref, 'ORD-')) {
+            return Order::query()
+                ->where('number', $ref)
+                ->first()
+                ?->payment;
         }
 
         return Payment::where('provider_payment_id', $ref)->first();

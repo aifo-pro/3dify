@@ -91,7 +91,18 @@ class CheckoutController extends Controller
     {
         abort_unless($order->user_id === auth()->id(), 403);
 
+        $order->load(['payment', 'items.product.author', 'items.product.files', 'items.author']);
+
         return view('marketplace.checkout-success', compact('order'));
+    }
+
+    public function failed(Order $order)
+    {
+        abort_unless($order->user_id === auth()->id(), 403);
+
+        $order->load(['payment', 'items.product.author', 'items.author']);
+
+        return view('marketplace.checkout-failed', compact('order'));
     }
 
     public function demoConfirm(Order $order, AifoPaymentService $payments)

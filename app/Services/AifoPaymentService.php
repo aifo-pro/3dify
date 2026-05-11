@@ -372,7 +372,7 @@ class AifoPaymentService
             if ($pid === null && $response?->json('payment_id') !== null) {
                 $pid = (string) $response->json('payment_id');
             }
-            $providerPaymentId = $pid ?? 'AIFO-'.strtoupper(str()->random(14));
+            $providerPaymentId = $pid ?? $directPayId;
         }
 
         $payment = $order->payment()->create([

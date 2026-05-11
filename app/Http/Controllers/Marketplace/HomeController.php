@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Marketplace;
 
 use App\Http\Controllers\Controller;
+use App\Mail\PurchaseReceiptMail;
+use App\Mail\SaleNotificationMail;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
@@ -11,6 +13,7 @@ use App\Models\User;
 use App\Notifications\NewTipNotification;
 use App\Services\AifoPaymentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 
 class HomeController extends Controller
@@ -18,6 +21,10 @@ class HomeController extends Controller
     public function __invoke(Request $request)
     {
         if ($redirect = $this->redirectAifoTipReturn($request)) {
+            return $redirect;
+        }
+
+        if ($redirect = $this->redirectAifoOrderReturn($request)) {
             return $redirect;
         }
 
@@ -116,5 +123,82 @@ class HomeController extends Controller
         return redirect()
             ->route('products.show', $product)
             ->with('status', $message);
+    }
+
+    private function redirectAifoOrderReturn(Request $request)
+    {
+        $reference = $request->query('orderReference')
+            ?? $request->query('external_id')
+            ?? $request->query('pay_id');
+
+        if (! is_string($reference) || ! str_starts_with($reference, 'ORD-') || ! Schema::hasTable('orders')) {
+            return null;
+        }
+
+        $order = Order::query()
+            ->with(['payment', 'items.product.author', 'items.author', 'user'])
+            ->where('number', $reference)
+            ->first();
+
+        if (! $order) {
+            return null;
+        }
+
+        if (auth()->check() && auth()->id() !== $order->user_id) {
+            return redirect()
+                ->route('dashboard')
+                ->with('error', __('Це замовлення належить іншому акаунту.'));
+        }
+
+        $status = strtolower((string) $request->query('status'));
+        $isPaidReturn = in_array($status, ['paid', 'success', 'completed'], true);
+        $isFailedReturn = in_array($status, ['failed', 'fail', 'error', 'declined', 'canceled', 'cancelled'], true);
+
+        if ($isPaidReturn) {
+            if ($order->payment && $order->payment->status !== 'paid') {
+                app(AifoPaymentService::class)->markPaid($order->payment, [
+                    'aifo_return' => $request->query(),
+                    'marked_paid_from_return' => true,
+                ]);
+
+                Mail::to($order->user)->queue(new PurchaseReceiptMail($order));
+                foreach ($order->items as $item) {
+                    Mail::to($item->author)->queue(new SaleNotificationMail($order, $item->author));
+                }
+            }
+
+            return redirect()
+                ->route('checkout.success', $order)
+                ->with('status', __('Оплату успішно прийнято. Файли моделі вже доступні для завантаження.'));
+        }
+
+        if ($isFailedReturn) {
+            $this->markOrderPaymentFailed($order, $request);
+
+            return redirect()
+                ->route('checkout.failed', $order)
+                ->with('error', __('Оплата не пройшла. Ви можете повторити покупку або повернутися до моделі.'));
+        }
+
+        return redirect()
+            ->route('checkout.failed', $order)
+            ->with('error', __('Не вдалося підтвердити статус платежу. Якщо кошти списані, зачекайте webhook AIFO або зверніться до підтримки.'));
+    }
+
+    private function markOrderPaymentFailed(Order $order, Request $request): void
+    {
+        if ($order->payment && $order->payment->status !== 'paid') {
+            $order->payment->update([
+                'status' => 'failed',
+                'payload' => array_merge($order->payment->payload ?? [], [
+                    'aifo_return' => $request->query(),
+                    'marked_failed_from_return' => true,
+                ]),
+            ]);
+        }
+
+        if ($order->status !== 'paid') {
+            $order->update(['status' => 'failed']);
+        }
     }
 }

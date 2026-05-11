@@ -98,6 +98,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/checkout/{product:slug}', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/checkout/{order}/success', [CheckoutController::class, 'success'])->name('checkout.success');
+    Route::get('/checkout/{order}/failed', [CheckoutController::class, 'failed'])->name('checkout.failed');
     Route::post('/checkout/{order}/demo-confirm', [CheckoutController::class, 'demoConfirm'])->name('checkout.demo-confirm');
     Route::get('/models/{product:slug}/download/{file}', DownloadController::class)->name('products.download');
     Route::get('/models/{product:slug}/download-options', [DownloadOptionsController::class, 'show'])->name('products.download-options');
