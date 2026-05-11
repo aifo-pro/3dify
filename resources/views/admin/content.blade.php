@@ -206,13 +206,24 @@
         {{-- 2. БРЕНДИНГ                                                    --}}
         {{-- ============================================================ --}}
         <div x-show="tab === 'branding'" x-cloak>
-            <form method="POST" action="{{ route('admin.settings.bulk') }}" enctype="multipart/form-data" class="grid gap-5">
+            <form method="POST" action="{{ route('admin.settings.bulk') }}" enctype="multipart/form-data" class="grid gap-7">
                 @csrf
                 <input type="hidden" name="group" value="brand">
                 <input type="hidden" name="tab" value="branding">
 
+                @if($errors->any())
+                    <div class="rounded-3xl border border-rose-400/25 bg-rose-400/[0.08] p-5 text-sm text-rose-100">
+                        <p class="font-bold">{{ __('Не вдалося зберегти брендинг') }}</p>
+                        <ul class="mt-3 grid gap-1.5 text-xs leading-5 text-rose-100/85">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <x-admin.settings-card :title="__('Логотипи та зображення')" :description="__('Завантажте логотип, фавікон та OG-зображення для соцмереж.')">
-                    <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="grid gap-5 xl:grid-cols-2">
                         <x-admin.asset-upload
                             name="assets[brand.logo_path]"
                             :label="__('Логотип (світлий)')"
@@ -272,8 +283,10 @@
                     </div>
                 </x-admin.settings-card>
 
-                <div class="flex justify-end">
-                    <button type="submit" class="inline-flex h-11 items-center gap-2 rounded-xl bg-emerald-400 px-6 text-sm font-bold text-zinc-950 shadow-lg shadow-emerald-500/25 hover:bg-emerald-300">{{ __('Зберегти брендинг') }}</button>
+                <div class="sticky bottom-4 z-20 rounded-3xl border border-white/10 bg-zinc-950/85 p-3 shadow-2xl shadow-black/35 backdrop-blur-xl sm:flex sm:justify-end">
+                    <button type="submit" class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-7 text-sm font-bold text-zinc-950 shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-300 sm:w-auto">
+                        {{ __('Зберегти брендинг') }}
+                    </button>
                 </div>
             </form>
         </div>
