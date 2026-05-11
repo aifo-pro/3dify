@@ -84,6 +84,8 @@ class CheckoutController extends Controller
             return redirect()->route('checkout.success', $order);
         }
 
+        $order->load(['items.product.author', 'items.author']);
+
         return view('marketplace.checkout', compact('order', 'payment'));
     }
 
