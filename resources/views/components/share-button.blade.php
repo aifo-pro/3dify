@@ -150,27 +150,30 @@
             x-show="embedModal"
             x-cloak
             x-transition.opacity.duration.200ms
-            class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
+            class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            style="background:rgba(0,0,0,0.92);"
             @click.self="closeEmbed()"
         >
-            <div class="w-full max-w-lg rounded-3xl border border-white/10 bg-[#0b1117] p-6 shadow-2xl">
-                <div class="mb-4 flex items-center justify-between">
+            <div class="w-full max-w-lg overflow-hidden rounded-3xl border border-white/10 shadow-2xl" style="background:#0a0e14;">
+                <div class="flex items-center justify-between px-6 py-5" style="background:#0a0e14;">
                     <h3 class="text-lg font-black text-white">Embed</h3>
                     <button type="button" @click="closeEmbed()" class="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-zinc-400 transition hover:bg-white/10 hover:text-white">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                     </button>
                 </div>
-                <div class="rounded-2xl border border-white/10 bg-zinc-950/80 p-4">
-                    <code class="block break-all text-xs leading-6 text-emerald-200" x-text="embedCode"></code>
-                </div>
-                <div class="mt-4 flex gap-3">
-                    <button type="button" @click="copyEmbed()" class="inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-300/30 bg-emerald-300/[0.08] px-4 text-sm font-bold text-emerald-100 transition hover:bg-emerald-300/[0.16]">
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                        <span x-text="embedCopied ? '{{ __("Скопійовано!") }}' : '{{ __("Копіювати код") }}'"></span>
-                    </button>
-                    <button type="button" @click="closeEmbed()" class="inline-flex h-10 items-center rounded-xl border border-white/10 px-4 text-sm font-bold text-zinc-300 transition hover:bg-white/5">
-                        {{ __('Закрити') }}
-                    </button>
+                <div class="px-6 pb-6" style="background:#0a0e14;">
+                    <div class="rounded-2xl border border-white/10 p-4" style="background:#060a10;">
+                        <code class="block break-all text-xs leading-6 text-emerald-200" x-text="embedCode"></code>
+                    </div>
+                    <div class="mt-5 flex gap-3">
+                        <button type="button" @click="copyEmbed()" class="inline-flex h-11 items-center gap-2 rounded-xl border border-emerald-300/30 px-5 text-sm font-bold text-emerald-100 transition hover:bg-emerald-300/[0.12]" style="background:rgba(52,211,153,0.08);">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                            <span x-text="embedCopied ? '{{ __("Скопійовано!") }}' : '{{ __("Копіювати код") }}'"></span>
+                        </button>
+                        <button type="button" @click="closeEmbed()" class="inline-flex h-11 items-center rounded-xl border border-white/10 px-5 text-sm font-bold text-zinc-300 transition hover:bg-white/5">
+                            {{ __('Закрити') }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
