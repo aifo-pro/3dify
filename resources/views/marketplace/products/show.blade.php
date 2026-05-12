@@ -100,6 +100,20 @@
             'alt' => $product->localized('title'),
         ])
         ->all();
+    $modelPreviewUrl = $modelPreview ? $diskUrl($modelPreview->disk, $modelPreview->path) : null;
+    $galleryMediaItems = collect($gallerySliderImages)
+        ->map(fn ($item) => [
+            'type' => 'image',
+            'url' => $item['url'],
+            'alt' => $item['alt'],
+        ])
+        ->when($modelPreviewUrl, fn ($items) => $items->prepend([
+            'type' => 'viewer',
+            'url' => $modelPreviewUrl,
+            'alt' => $product->localized('title'),
+        ]))
+        ->values()
+        ->all();
 @endphp
 
 <x-layouts.marketplace
@@ -168,19 +182,60 @@
 
         <div class="grid gap-8 lg:grid-cols-[1fr_390px]">
             <div class="grid gap-8">
-                @if(count($gallerySliderImages) > 0)
+                @if(count($galleryMediaItems) > 0)
                     <div
                         class="grid gap-4"
                         x-data="{
-                            images: @js($gallerySliderImages),
+                            mediaItems: @js($galleryMediaItems),
                             currentIndex: 0,
                             lightboxOpen: false,
+                            viewerOpen: false,
                             touchStartX: null,
-                            nextImage() { if (this.images.length > 1) this.currentIndex = (this.currentIndex + 1) % this.images.length; },
-                            prevImage() { if (this.images.length > 1) this.currentIndex = (this.currentIndex - 1 + this.images.length) % this.images.length; },
+                            get currentItem() { return this.mediaItems[this.currentIndex]; },
+                            get imageItems() { return this.mediaItems.filter((item) => item.type === 'image'); },
+                            get currentImageIndex() {
+                                if (! this.currentItem || this.currentItem.type !== 'image') return 0;
+                                return Math.max(0, this.imageItems.findIndex((item) => item.url === this.currentItem.url));
+                            },
+                            next() { if (this.mediaItems.length > 1) this.currentIndex = (this.currentIndex + 1) % this.mediaItems.length; this.afterSelect(); },
+                            prev() { if (this.mediaItems.length > 1) this.currentIndex = (this.currentIndex - 1 + this.mediaItems.length) % this.mediaItems.length; this.afterSelect(); },
+                            nextImage() {
+                                const images = this.imageItems;
+                                if (images.length < 2) return;
+                                this.goToUrl(images[(this.currentImageIndex + 1) % images.length].url);
+                            },
+                            prevImage() {
+                                const images = this.imageItems;
+                                if (images.length < 2) return;
+                                this.goToUrl(images[(this.currentImageIndex - 1 + images.length) % images.length].url);
+                            },
+                            goToUrl(url) {
+                                const index = this.mediaItems.findIndex((item) => item.url === url);
+                                if (index >= 0) this.currentIndex = index;
+                            },
                             goToImage(index) { this.currentIndex = index; },
-                            openLightbox(index = this.currentIndex) { this.currentIndex = index; this.lightboxOpen = true; document.body.classList.add('overflow-hidden'); },
-                            closeLightbox() { this.lightboxOpen = false; document.body.classList.remove('overflow-hidden'); },
+                            select(index) { this.currentIndex = index; this.afterSelect(); },
+                            afterSelect() { if (this.currentItem?.type === 'viewer') this.$nextTick(() => window.dispatchEvent(new CustomEvent('init-model-viewers'))); },
+                            openCurrent() {
+                                if (this.currentItem?.type === 'viewer') return this.openViewer(this.currentIndex);
+                                return this.openImageLightbox(this.currentIndex);
+                            },
+                            openImageLightbox(index = this.currentIndex) {
+                                this.currentIndex = index;
+                                if (this.currentItem?.type !== 'image') {
+                                    const firstImage = this.mediaItems.findIndex((item) => item.type === 'image');
+                                    if (firstImage >= 0) this.currentIndex = firstImage;
+                                }
+                                this.lightboxOpen = true;
+                                document.body.classList.add('overflow-hidden');
+                            },
+                            openViewer(index = this.currentIndex) {
+                                this.currentIndex = index;
+                                this.viewerOpen = true;
+                                document.body.classList.add('overflow-hidden');
+                                this.$nextTick(() => window.dispatchEvent(new CustomEvent('init-model-viewers')));
+                            },
+                            close() { this.lightboxOpen = false; this.viewerOpen = false; document.body.classList.remove('overflow-hidden'); },
                             handleSwipe(event) {
                                 if (this.touchStartX === null) return;
                                 const diff = this.touchStartX - event.changedTouches[0].clientX;
@@ -188,28 +243,35 @@
                                 this.touchStartX = null;
                             },
                         }"
-                        @keydown.escape.window="lightboxOpen && closeLightbox()"
+                        x-init="$nextTick(() => window.dispatchEvent(new CustomEvent('init-model-viewers')))"
+                        @keydown.escape.window="(lightboxOpen || viewerOpen) && close()"
                         @keydown.arrow-right.window="lightboxOpen && nextImage()"
                         @keydown.arrow-left.window="lightboxOpen && prevImage()"
                     >
                         <div class="relative overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-950 shadow-2xl shadow-black/30">
-                            <button type="button" @click="openLightbox(currentIndex)" class="block aspect-[4/3] w-full cursor-zoom-in bg-zinc-950 sm:aspect-video" aria-label="{{ __('Відкрити фото') }}">
+                            <button x-show="currentItem?.type === 'image'" type="button" @click="openCurrent()" class="block aspect-[4/3] w-full cursor-zoom-in bg-zinc-950 sm:aspect-video" aria-label="{{ __('Відкрити фото') }}">
                                 <img
-                                    :src="images[currentIndex].url"
-                                    :alt="images[currentIndex].alt"
+                                    :src="currentItem.url"
+                                    :alt="currentItem.alt"
                                     width="960"
                                     height="720"
                                     fetchpriority="high"
                                     class="h-full w-full object-contain"
                                 >
                             </button>
+                            <div x-show="currentItem?.type === 'viewer'" x-cloak class="aspect-[4/3] w-full bg-zinc-950 sm:aspect-video">
+                                <button type="button" @click="openCurrent()" class="absolute right-4 top-4 z-20 inline-flex h-10 items-center gap-2 rounded-full border border-emerald-300/25 bg-emerald-300/[0.12] px-4 text-xs font-black uppercase tracking-[0.14em] text-emerald-100 backdrop-blur transition hover:bg-emerald-300/[0.18]">
+                                    {{ __('Відкрити 3D') }}
+                                </button>
+                                <div data-model-viewer :data-model-url="currentItem.url" class="h-full w-full"></div>
+                            </div>
 
-                            <template x-if="images.length > 1">
+                            <template x-if="mediaItems.length > 1">
                                 <div class="pointer-events-none absolute inset-y-0 left-0 right-0 z-10 flex items-center justify-between px-3 sm:px-5">
-                                    <button type="button" @click.stop="prevImage()" class="pointer-events-auto grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-zinc-950/75 text-white shadow-xl shadow-black/30 backdrop-blur transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Попереднє фото') }}">
+                                    <button type="button" @click.stop="prev()" class="pointer-events-auto grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-zinc-950/75 text-white shadow-xl shadow-black/30 backdrop-blur transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Попереднє фото') }}">
                                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                                     </button>
-                                    <button type="button" @click.stop="nextImage()" class="pointer-events-auto grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-zinc-950/75 text-white shadow-xl shadow-black/30 backdrop-blur transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Наступне фото') }}">
+                                    <button type="button" @click.stop="next()" class="pointer-events-auto grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-zinc-950/75 text-white shadow-xl shadow-black/30 backdrop-blur transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Наступне фото') }}">
                                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                                     </button>
                                 </div>
@@ -218,21 +280,24 @@
                             <div class="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/10 bg-zinc-950/70 px-3 py-1.5 text-xs font-bold text-zinc-200 backdrop-blur">
                                 <span x-text="currentIndex + 1"></span>
                                 <span class="text-zinc-500">/</span>
-                                <span x-text="images.length"></span>
+                                <span x-text="mediaItems.length"></span>
                             </div>
                         </div>
 
-                        <template x-if="images.length > 1">
+                        <template x-if="mediaItems.length > 1">
                             <div class="rounded-3xl border border-white/10 bg-white/[0.035] p-3">
                                 <div class="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:thin]">
-                                    <template x-for="(image, index) in images" :key="image.url">
+                                    <template x-for="(item, index) in mediaItems" :key="item.type + '-' + item.url">
                                         <button
                                             type="button"
-                                            @click="goToImage(index)"
+                                            @click="select(index)"
                                             class="group relative h-24 w-36 shrink-0 overflow-hidden rounded-2xl border bg-zinc-900 transition sm:h-28 sm:w-44"
                                             :class="currentIndex === index ? 'border-emerald-300/70 ring-2 ring-emerald-300/20' : 'border-white/10 hover:border-white/25'"
                                         >
-                                            <img :src="image.url" :alt="image.alt" loading="lazy" class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
+                                            <img x-show="item.type === 'image'" :src="item.url" :alt="item.alt" loading="lazy" class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
+                                            <span x-show="item.type === 'viewer'" class="grid h-full w-full place-items-center bg-[radial-gradient(circle_at_center,rgba(52,211,153,.18),transparent_55%),#09090b] text-emerald-100">
+                                                <span class="grid h-12 w-12 place-items-center rounded-2xl border border-emerald-300/25 bg-emerald-300/[0.12] text-xs font-black">3D</span>
+                                            </span>
                                             <span x-show="currentIndex === index" class="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20">
                                                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                                             </span>
@@ -249,44 +314,69 @@
                             class="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-4 bg-black/95 p-4 backdrop-blur-md"
                             role="dialog"
                             aria-modal="true"
-                            @click.self="closeLightbox()"
+                            @click.self="close()"
                             @touchstart.passive="touchStartX = $event.changedTouches[0].clientX"
                             @touchend.passive="handleSwipe($event)"
                         >
-                            <button type="button" @click="closeLightbox()" class="absolute right-4 top-4 z-20 grid h-12 w-12 place-items-center rounded-full border border-white/15 bg-zinc-950/75 text-white shadow-2xl shadow-black/40 backdrop-blur transition hover:bg-white/10" aria-label="{{ __('Закрити') }}">
+                            <button type="button" @click="close()" class="absolute right-4 top-4 z-20 grid h-12 w-12 place-items-center rounded-full border border-white/15 bg-zinc-950/75 text-white shadow-2xl shadow-black/40 backdrop-blur transition hover:bg-white/10" aria-label="{{ __('Закрити') }}">
                                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                             </button>
 
-                            <template x-if="images.length > 1">
+                            <template x-if="imageItems.length > 1">
                                 <button type="button" @click.stop="prevImage()" class="absolute left-4 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-zinc-950/75 text-white shadow-2xl shadow-black/40 backdrop-blur transition hover:bg-white/10" aria-label="{{ __('Попереднє фото') }}">
                                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                                 </button>
                             </template>
 
-                            <img :src="images[currentIndex].url" :alt="images[currentIndex].alt" class="max-h-[90vh] max-w-[95vw] rounded-2xl object-contain shadow-2xl shadow-black/50">
+                            <div class="rounded-[1.75rem] border border-white/10 bg-zinc-950 p-2 shadow-2xl shadow-black/50">
+                                <img :src="currentItem.url" :alt="currentItem.alt" class="h-auto w-auto max-h-[86vh] max-w-[92vw] rounded-2xl object-contain">
+                            </div>
 
-                            <template x-if="images.length > 1">
+                            <template x-if="imageItems.length > 1">
                                 <button type="button" @click.stop="nextImage()" class="absolute right-4 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-zinc-950/75 text-white shadow-2xl shadow-black/40 backdrop-blur transition hover:bg-white/10" aria-label="{{ __('Наступне фото') }}">
                                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                                 </button>
                             </template>
 
-                            <template x-if="images.length > 1">
+                            <div class="absolute left-1/2 top-5 -translate-x-1/2 rounded-full border border-white/10 bg-zinc-950/70 px-3 py-1.5 text-xs font-bold text-zinc-200 backdrop-blur">
+                                <span x-text="currentImageIndex + 1"></span>
+                                <span class="text-zinc-500">/</span>
+                                <span x-text="imageItems.length"></span>
+                            </div>
+
+                            <template x-if="imageItems.length > 1">
                                 <div class="absolute bottom-5 left-1/2 flex max-w-[90vw] -translate-x-1/2 gap-2 overflow-x-auto rounded-full border border-white/10 bg-zinc-950/70 px-3 py-2 backdrop-blur [scrollbar-width:none]">
-                                    <template x-for="(image, index) in images" :key="'dot-' + image.url">
-                                        <button type="button" @click.stop="goToImage(index)" class="h-2.5 rounded-full transition-all" :class="currentIndex === index ? 'w-8 bg-emerald-300' : 'w-2.5 bg-white/35 hover:bg-white/60'" :aria-label="'Photo ' + (index + 1)"></button>
+                                    <template x-for="(image, index) in imageItems" :key="'dot-' + image.url">
+                                        <button type="button" @click.stop="goToUrl(image.url)" class="h-2.5 rounded-full transition-all" :class="currentImageIndex === index ? 'w-8 bg-emerald-300' : 'w-2.5 bg-white/35 hover:bg-white/60'" :aria-label="'Photo ' + (index + 1)"></button>
                                     </template>
                                 </div>
                             </template>
                         </div>
+
+                        <div
+                            x-show="viewerOpen"
+                            x-cloak
+                            x-transition.opacity
+                            class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md"
+                            role="dialog"
+                            aria-modal="true"
+                            @click.self="close()"
+                        >
+                            <button type="button" @click="close()" class="absolute right-4 top-4 z-20 grid h-12 w-12 place-items-center rounded-full border border-white/15 bg-zinc-950/75 text-white shadow-2xl shadow-black/40 backdrop-blur transition hover:bg-white/10" aria-label="{{ __('Закрити') }}">
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                            </button>
+                            <div class="h-[85vh] w-[90vw] max-w-6xl overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-950 shadow-2xl shadow-black/50">
+                                <div x-show="currentItem?.type === 'viewer'" data-model-viewer :data-model-url="currentItem?.url" class="h-full w-full"></div>
+                            </div>
+                        </div>
                     </div>
                 @elseif($modelPreview)
                     <div class="overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900 shadow-2xl shadow-black/30">
-                        <div id="viewer" data-model-url="{{ Storage::disk($modelPreview->disk)->url($modelPreview->path) }}" class="h-[420px] bg-zinc-950 sm:h-[560px]"></div>
+                        <div data-model-viewer data-model-url="{{ Storage::disk($modelPreview->disk)->url($modelPreview->path) }}" class="h-[420px] bg-zinc-950 sm:h-[560px]"></div>
                     </div>
                 @else
                     <div class="overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900 shadow-2xl shadow-black/30">
-                        <div id="viewer" data-model-url="" class="h-[420px] bg-zinc-950 sm:h-[560px]"></div>
+                        <div data-model-viewer data-model-url="" class="h-[420px] bg-zinc-950 sm:h-[560px]"></div>
                     </div>
                 @endif
 

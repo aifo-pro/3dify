@@ -44,29 +44,35 @@ Alpine.data('productPricing', () => ({
 
 Alpine.start();
 
-requestIdleCallback(() => {
-    const viewer = document.getElementById('viewer');
-    if (!viewer) return;
-
+function initModelViewers() {
     const IMAGE_EXTS = ['gif', 'png', 'jpg', 'jpeg', 'webp', 'avif', 'svg'];
-    const modelUrl = viewer.dataset.modelUrl;
-    const ext = (() => {
-        if (!modelUrl) return '';
-        try {
-            const m = new URL(modelUrl, location.origin).pathname.match(/\.([a-z0-9]+)$/i);
-            return m ? m[1].toLowerCase() : '';
-        } catch { return ''; }
-    })();
 
-    if (modelUrl && IMAGE_EXTS.includes(ext)) {
-        viewer.classList.add('flex', 'items-center', 'justify-center', 'bg-zinc-950');
-        const img = document.createElement('img');
-        img.src = modelUrl;
-        img.alt = '';
-        img.loading = 'lazy';
-        img.className = 'h-full w-full object-contain';
-        viewer.appendChild(img);
-    } else {
+    document.querySelectorAll('[data-model-viewer]').forEach((viewer) => {
+        if (viewer.dataset.viewerInitialized === '1') return;
+        if (viewer.clientWidth < 20 || viewer.clientHeight < 20) return;
+
+        const modelUrl = viewer.dataset.modelUrl;
+        const ext = (() => {
+            if (!modelUrl) return '';
+            try {
+                const m = new URL(modelUrl, location.origin).pathname.match(/\.([a-z0-9]+)$/i);
+                return m ? m[1].toLowerCase() : '';
+            } catch { return ''; }
+        })();
+
+        viewer.dataset.viewerInitialized = '1';
+
+        if (modelUrl && IMAGE_EXTS.includes(ext)) {
+            viewer.classList.add('flex', 'items-center', 'justify-center', 'bg-zinc-950');
+            const img = document.createElement('img');
+            img.src = modelUrl;
+            img.alt = '';
+            img.loading = 'lazy';
+            img.className = 'h-full w-full object-contain';
+            viewer.appendChild(img);
+            return;
+        }
+
         import('https://unpkg.com/three@0.165.0/build/three.module.js').then(async (THREE) => {
             const { OrbitControls } = await import('https://unpkg.com/three@0.165.0/examples/jsm/controls/OrbitControls.js');
             const { GLTFLoader } = await import('https://unpkg.com/three@0.165.0/examples/jsm/loaders/GLTFLoader.js');
@@ -109,13 +115,19 @@ requestIdleCallback(() => {
                 requestAnimationFrame(render);
             }
 
-            window.addEventListener('resize', () => {
+            function resize() {
+                if (viewer.clientWidth < 20 || viewer.clientHeight < 20) return;
                 camera.aspect = viewer.clientWidth / viewer.clientHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(viewer.clientWidth, viewer.clientHeight);
-            });
+            }
 
+            window.addEventListener('resize', resize);
+            window.addEventListener('init-model-viewers', resize);
             render();
         });
-    }
-});
+    });
+}
+
+window.addEventListener('init-model-viewers', () => requestAnimationFrame(initModelViewers));
+requestIdleCallback(initModelViewers);
