@@ -21,7 +21,7 @@ Allow: /
 
 User-agent: *
 Disallow: /admin
-Disallow: /author
+Disallow: /author/
 Disallow: /dashboard
 Disallow: /notifications
 Disallow: /wishlist
@@ -30,6 +30,8 @@ Disallow: /login
 Disallow: /register
 Disallow: /password
 Disallow: /verify-email
+Allow: /authors
+Allow: /authors/
 Allow: /
 
 Sitemap: https://3dify.dev/sitemap.xml
