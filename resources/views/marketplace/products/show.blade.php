@@ -300,7 +300,7 @@
                             </form>
                         @endif
 
-                        <div class="mt-3 grid grid-cols-[1fr_auto_auto] gap-2">
+                        <div class="mt-3 grid gap-3">
                             @if($access)
                                 <button
                                     type="button"
@@ -357,26 +357,32 @@
                                     </button>
                                 </form>
                             @endif
-                            <x-ui.wishlist-button :product="$product" variant="icon" size="lg" class="self-stretch [&_button]:h-12 [&_button]:w-12" />
-                            <x-share-button
-                                :url="route('products.show', $product)"
-                                :title="$product->localized('title')"
-                                :description="$product->localized('short_description') ?: __('3D-модель на 3Dify')"
-                                :image="$coverImage ?? ''"
-                                :embed-route="route('products.embed', $product)"
-                            />
+                            <div class="flex items-center gap-2">
+                                <x-ui.wishlist-button :product="$product" variant="icon" size="lg" class="[&_button]:h-11 [&_button]:w-11" />
+                                <x-share-button
+                                    :url="route('products.show', $product)"
+                                    :title="$product->localized('title')"
+                                    :description="$product->localized('short_description') ?: __('3D-модель на 3Dify')"
+                                    :image="$coverImage ?? ''"
+                                    :embed-route="route('products.embed', $product)"
+                                />
+                                <span class="ml-1 text-xs font-medium text-zinc-500">{{ __('Поширити') }}</span>
+                            </div>
                         </div>
                     @else
-                        <div class="mt-6 grid grid-cols-[1fr_auto_auto] gap-2">
+                        <div class="mt-6 grid gap-3">
                             <x-ui.button :href="route('login')" class="w-full">{{ __('Увійти для покупки') }}</x-ui.button>
-                            <x-ui.wishlist-button :product="$product" variant="icon" size="lg" class="self-stretch [&_button]:h-12 [&_button]:w-12" />
-                            <x-share-button
-                                :url="route('products.show', $product)"
-                                :title="$product->localized('title')"
-                                :description="$product->localized('short_description') ?: __('3D-модель на 3Dify')"
-                                :image="$coverImage ?? ''"
-                                :embed-route="route('products.embed', $product)"
-                            />
+                            <div class="flex items-center gap-2">
+                                <x-ui.wishlist-button :product="$product" variant="icon" size="lg" class="[&_button]:h-11 [&_button]:w-11" />
+                                <x-share-button
+                                    :url="route('products.show', $product)"
+                                    :title="$product->localized('title')"
+                                    :description="$product->localized('short_description') ?: __('3D-модель на 3Dify')"
+                                    :image="$coverImage ?? ''"
+                                    :embed-route="route('products.embed', $product)"
+                                />
+                                <span class="ml-1 text-xs font-medium text-zinc-500">{{ __('Поширити') }}</span>
+                            </div>
                         </div>
                     @endauth
 
