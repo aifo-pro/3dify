@@ -195,11 +195,11 @@
                             </button>
 
                             <template x-if="images.length > 1">
-                                <div class="absolute inset-y-0 left-0 right-0 z-10 flex items-center justify-between px-3 sm:px-5">
-                                    <button type="button" @click.stop="prev()" class="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-zinc-950/75 text-white shadow-xl shadow-black/30 backdrop-blur transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Попереднє фото') }}">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 right-0 z-10 flex items-center justify-between px-3 sm:px-5">
+                                    <button type="button" @click.stop="prev()" class="pointer-events-auto grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-zinc-950/75 text-white shadow-xl shadow-black/30 backdrop-blur transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Попереднє фото') }}">
                                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                                     </button>
-                                    <button type="button" @click.stop="next()" class="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-zinc-950/75 text-white shadow-xl shadow-black/30 backdrop-blur transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Наступне фото') }}">
+                                    <button type="button" @click.stop="next()" class="pointer-events-auto grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-zinc-950/75 text-white shadow-xl shadow-black/30 backdrop-blur transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Наступне фото') }}">
                                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                                     </button>
                                 </div>
