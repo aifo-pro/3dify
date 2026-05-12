@@ -5,6 +5,23 @@
 
     RewriteEngine On
 
+    # Allow social media crawlers (bypass mod_security / bot protection)
+    SetEnvIfNoCase User-Agent "facebookexternalhit" SOCIAL_BOT
+    SetEnvIfNoCase User-Agent "Facebot" SOCIAL_BOT
+    SetEnvIfNoCase User-Agent "Twitterbot" SOCIAL_BOT
+    SetEnvIfNoCase User-Agent "TelegramBot" SOCIAL_BOT
+    SetEnvIfNoCase User-Agent "LinkedInBot" SOCIAL_BOT
+    SetEnvIfNoCase User-Agent "Pinterestbot" SOCIAL_BOT
+    SetEnvIfNoCase User-Agent "redditbot" SOCIAL_BOT
+    SetEnvIfNoCase User-Agent "Slackbot" SOCIAL_BOT
+    SetEnvIfNoCase User-Agent "WhatsApp" SOCIAL_BOT
+    SetEnvIfNoCase User-Agent "Discordbot" SOCIAL_BOT
+
+    <IfModule mod_security2.c>
+        SecFilterEngine Off
+        SecFilterScanPOST Off
+    </IfModule>
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
@@ -22,6 +39,11 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule mod_security2.c>
+    SecRuleRemoveById 960015
+    SecRuleRemoveById 960009
 </IfModule>
 
 # Cache static assets (Vite-hashed files get 1 year, images/fonts 30 days)
