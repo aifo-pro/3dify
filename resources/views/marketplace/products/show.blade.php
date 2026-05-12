@@ -174,28 +174,32 @@
                         x-data="{
                             images: @js($gallerySliderImages),
                             active: 0,
+                            lightbox: false,
                             next() { this.active = (this.active + 1) % this.images.length; },
                             prev() { this.active = (this.active - 1 + this.images.length) % this.images.length; },
                         }"
-                        @keydown.arrow-right.window="next()"
-                        @keydown.arrow-left.window="prev()"
+                        @keydown.escape.window="lightbox = false"
+                        @keydown.arrow-right.window="lightbox && next()"
+                        @keydown.arrow-left.window="lightbox && prev()"
                     >
                         <div class="relative overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-950 shadow-2xl shadow-black/30">
-                            <img
-                                :src="images[active].url"
-                                :alt="images[active].alt"
-                                width="960"
-                                height="560"
-                                fetchpriority="high"
-                                class="h-[420px] w-full bg-zinc-950 object-contain sm:h-[560px]"
-                            >
+                            <button type="button" @click="lightbox = true" class="block w-full cursor-zoom-in" aria-label="{{ __('Відкрити фото') }}">
+                                <img
+                                    :src="images[active].url"
+                                    :alt="images[active].alt"
+                                    width="960"
+                                    height="560"
+                                    fetchpriority="high"
+                                    class="h-[420px] w-full bg-zinc-950 object-contain sm:h-[560px]"
+                                >
+                            </button>
 
                             <template x-if="images.length > 1">
-                                <div class="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-3 sm:px-5">
-                                    <button type="button" @click="prev()" class="pointer-events-auto grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-zinc-950/70 text-white shadow-xl shadow-black/30 backdrop-blur transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Попереднє фото') }}">
+                                <div class="absolute inset-y-0 left-0 right-0 z-10 flex items-center justify-between px-3 sm:px-5">
+                                    <button type="button" @click.stop="prev()" class="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-zinc-950/75 text-white shadow-xl shadow-black/30 backdrop-blur transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Попереднє фото') }}">
                                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                                     </button>
-                                    <button type="button" @click="next()" class="pointer-events-auto grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-zinc-950/70 text-white shadow-xl shadow-black/30 backdrop-blur transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Наступне фото') }}">
+                                    <button type="button" @click.stop="next()" class="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-zinc-950/75 text-white shadow-xl shadow-black/30 backdrop-blur transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Наступне фото') }}">
                                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                                     </button>
                                 </div>
@@ -210,31 +214,51 @@
 
                         <template x-if="images.length > 1">
                             <div class="rounded-3xl border border-white/10 bg-white/[0.035] p-3">
-                                <div class="flex items-center gap-3">
-                                    <button type="button" @click="prev()" class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-zinc-950/70 text-zinc-100 transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Прокрутити вліво') }}">
-                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                                    </button>
-                                    <div class="flex min-w-0 flex-1 snap-x gap-3 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:thin]">
-                                        <template x-for="(image, index) in images" :key="image.url">
-                                            <button
-                                                type="button"
-                                                @click="active = index"
-                                                class="group relative h-24 w-36 shrink-0 snap-start overflow-hidden rounded-2xl border bg-zinc-900 transition sm:h-28 sm:w-44"
-                                                :class="active === index ? 'border-emerald-300/70 ring-2 ring-emerald-300/20' : 'border-white/10 hover:border-white/25'"
-                                            >
-                                                <img :src="image.url" :alt="image.alt" loading="lazy" class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
-                                                <span x-show="active === index" class="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20">
-                                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                                                </span>
-                                            </button>
-                                        </template>
-                                    </div>
-                                    <button type="button" @click="next()" class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-zinc-950/70 text-zinc-100 transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Прокрутити вправо') }}">
-                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                                    </button>
+                                <div class="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:thin]">
+                                    <template x-for="(image, index) in images" :key="image.url">
+                                        <button
+                                            type="button"
+                                            @click="active = index"
+                                            class="group relative h-24 w-36 shrink-0 overflow-hidden rounded-2xl border bg-zinc-900 transition sm:h-28 sm:w-44"
+                                            :class="active === index ? 'border-emerald-300/70 ring-2 ring-emerald-300/20' : 'border-white/10 hover:border-white/25'"
+                                        >
+                                            <img :src="image.url" :alt="image.alt" loading="lazy" class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
+                                            <span x-show="active === index" class="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20">
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                            </span>
+                                        </button>
+                                    </template>
                                 </div>
                             </div>
                         </template>
+
+                        <div
+                            x-show="lightbox"
+                            x-cloak
+                            x-transition.opacity
+                            class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md"
+                            role="dialog"
+                            aria-modal="true"
+                            @click.self="lightbox = false"
+                        >
+                            <button type="button" @click="lightbox = false" class="absolute right-4 top-4 z-20 grid h-12 w-12 place-items-center rounded-full border border-white/15 bg-zinc-950/75 text-white shadow-2xl shadow-black/40 backdrop-blur transition hover:bg-white/10" aria-label="{{ __('Закрити') }}">
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                            </button>
+
+                            <template x-if="images.length > 1">
+                                <button type="button" @click.stop="prev()" class="absolute left-4 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-zinc-950/75 text-white shadow-2xl shadow-black/40 backdrop-blur transition hover:bg-white/10" aria-label="{{ __('Попереднє фото') }}">
+                                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                </button>
+                            </template>
+
+                            <img :src="images[active].url" :alt="images[active].alt" class="max-h-[88vh] max-w-[94vw] rounded-3xl object-contain shadow-2xl shadow-black/50">
+
+                            <template x-if="images.length > 1">
+                                <button type="button" @click.stop="next()" class="absolute right-4 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-zinc-950/75 text-white shadow-2xl shadow-black/40 backdrop-blur transition hover:bg-white/10" aria-label="{{ __('Наступне фото') }}">
+                                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                </button>
+                            </template>
+                        </div>
                     </div>
                 @elseif($modelPreview)
                     <div class="overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900 shadow-2xl shadow-black/30">
