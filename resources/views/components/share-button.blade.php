@@ -108,7 +108,8 @@
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95"
         @click.outside="open = false"
-        class="absolute right-0 top-full z-50 mt-3 w-64 overflow-hidden rounded-2xl border border-white/10 bg-[#101418] shadow-2xl shadow-black/50"
+        class="absolute bottom-full left-0 z-50 mb-3 w-64 overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/60"
+        style="background: #101418;"
     >
         <div class="py-2">
             <button type="button" @click="shareFacebook()" class="flex w-full items-center gap-3 px-4 py-3 text-sm text-zinc-200 transition hover:bg-emerald-300/10 hover:text-emerald-200">
