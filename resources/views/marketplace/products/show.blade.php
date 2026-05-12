@@ -60,7 +60,14 @@
         }
 
         try {
-            return Storage::disk('public')->exists($path) ? Storage::disk('public')->url($path) : null;
+            if (! Storage::disk('public')->exists($path)) {
+                return null;
+            }
+            $url = Storage::disk('public')->url($path);
+            if (! str_starts_with($url, 'http')) {
+                $url = url($url);
+            }
+            return $url;
         } catch (\Throwable) {
             return null;
         }
@@ -71,7 +78,11 @@
         }
 
         try {
-            return Storage::disk($disk)->url($path);
+            $url = Storage::disk($disk)->url($path);
+            if (! str_starts_with($url, 'http')) {
+                $url = url($url);
+            }
+            return $url;
         } catch (\Throwable) {
             return null;
         }
