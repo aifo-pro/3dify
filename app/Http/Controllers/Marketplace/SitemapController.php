@@ -52,7 +52,7 @@ class SitemapController extends Controller
         if (Schema::hasTable('categories')) {
             Category::query()->where('is_active', true)->each(function ($cat) use (&$urls) {
                 $urls[] = [
-                    'loc' => route('products.index', ['category' => $cat->slug]),
+                    'loc' => route('categories.show', $cat),
                     'priority' => '0.7',
                     'changefreq' => 'weekly',
                 ];

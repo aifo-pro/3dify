@@ -221,7 +221,7 @@ class NewsletterTemplateService
         $body = $this->shellHeader('Категорія тижня', $subject)
             .$this->shellIntro('Цього тижня в центрі уваги — '.e($catName).'. У каталозі '.$category->products_count.' моделей у цій категорії. Ось чотири, з яких варто почати:')
             .$this->productGrid($products, columns: 2)
-            .$this->ctaButton(route('products.index', ['category' => $category->slug]), 'Переглянути всю категорію')
+            .$this->ctaButton(route('categories.show', $category), 'Переглянути всю категорію')
             .$this->shellOutro('Шукаєш щось специфічне? Напиши нам у відповідь — підкажемо.');
 
         return [

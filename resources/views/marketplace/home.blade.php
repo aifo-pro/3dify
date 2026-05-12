@@ -197,7 +197,7 @@
                         $iconNames = ['sword','wrench','sparkle','toy','gear','building'];
                         $iconKey = $iconNames[$loop->index % 6];
                     @endphp
-                    <a href="{{ route('products.index', ['category' => $category->slug]) }}" class="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-xl shadow-black/15 transition duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.07]">
+                    <a href="{{ route('categories.show', $category) }}" class="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-xl shadow-black/15 transition duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.07]">
                         <div class="absolute inset-0 -z-10 bg-gradient-to-br {{ $catTone[$tone] }} opacity-60"></div>
                         <div class="flex items-start justify-between gap-4">
                             <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/10 bg-zinc-950/50 backdrop-blur {{ $catText[$tone] }}">

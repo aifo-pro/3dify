@@ -143,7 +143,7 @@
             '@type' => 'ListItem',
             'position' => count($breadcrumbItems) + 1,
             'name' => $product->category->localized('name'),
-            'item' => route('products.index', ['category' => $product->category->slug]),
+            'item' => route('categories.show', $product->category),
         ];
     }
     $breadcrumbItems[] = [
@@ -244,7 +244,7 @@
             <div class="flex flex-wrap items-center gap-2">
                 <x-ui.badge :variant="$product->is_free ? 'free' : 'paid'">{{ $product->is_free ? __('Безкоштовна модель') : __('Преміальна модель') }}</x-ui.badge>
                 @if($product->category)
-                    <a href="{{ route('products.index', ['category' => $product->category->slug]) }}">
+                    <a href="{{ route('categories.show', $product->category) }}">
                         <x-ui.badge>{{ $product->category->localized('name') }}</x-ui.badge>
                     </a>
                 @endif
@@ -696,7 +696,7 @@
                             <dt class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">{{ __('Категорія') }}</dt>
                             <dd class="mt-1.5">
                                 @if($product->category)
-                                    <a href="{{ route('products.index', ['category' => $product->category->slug]) }}" class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-sm font-semibold text-zinc-100 transition hover:border-emerald-300/40 hover:bg-emerald-300/[0.10] hover:text-emerald-100">
+                                    <a href="{{ route('categories.show', $product->category) }}" class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-sm font-semibold text-zinc-100 transition hover:border-emerald-300/40 hover:bg-emerald-300/[0.10] hover:text-emerald-100">
                                         {{ $product->category->localized('name') }}
                                     </a>
                                 @else

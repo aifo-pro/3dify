@@ -17,12 +17,23 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, ?Category $category = null)
     {
         $minPrice = $request->filled('min_price') ? max(0, (float) $request->input('min_price')) : null;
         $maxPrice = $request->filled('max_price') ? max(0, (float) $request->input('max_price')) : null;
         $licenseSlugs = (array) $request->input('license', []);
         $formatExt = (array) $request->input('format', []);
+        $categorySlug = $category?->slug ?: (string) $request->input('category', '');
+
+        if (! $category && $request->filled('category') && count($request->query()) === 1) {
+            $cleanCategory = Category::query()
+                ->where('slug', $request->string('category')->toString())
+                ->first();
+
+            if ($cleanCategory) {
+                return redirect()->route('categories.show', $cleanCategory, status: 301);
+            }
+        }
 
         $products = Product::query()
             ->with(['author', 'category', 'tags'])
@@ -35,7 +46,7 @@ class ProductController extends Controller
                         ->orWhere('description', 'like', $term);
                 });
             })
-            ->when($request->filled('category'), fn ($query) => $query->whereHas('category', fn ($q) => $q->where('slug', $request->category)))
+            ->when($categorySlug !== '', fn ($query) => $query->whereHas('category', fn ($q) => $q->where('slug', $categorySlug)))
             ->when($request->boolean('free'), fn ($query) => $query->where('is_free', true))
             ->when($request->filled('tag'), fn ($query) => $query->whereHas('tags', fn ($q) => $q->where('slug', $request->tag)))
             ->when(! empty($licenseSlugs), fn ($query) => $query->whereHas('license', fn ($q) => $q->whereIn('slug', $licenseSlugs)))
@@ -68,7 +79,7 @@ class ProductController extends Controller
             'availableFormats' => $availableFormats,
             'filters' => [
                 'q' => (string) $request->input('q', ''),
-                'category' => (string) $request->input('category', ''),
+                'category' => $categorySlug,
                 'tag' => (string) $request->input('tag', ''),
                 'free' => $request->boolean('free'),
                 'license' => $licenseSlugs,
