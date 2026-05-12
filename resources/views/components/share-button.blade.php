@@ -79,9 +79,9 @@
         x-transition:leave-end="opacity-0 translate-y-4"
         class="fixed inset-x-0 bottom-0 z-[9999] mx-auto w-full max-w-sm p-4 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:p-0"
     >
-        <div class="overflow-hidden rounded-2xl border border-white/10 bg-[#0b1117] shadow-2xl shadow-black/60">
+        <div class="overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/60" style="background:#0b1117;">
             {{-- Header --}}
-            <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
+            <div class="flex items-center justify-between border-b border-white/10 px-5 py-4" style="background:#0b1117;">
                 <h3 class="text-sm font-bold text-white">{{ __('Поширити') }}</h3>
                 <button type="button" @click="open = false" class="grid h-8 w-8 place-items-center rounded-lg text-zinc-400 transition hover:bg-white/10 hover:text-white">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -89,7 +89,7 @@
             </div>
 
             {{-- Social grid --}}
-            <div class="grid grid-cols-4 gap-1 px-4 py-4">
+            <div class="grid grid-cols-4 gap-1 px-4 py-4" style="background:#0b1117;">
                 <button type="button" @click="shareFacebook()" class="flex flex-col items-center gap-2 rounded-xl px-2 py-3 transition hover:bg-white/5">
                     <span class="grid h-10 w-10 place-items-center rounded-full" style="background:#1877F2">
                         <svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
