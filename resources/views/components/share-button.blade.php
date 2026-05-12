@@ -48,6 +48,7 @@
     }"
     @keydown.escape.window="open ? (open = false) : (embedModal ? closeEmbed() : null)"
     class="relative"
+    :class="open ? 'z-[100]' : ''"
 >
     {{-- Trigger --}}
     <button
@@ -66,7 +67,7 @@
         x-cloak
         x-transition
         @click.outside="open = false"
-        class="absolute right-0 top-full z-[100] mt-3 w-72 overflow-hidden rounded-2xl border border-white/10 bg-[#0b1117] shadow-2xl"
+        class="absolute left-0 bottom-full z-[100] mb-3 w-72 overflow-hidden rounded-2xl border border-white/10 bg-[#0b1117] shadow-2xl shadow-black/60"
     >
         <button type="button" @click="shareFacebook()" class="flex w-full items-center gap-3 px-4 py-3 text-sm text-zinc-200 hover:bg-white/5">
             <svg class="h-5 w-5 shrink-0" style="color:#1877F2" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
@@ -113,7 +114,7 @@
         x-show="copied"
         x-cloak
         x-transition.opacity.duration.200ms
-        class="absolute right-0 top-full z-[101] mt-2 rounded-xl border border-emerald-300/20 bg-emerald-950 px-3 py-2 text-xs font-bold text-emerald-200 shadow-lg"
+        class="absolute left-0 top-full z-[101] mt-2 rounded-xl border border-emerald-300/20 bg-emerald-950 px-3 py-2 text-xs font-bold text-emerald-200 shadow-lg"
     >
         {{ __('Посилання скопійовано') }}
     </div>
