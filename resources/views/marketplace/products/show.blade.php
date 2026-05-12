@@ -125,6 +125,97 @@
         ]))
         ->values()
         ->all();
+
+    $productUrl = route('products.show', $product);
+    $productDescription = $product->localized('short_description') ?: $product->localized('description') ?: __('3D-модель для друку на 3Dify.');
+    $productImages = collect($gallerySliderImages)
+        ->pluck('url')
+        ->filter(fn ($url) => is_string($url) && trim($url) !== '')
+        ->unique()
+        ->values();
+    $primaryImageUrl = $productImages->first() ?: $coverImage;
+    $breadcrumbItems = [
+        ['@type' => 'ListItem', 'position' => 1, 'name' => __('Головна'), 'item' => route('home')],
+        ['@type' => 'ListItem', 'position' => 2, 'name' => __('Каталог'), 'item' => route('products.index')],
+    ];
+    if ($product->category) {
+        $breadcrumbItems[] = [
+            '@type' => 'ListItem',
+            'position' => count($breadcrumbItems) + 1,
+            'name' => $product->category->localized('name'),
+            'item' => route('products.index', ['category' => $product->category->slug]),
+        ];
+    }
+    $breadcrumbItems[] = [
+        '@type' => 'ListItem',
+        'position' => count($breadcrumbItems) + 1,
+        'name' => $product->localized('title'),
+        'item' => $productUrl,
+    ];
+    $webPageSchema = [
+        '@type' => 'WebPage',
+        '@id' => $productUrl.'#webpage',
+        'url' => $productUrl,
+        'name' => $product->localized('title').' · 3Dify',
+        'description' => $productDescription,
+        'breadcrumb' => ['@id' => $productUrl.'#breadcrumb'],
+    ];
+    if ($primaryImageUrl) {
+        $webPageSchema['primaryImageOfPage'] = ['@id' => $primaryImageUrl.'#image'];
+    }
+    $productSchema = [
+        '@type' => 'Product',
+        '@id' => $productUrl.'#product',
+        'name' => $product->localized('title'),
+        'description' => $productDescription,
+        'sku' => 'P-'.$product->id,
+        'url' => $productUrl,
+        'brand' => ['@type' => 'Brand', 'name' => '3Dify'],
+        'manufacturer' => ['@type' => 'Organization', 'name' => $authorName],
+        'category' => $product->category?->localized('name'),
+        'offers' => [
+            '@type' => 'Offer',
+            'price' => (float) $product->price,
+            'priceCurrency' => $product->currency ?? 'UAH',
+            'availability' => $product->status === 'published' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            'url' => $productUrl,
+        ],
+    ];
+    if ($productImages->isNotEmpty()) {
+        $productSchema['image'] = $productImages->all();
+    }
+    if ($reviewsCount > 0) {
+        $productSchema['aggregateRating'] = [
+            '@type' => 'AggregateRating',
+            'ratingValue' => (float) $avgRating,
+            'reviewCount' => $reviewsCount,
+            'bestRating' => 5,
+            'worstRating' => 1,
+        ];
+    }
+    $imageSchemas = $productImages
+        ->map(fn ($url, $index) => [
+            '@type' => 'ImageObject',
+            '@id' => $url.'#image',
+            'url' => $url,
+            'contentUrl' => $url,
+            'name' => $product->localized('title').' · '.__('фото :number', ['number' => $index + 1]),
+            'caption' => $product->localized('title').' — '.__('3D-модель для друку'),
+            'representativeOfPage' => $index === 0,
+        ])
+        ->all();
+    $structuredData = [
+        '@context' => 'https://schema.org',
+        '@graph' => array_merge([
+            $webPageSchema,
+            $productSchema,
+            [
+                '@type' => 'BreadcrumbList',
+                '@id' => $productUrl.'#breadcrumb',
+                'itemListElement' => $breadcrumbItems,
+            ],
+        ], $imageSchemas),
+    ];
 @endphp
 
 <x-layouts.marketplace
@@ -141,30 +232,7 @@
         <link rel="preload" as="image" href="{{ Storage::disk($imagePreview->disk)->url($imagePreview->path) }}">
     @endif
     <script type="application/ld+json">
-    {!! json_encode([
-        '@context' => 'https://schema.org/',
-        '@type' => 'Product',
-        'name' => $product->localized('title'),
-        'description' => $product->localized('short_description') ?: $product->localized('description'),
-        'image' => $coverImage,
-        'sku' => 'P-'.$product->id,
-        'brand' => ['@type' => 'Brand', 'name' => $authorName],
-        'category' => $product->category?->localized('name'),
-        'offers' => [
-            '@type' => 'Offer',
-            'price' => (float) $product->price,
-            'priceCurrency' => $product->currency ?? 'UAH',
-            'availability' => 'https://schema.org/InStock',
-            'url' => route('products.show', $product),
-        ],
-        'aggregateRating' => $reviewsCount > 0 ? [
-            '@type' => 'AggregateRating',
-            'ratingValue' => (float) $avgRating,
-            'reviewCount' => $reviewsCount,
-            'bestRating' => 5,
-            'worstRating' => 1,
-        ] : null,
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+    {!! json_encode($structuredData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
     </script>
 @endpush
 

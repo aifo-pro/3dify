@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 class SitemapController extends Controller
 {
@@ -21,15 +22,28 @@ class SitemapController extends Controller
             Product::query()
                 ->where('status', 'published')
                 ->whereNotNull('published_at')
-                ->select(['slug', 'updated_at'])
+                ->select(['slug', 'updated_at', 'cover_path', 'gallery', 'title'])
                 ->orderByDesc('updated_at')
                 ->chunk(500, function ($products) use (&$urls) {
                     foreach ($products as $p) {
+                        $images = collect([$p->cover_path, ...collect($p->gallery ?? [])->all()])
+                            ->filter(fn ($path) => is_string($path) && trim($path) !== '')
+                            ->unique()
+                            ->map(fn ($path) => $this->publicStorageUrl($path))
+                            ->filter()
+                            ->values()
+                            ->map(fn ($url) => [
+                                'loc' => $url,
+                                'title' => $p->localized('title'),
+                            ])
+                            ->all();
+
                         $urls[] = [
                             'loc' => route('products.show', $p->slug),
                             'lastmod' => optional($p->updated_at)->toAtomString(),
                             'priority' => '0.8',
                             'changefreq' => 'weekly',
+                            'images' => $images,
                         ];
                     }
                 });
@@ -62,5 +76,24 @@ class SitemapController extends Controller
         return response()
             ->view('marketplace.sitemap', compact('urls'))
             ->header('Content-Type', 'application/xml; charset=UTF-8');
+    }
+
+    private function publicStorageUrl(?string $path): ?string
+    {
+        if (! is_string($path) || trim($path) === '') {
+            return null;
+        }
+
+        try {
+            if (! Storage::disk('public')->exists($path)) {
+                return null;
+            }
+
+            $url = Storage::disk('public')->url($path);
+
+            return str_starts_with($url, 'http') ? $url : url($url);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

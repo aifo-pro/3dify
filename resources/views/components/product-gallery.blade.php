@@ -1,5 +1,13 @@
 @props(['mediaItems' => [], 'modelPreviewUrl' => null, 'productTitle' => ''])
 
+@php
+    $seoImages = collect($mediaItems)
+        ->filter(fn ($item) => ($item['type'] ?? null) === 'image' && filled($item['url'] ?? null))
+        ->values();
+    $primarySeoImage = $seoImages->first()['url'] ?? '';
+    $primarySeoAlt = $seoImages->first()['alt'] ?? $productTitle;
+@endphp
+
 <div
     x-data="{
         media: @js($mediaItems),
@@ -112,8 +120,12 @@
                 aria-label="{{ __('Відкрити фото') }}"
             >
                 <img
+                    src="{{ $primarySeoImage }}"
+                    alt="{{ $primarySeoAlt }}"
                     :src="current().url"
                     :alt="current().alt"
+                    width="1200"
+                    height="900"
                     class="h-full w-full object-contain"
                     style="background: #05070a;"
                 >
@@ -192,6 +204,23 @@
             </template>
         </div>
     </template>
+
+    @if($seoImages->isNotEmpty())
+        <noscript>
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach($seoImages as $image)
+                    <img
+                        src="{{ $image['url'] }}"
+                        alt="{{ $image['alt'] ?? $productTitle }}"
+                        loading="lazy"
+                        width="1200"
+                        height="900"
+                        class="rounded-2xl border border-white/10 bg-zinc-950 object-contain"
+                    >
+                @endforeach
+            </div>
+        </noscript>
+    @endif
 
     {{-- ===== FULLSCREEN LIGHTBOX (images only) ===== --}}
     <div
