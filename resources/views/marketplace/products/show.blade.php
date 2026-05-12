@@ -87,6 +87,19 @@
     $coverImage = $publicUrl($product->cover_path)
         ?: $publicUrl($galleryImages->first())
         ?: ($imagePreview ? $diskUrl($imagePreview->disk, $imagePreview->path) : null);
+    $gallerySliderImages = collect([
+            $coverImage,
+            ...$galleryImages->map(fn ($image) => $publicUrl($image))->all(),
+            $imagePreview ? $diskUrl($imagePreview->disk, $imagePreview->path) : null,
+        ])
+        ->filter(fn ($url) => is_string($url) && trim($url) !== '')
+        ->unique()
+        ->values()
+        ->map(fn ($url) => [
+            'url' => $url,
+            'alt' => $product->localized('title'),
+        ])
+        ->all();
 @endphp
 
 <x-layouts.marketplace
@@ -155,33 +168,81 @@
 
         <div class="grid gap-8 lg:grid-cols-[1fr_390px]">
             <div class="grid gap-8">
-                <div class="overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900 shadow-2xl shadow-black/30">
-                    @if($imagePreview)
-                        <img src="{{ Storage::disk($imagePreview->disk)->url($imagePreview->path) }}" alt="{{ $product->localized('title') }}" width="960" height="560" fetchpriority="high" class="h-[420px] w-full bg-zinc-950 object-contain sm:h-[560px]">
-                    @elseif($modelPreview)
-                        <div id="viewer" data-model-url="{{ Storage::disk($modelPreview->disk)->url($modelPreview->path) }}" class="h-[420px] bg-zinc-950 sm:h-[560px]"></div>
-                    @elseif($coverImage)
-                        <img src="{{ $coverImage }}" alt="{{ $product->localized('title') }}" width="960" height="560" fetchpriority="high" class="h-[420px] w-full bg-zinc-950 object-contain sm:h-[560px]">
-                    @else
-                        <div id="viewer" data-model-url="" class="h-[420px] bg-zinc-950 sm:h-[560px]"></div>
-                    @endif
-                </div>
+                @if(count($gallerySliderImages) > 0)
+                    <div
+                        class="grid gap-4"
+                        x-data="{
+                            images: @js($gallerySliderImages),
+                            active: 0,
+                            next() { this.active = (this.active + 1) % this.images.length; },
+                            prev() { this.active = (this.active - 1 + this.images.length) % this.images.length; },
+                        }"
+                        @keydown.arrow-right.window="next()"
+                        @keydown.arrow-left.window="prev()"
+                    >
+                        <div class="relative overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-950 shadow-2xl shadow-black/30">
+                            <img
+                                :src="images[active].url"
+                                :alt="images[active].alt"
+                                width="960"
+                                height="560"
+                                fetchpriority="high"
+                                class="h-[420px] w-full bg-zinc-950 object-contain sm:h-[560px]"
+                            >
 
-                @if($galleryImages->isNotEmpty() || $coverImage)
-                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        @if($coverImage)
-                            <a href="{{ $coverImage }}" target="_blank" class="group overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
-                                <img src="{{ $coverImage }}" alt="{{ $product->localized('title') }}" width="240" height="135" loading="lazy" class="aspect-video w-full object-cover transition group-hover:scale-105">
-                            </a>
-                        @endif
-                        @foreach($galleryImages as $image)
-                            @php $galleryUrl = $publicUrl($image); @endphp
-                            @if($galleryUrl)
-                                <a href="{{ $galleryUrl }}" target="_blank" class="group overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
-                                    <img src="{{ $galleryUrl }}" alt="{{ $product->localized('title') }}" width="240" height="135" loading="lazy" class="aspect-video w-full object-cover transition group-hover:scale-105">
-                                </a>
-                            @endif
-                        @endforeach
+                            <template x-if="images.length > 1">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-3 sm:px-5">
+                                    <button type="button" @click="prev()" class="pointer-events-auto grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-zinc-950/70 text-white shadow-xl shadow-black/30 backdrop-blur transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Попереднє фото') }}">
+                                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                    </button>
+                                    <button type="button" @click="next()" class="pointer-events-auto grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-zinc-950/70 text-white shadow-xl shadow-black/30 backdrop-blur transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Наступне фото') }}">
+                                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                    </button>
+                                </div>
+                            </template>
+
+                            <div class="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/10 bg-zinc-950/70 px-3 py-1.5 text-xs font-bold text-zinc-200 backdrop-blur">
+                                <span x-text="active + 1"></span>
+                                <span class="text-zinc-500">/</span>
+                                <span x-text="images.length"></span>
+                            </div>
+                        </div>
+
+                        <template x-if="images.length > 1">
+                            <div class="rounded-3xl border border-white/10 bg-white/[0.035] p-3">
+                                <div class="flex items-center gap-3">
+                                    <button type="button" @click="prev()" class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-zinc-950/70 text-zinc-100 transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Прокрутити вліво') }}">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                                    </button>
+                                    <div class="flex min-w-0 flex-1 snap-x gap-3 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:thin]">
+                                        <template x-for="(image, index) in images" :key="image.url">
+                                            <button
+                                                type="button"
+                                                @click="active = index"
+                                                class="group relative h-24 w-36 shrink-0 snap-start overflow-hidden rounded-2xl border bg-zinc-900 transition sm:h-28 sm:w-44"
+                                                :class="active === index ? 'border-emerald-300/70 ring-2 ring-emerald-300/20' : 'border-white/10 hover:border-white/25'"
+                                            >
+                                                <img :src="image.url" :alt="image.alt" loading="lazy" class="h-full w-full object-cover transition duration-300 group-hover:scale-105">
+                                                <span x-show="active === index" class="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20">
+                                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                                </span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                    <button type="button" @click="next()" class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-zinc-950/70 text-zinc-100 transition hover:border-emerald-300/40 hover:bg-emerald-300/15" aria-label="{{ __('Прокрутити вправо') }}">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                @elseif($modelPreview)
+                    <div class="overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900 shadow-2xl shadow-black/30">
+                        <div id="viewer" data-model-url="{{ Storage::disk($modelPreview->disk)->url($modelPreview->path) }}" class="h-[420px] bg-zinc-950 sm:h-[560px]"></div>
+                    </div>
+                @else
+                    <div class="overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900 shadow-2xl shadow-black/30">
+                        <div id="viewer" data-model-url="" class="h-[420px] bg-zinc-950 sm:h-[560px]"></div>
                     </div>
                 @endif
 
