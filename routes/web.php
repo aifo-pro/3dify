@@ -60,6 +60,7 @@ Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::redirect('/catalog', '/models')->name('catalog');
 Route::get('/models', [ProductController::class, 'index'])->name('products.index');
 Route::get('/models/{product:slug}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/models/{product:slug}/embed', [ProductController::class, 'embed'])->name('products.embed');
 // Tip shortcut URL (bookmark/share): works for guests — redirects to product page where the tip form lives.
 Route::get('/models/{product:slug}/tip', [TipController::class, 'redirect'])->name('products.tip.redirect');
 

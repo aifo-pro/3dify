@@ -166,6 +166,17 @@ class ProductController extends Controller
         ]);
     }
 
+    public function embed(Product $product)
+    {
+        abort_unless($product->status === 'published', 404);
+
+        $product->load(['previewFile']);
+
+        return view('marketplace.products.embed', [
+            'product' => $product,
+        ]);
+    }
+
     public function create()
     {
         $this->authorize('create', Product::class);
