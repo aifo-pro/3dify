@@ -11,13 +11,13 @@
             <div class="mb-6 rounded-2xl border border-amber-300/30 bg-amber-400/[0.08] px-4 py-3 text-sm font-semibold text-amber-100">{{ __('blog.awaiting_migration_banner') }}</div>
         @endif
 
-        <header class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-end">
+        <header class="grid gap-8 pb-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-end lg:gap-10">
             <div class="min-w-0">
                 <x-ui.badge>{{ __('blog.hero.badge') }}</x-ui.badge>
                 <h1 class="mt-5 max-w-4xl text-5xl font-black tracking-tight text-white sm:text-6xl">{{ __('blog.hero.title') }}</h1>
                 <p class="mt-5 max-w-2xl text-lg leading-8 text-zinc-400">{{ __('blog.hero.subtitle') }}</p>
             </div>
-            <form method="GET" action="{{ route('blog.index') }}" class="min-w-0 rounded-3xl border border-white/10 bg-white/[0.05] p-2">
+            <form method="GET" action="{{ route('blog.index') }}" class="min-w-0 rounded-3xl border border-white/10 bg-white/[0.05] p-2 lg:self-stretch">
                 <div class="flex gap-2">
                     <input name="q" value="{{ $q }}" placeholder="{{ __('blog.search_placeholder') }}" class="h-12 min-w-0 flex-1 rounded-2xl border border-white/10 bg-zinc-950/70 px-4 text-sm text-white placeholder:text-zinc-500">
                     <button type="submit" class="shrink-0 rounded-2xl bg-emerald-400 px-5 text-sm font-black text-zinc-950">{{ __('blog.search_button') }}</button>
@@ -39,8 +39,12 @@
             </a>
         @endif
 
-        {{-- Main + sidebar: minmax(0,1fr) prevents grid blowout; subscribe lives in sidebar on lg+ --}}
-        <div class="mt-12 grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-10">
+        {{-- Main + sidebar: without featured, extra air + hairline under hero/search; with featured, standard gap under card --}}
+        <div @class([
+            'grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-10',
+            'mt-14 lg:mt-16' => $featured,
+            'mt-14 border-t border-white/10 pt-12 sm:mt-16 sm:pt-14 lg:mt-20 lg:pt-16' => ! $featured,
+        ])>
             <div class="min-w-0">
                 @if($posts->isEmpty())
                     <x-ui.empty-state :title="__('blog.empty_posts')" :description="__('blog.empty_posts_hint')" />
