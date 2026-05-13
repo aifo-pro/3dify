@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Marketplace;
 
 use App\Http\Controllers\Controller;
+use App\Models\BlogPost;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
@@ -17,6 +18,7 @@ class SitemapController extends Controller
 
         $urls[] = ['loc' => route('home'), 'priority' => '1.0', 'changefreq' => 'daily'];
         $urls[] = ['loc' => route('products.index'), 'priority' => '0.9', 'changefreq' => 'daily'];
+        $urls[] = ['loc' => route('blog.index'), 'priority' => '0.7', 'changefreq' => 'weekly'];
 
         if (Schema::hasTable('products')) {
             Product::query()
@@ -57,6 +59,24 @@ class SitemapController extends Controller
                     'changefreq' => 'weekly',
                 ];
             });
+        }
+
+        if (Schema::hasTable('blog_posts')) {
+            BlogPost::query()
+                ->published()
+                ->indexable()
+                ->select(['slug', 'updated_at'])
+                ->orderByDesc('updated_at')
+                ->chunk(500, function ($posts) use (&$urls) {
+                    foreach ($posts as $post) {
+                        $urls[] = [
+                            'loc' => route('blog.show', $post->slug),
+                            'lastmod' => optional($post->updated_at)->toAtomString(),
+                            'priority' => '0.7',
+                            'changefreq' => 'weekly',
+                        ];
+                    }
+                });
         }
 
         if (Schema::hasTable('users')) {

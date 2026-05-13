@@ -129,6 +129,13 @@ class EmailTemplateRenderer
             $data['product_slug'] ??= $data['product']['slug'] ?? null;
         }
 
+        if (is_array($data['post'] ?? null)) {
+            $data['post_title'] ??= $data['post']['title'] ?? null;
+            $data['post_url'] ??= $data['post']['url'] ?? null;
+            $data['post_excerpt'] ??= $data['post']['excerpt'] ?? null;
+            $data['post_cover'] ??= $data['post']['cover'] ?? null;
+        }
+
         if (is_array($data['reset'] ?? null)) {
             $data['link'] ??= $data['reset']['url'] ?? null;
         }

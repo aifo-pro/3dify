@@ -26,6 +26,7 @@
                 <x-ui.footer-link :href="route('products.index').'#categories'">{{ __('Категорії') }}</x-ui.footer-link>
                 <x-ui.footer-link :href="route('authors.index')">{{ __('Автори') }}</x-ui.footer-link>
                 <x-ui.footer-link :href="route('products.index', ['free' => 1])">{{ __('Безкоштовні моделі') }}</x-ui.footer-link>
+                <x-ui.footer-link :href="route('blog.index')">{{ __('Блог') }}</x-ui.footer-link>
             </div>
         </div>
 

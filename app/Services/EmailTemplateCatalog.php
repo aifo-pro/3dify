@@ -16,6 +16,7 @@ class EmailTemplateCatalog
         $balance = ['{{ balance.amount }}', '{{ balance.currency }}', '{{ balance.available }}', '{{ balance.reason }}'];
         $refund = ['{{ refund.reason }}', '{{ refund.message }}', '{{ refund.status }}', '{{ refund.admin_notes }}', '{{ refund.url }}'];
         $tip = ['{{ tip.amount }}', '{{ tip.currency }}', '{{ tip.message }}', '{{ tip.url }}'];
+        $post = ['{{ post.title }}', '{{ post.excerpt }}', '{{ post.url }}', '{{ post.cover }}'];
         $payout = ['{{ payout.amount }}', '{{ payout.currency }}', '{{ payout.status }}', '{{ payout.method }}', '{{ payout.url }}'];
         $contact = ['{{ contact.subject }}', '{{ contact.message }}', '{{ contact.sender_name }}'];
         $moderation = ['{{ moderation.note }}', '{{ moderation.reason }}'];
@@ -167,6 +168,21 @@ class EmailTemplateCatalog
                 'defaults' => [
                     'uk' => ['subject' => 'Нове повідомлення від {{ contact.sender_name }}', 'body' => '<h1>{{ contact.subject }}</h1><p>{{ contact.message }}</p><p>Відправник: {{ contact.sender_name }} ({{ user.email }})</p>'],
                     'en' => ['subject' => 'New message from {{ contact.sender_name }}', 'body' => '<h1>{{ contact.subject }}</h1><p>{{ contact.message }}</p><p>Sender: {{ contact.sender_name }} ({{ user.email }})</p>'],
+                ],
+            ],
+            'blog_post_published' => [
+                'label' => 'Нова стаття блогу',
+                'description' => 'Підписникам блогу після публікації нової статті.',
+                'variables' => self::tokens($site, $user, $post, $authLink),
+                'defaults' => [
+                    'uk' => [
+                        'subject' => 'Нова стаття на {{ site.name }}: {{ post.title }}',
+                        'body' => '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#030712;padding:32px 16px;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;"><tr><td align="center"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border-radius:24px;border:1px solid rgba(16,185,129,.25);background:linear-gradient(180deg,rgba(16,185,129,.08),rgba(9,9,11,.96));overflow:hidden;"><tr><td style="padding:28px 28px 8px;"><p style="margin:0;font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#6ee7b7;">3Dify Blog</p><h1 style="margin:12px 0 0;font-size:24px;line-height:1.2;color:#fafafa;">{{ post.title }}</h1><p style="margin:14px 0 0;font-size:15px;line-height:1.6;color:#a1a1aa;">{{ post.excerpt }}</p></td></tr><tr><td style="padding:0 28px 12px;"><img src="{{ post.cover }}" alt="{{ post.title }}" width="544" style="width:100%;max-width:544px;height:auto;display:block;border-radius:16px;border:1px solid rgba(255,255,255,.10);"></td></tr><tr><td style="padding:8px 28px 28px;"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:16px;background:#34d399;"><a href="{{ post.url }}" style="display:inline-block;padding:14px 22px;font-size:14px;font-weight:800;color:#0a0a0a;text-decoration:none;">Читати статтю</a></td></tr></table><p style="margin:22px 0 0;font-size:12px;line-height:1.5;color:#71717a;">Відписатися від розсилки: <a href="{{ link }}" style="color:#6ee7b7;">посилання</a></p></td></tr></table></td></tr></table>',
+                    ],
+                    'en' => [
+                        'subject' => 'New article on {{ site.name }}: {{ post.title }}',
+                        'body' => '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#030712;padding:32px 16px;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;"><tr><td align="center"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border-radius:24px;border:1px solid rgba(16,185,129,.25);background:linear-gradient(180deg,rgba(16,185,129,.08),rgba(9,9,11,.96));overflow:hidden;"><tr><td style="padding:28px 28px 8px;"><p style="margin:0;font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#6ee7b7;">3Dify Blog</p><h1 style="margin:12px 0 0;font-size:24px;line-height:1.2;color:#fafafa;">{{ post.title }}</h1><p style="margin:14px 0 0;font-size:15px;line-height:1.6;color:#a1a1aa;">{{ post.excerpt }}</p></td></tr><tr><td style="padding:0 28px 12px;"><img src="{{ post.cover }}" alt="{{ post.title }}" width="544" style="width:100%;max-width:544px;height:auto;display:block;border-radius:16px;border:1px solid rgba(255,255,255,.10);"></td></tr><tr><td style="padding:8px 28px 28px;"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:16px;background:#34d399;"><a href="{{ post.url }}" style="display:inline-block;padding:14px 22px;font-size:14px;font-weight:800;color:#0a0a0a;text-decoration:none;">Read article</a></td></tr></table><p style="margin:22px 0 0;font-size:12px;line-height:1.5;color:#71717a;">Unsubscribe: <a href="{{ link }}" style="color:#6ee7b7;">link</a></p></td></tr></table></td></tr></table>',
+                    ],
                 ],
             ],
             'payout_requested' => [

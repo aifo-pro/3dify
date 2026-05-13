@@ -5,6 +5,7 @@
         ['label' => __('Каталог'), 'href' => route('products.index'), 'active' => request()->routeIs('products.index') && ! request()->boolean('free')],
         ['label' => __('Категорії'), 'href' => route('products.index').'#categories', 'active' => request()->filled('category')],
         ['label' => __('Автори'), 'href' => route('authors.index'), 'active' => request()->routeIs('authors.*')],
+        ['label' => __('Блог'), 'href' => route('blog.index'), 'active' => request()->routeIs('blog.*')],
         ['label' => __('Безкоштовні'), 'href' => route('products.index', ['free' => 1]), 'active' => request()->boolean('free')],
     ];
 @endphp

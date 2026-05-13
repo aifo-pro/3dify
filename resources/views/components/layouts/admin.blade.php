@@ -71,6 +71,7 @@
             'label' => __('Спільнота'),
             'items' => [
                 ['key' => 'users', 'label' => __('Користувачі'), 'href' => route('admin.users'), 'icon' => 'users'],
+                ['key' => 'blog', 'label' => __('Блог'), 'href' => route('admin.blog.index'), 'icon' => 'layers', 'admin_only' => true],
                 ['key' => 'announcements', 'label' => __('Оголошення'), 'href' => route('admin.announcements'), 'icon' => 'bell'],
                 ['key' => 'newsletter', 'label' => __('Newsletter'), 'href' => route('admin.newsletter'), 'icon' => 'send'],
             ],
@@ -170,6 +171,7 @@
                         <p class="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500" :class="collapsed && 'lg:hidden'">{{ $section['label'] }}</p>
                         <ul class="grid gap-1">
                             @foreach($section['items'] as $item)
+                                @continue(! empty($item['admin_only']) && ! auth()->user()?->isAdmin())
                                 @php $isActive = $active === $item['key']; @endphp
                                 <li>
                                     <a

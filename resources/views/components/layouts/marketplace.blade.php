@@ -1,3 +1,11 @@
+@props([
+    'seoTitle' => null,
+    'seoDescription' => null,
+    'seoImage' => null,
+    'ogType' => null,
+    'seoCanonical' => null,
+])
+
 @php
     $settings = app(\App\Services\SiteSettings::class);
     $seo = \Illuminate\Support\Facades\Schema::hasTable('seo_pages')
@@ -38,7 +46,7 @@
         $finalDescription = $seoDescription ?? $seo?->description ?? __('Купуйте, продавайте та завантажуйте якісні 3D-моделі для друку.');
         $finalImage = $absoluteAssetUrl($seoImage ?? $settings->string('brand.og_image_path'))
             ?: url('/og-image.png');
-        $canonical = $seo?->canonical_url ?? url()->current();
+        $canonical = $seoCanonical ?? $seo?->canonical_url ?? url()->current();
         $ogType = $ogType ?? 'website';
     @endphp
     <title>{{ $finalTitle }}</title>

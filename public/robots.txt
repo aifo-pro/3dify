@@ -35,3 +35,4 @@ Allow: /authors/
 Allow: /
 
 Sitemap: https://3dify.dev/sitemap.xml
+Sitemap: https://3dify.dev/sitemap-blog.xml
