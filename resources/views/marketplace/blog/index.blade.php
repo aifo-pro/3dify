@@ -60,42 +60,42 @@
                 @endif
             </div>
 
-            <aside class="min-w-0 space-y-6 lg:sticky lg:top-28 lg:self-start">
-                <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-                    <h3 class="font-black text-white">{{ __('blog.categories') }}</h3>
+            <aside class="min-w-0 space-y-5 lg:sticky lg:top-28 lg:self-start">
+                <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                    <h3 class="text-xs font-black uppercase tracking-[0.18em] text-zinc-500">{{ __('blog.categories') }}</h3>
                     @if($categories->isEmpty())
-                        <p class="mt-4 text-sm leading-relaxed text-zinc-500">{{ __('blog.empty_categories') }}</p>
+                        <p class="mt-3 text-xs leading-relaxed text-zinc-500">{{ __('blog.empty_categories') }}</p>
                     @else
-                        <div class="mt-4 grid gap-2">
+                        <nav class="mt-2 max-h-52 space-y-0.5 overflow-y-auto overscroll-contain pr-0.5 [scrollbar-width:thin]" aria-label="{{ __('blog.categories') }}">
                             @foreach($categories as $category)
-                                <a href="{{ route('blog.category', $category) }}" class="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-bold text-zinc-200 hover:border-emerald-300/30 hover:text-emerald-100">{{ $category->localized('name') }}</a>
+                                <a href="{{ route('blog.category', $category) }}" class="block truncate rounded-lg px-2 py-1.5 text-[13px] font-semibold leading-snug text-zinc-300 transition hover:bg-white/[0.07] hover:text-emerald-100">{{ $category->localized('name') }}</a>
                             @endforeach
-                        </div>
+                        </nav>
                     @endif
                 </div>
 
-                <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-                    <h3 class="font-black text-white">{{ __('blog.popular_tags') }}</h3>
+                <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                    <h3 class="text-xs font-black uppercase tracking-[0.18em] text-zinc-500">{{ __('blog.popular_tags') }}</h3>
                     @if($tags->isEmpty())
-                        <p class="mt-4 text-sm leading-relaxed text-zinc-500">{{ __('blog.empty_tags') }}</p>
+                        <p class="mt-3 text-xs leading-relaxed text-zinc-500">{{ __('blog.empty_tags') }}</p>
                     @else
-                        <div class="mt-4 flex flex-wrap gap-2">
+                        <div class="mt-3 flex flex-wrap gap-1.5">
                             @foreach($tags as $tag)
-                                <a href="{{ route('blog.tag', $tag) }}" class="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-bold text-zinc-300 hover:border-emerald-300/30 hover:text-emerald-100">#{{ $tag->localized() }}</a>
+                                <a href="{{ route('blog.tag', $tag) }}" class="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-bold text-zinc-400 hover:border-emerald-300/30 hover:text-emerald-100">#{{ $tag->localized() }}</a>
                             @endforeach
                         </div>
                     @endif
                 </div>
 
                 @if($popular->isNotEmpty())
-                    <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-                        <h3 class="font-black text-white">{{ __('blog.popular_posts') }}</h3>
-                        <ul class="mt-4 grid gap-3">
+                    <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                        <h3 class="text-xs font-black uppercase tracking-[0.18em] text-zinc-500">{{ __('blog.popular_posts') }}</h3>
+                        <ul class="mt-2 space-y-1">
                             @foreach($popular as $pop)
                                 <li>
-                                    <a href="{{ $pop->url }}" class="group block rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-emerald-300/30">
-                                        <span class="line-clamp-2 text-sm font-bold text-zinc-200 group-hover:text-emerald-100">{{ $pop->localized_title }}</span>
-                                        <span class="mt-1 block text-xs text-zinc-500">{{ number_format($pop->views) }} {{ __('blog.views') }}</span>
+                                    <a href="{{ $pop->url }}" class="group block rounded-lg px-2 py-2 transition hover:bg-white/[0.05]">
+                                        <span class="line-clamp-2 text-[13px] font-semibold leading-snug text-zinc-300 group-hover:text-emerald-100">{{ $pop->localized_title }}</span>
+                                        <span class="mt-0.5 block text-[11px] text-zinc-600 group-hover:text-zinc-500">{{ number_format($pop->views) }} {{ __('blog.views') }}</span>
                                     </a>
                                 </li>
                             @endforeach
