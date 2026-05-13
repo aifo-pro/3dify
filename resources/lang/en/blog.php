@@ -21,6 +21,8 @@ return [
     'popular_posts' => 'Popular posts',
     'empty_posts' => 'No articles yet',
     'empty_posts_hint' => 'Materials for 3D printing will appear here soon.',
+    'empty_categories' => 'Categories will appear once they are configured in the admin.',
+    'empty_tags' => 'Tags will appear once they are configured in the admin.',
     'term_empty_title' => 'No articles yet',
     'term_empty_hint' => 'There are no published articles in this section yet.',
     'term_tag_description' => 'Articles tagged :tag',

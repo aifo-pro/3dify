@@ -19,13 +19,20 @@
         <x-ui.badge>{{ $type === 'category' ? __('blog.label_category') : __('blog.label_tag') }}</x-ui.badge>
         <h1 class="mt-5 text-5xl font-black text-white">{{ $name }}</h1>
         @if($seoDescription)<p class="mt-4 max-w-3xl text-zinc-400">{{ $seoDescription }}</p>@endif
-        <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            @forelse($posts as $post)
-                @include('marketplace.blog.partials.card', ['post' => $post])
-            @empty
+
+        @if($posts->isEmpty())
+            <div class="mt-10 max-w-2xl">
                 <x-ui.empty-state :title="__('blog.term_empty_title')" :description="__('blog.term_empty_hint')" />
-            @endforelse
-        </div>
-        <div class="mt-8">{{ $posts->links() }}</div>
+            </div>
+        @else
+            <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach($posts as $post)
+                    @include('marketplace.blog.partials.card', ['post' => $post])
+                @endforeach
+            </div>
+        @endif
+        @if($posts->hasPages())
+            <div class="mt-8">{{ $posts->links() }}</div>
+        @endif
     </section>
 </x-layouts.marketplace>
