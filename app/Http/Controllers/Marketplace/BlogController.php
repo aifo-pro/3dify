@@ -7,6 +7,8 @@ use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use App\Models\BlogTag;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class BlogController extends Controller
@@ -14,6 +16,24 @@ class BlogController extends Controller
     public function index(Request $request)
     {
         $q = trim((string) $request->input('q', ''));
+
+        if (! Schema::hasTable('blog_posts')) {
+            $emptyPaginator = new LengthAwarePaginator([], 0, 9, 1, [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]);
+
+            return view('marketplace.blog.index', [
+                'posts' => $emptyPaginator,
+                'featured' => null,
+                'categories' => collect(),
+                'tags' => collect(),
+                'popular' => collect(),
+                'q' => $q,
+                'blogAwaitingMigration' => true,
+            ]);
+        }
+
         $posts = BlogPost::query()
             ->with(['categories', 'tags', 'author'])
             ->published()
@@ -36,6 +56,7 @@ class BlogController extends Controller
             'tags' => BlogTag::where('is_active', true)->orderBy('name_uk')->limit(24)->get(),
             'popular' => BlogPost::published()->orderByDesc('views')->limit(5)->get(),
             'q' => $q,
+            'blogAwaitingMigration' => false,
         ]);
     }
 

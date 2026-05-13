@@ -41,6 +41,8 @@ return [
         'description' => 'Надсилаємо тільки корисні статті про STL, slicer, матеріали та маркетплейс 3D-моделей.',
         'button' => 'Підписатися',
     ],
+    'migrations_required' => 'Модуль блогу ще не встановлено на сервері. Виконайте: php artisan migrate --force',
+    'awaiting_migration_banner' => 'База блогу ще не оновлена. Після деплою виконайте php artisan migrate --force на сервері.',
     'subscribe_success' => 'Підписку на блог оформлено.',
     'unsubscribe_success' => 'Ви відписалися від оновлень блогу.',
     'admin' => [

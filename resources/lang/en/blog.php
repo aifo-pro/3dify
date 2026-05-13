@@ -41,6 +41,8 @@ return [
         'description' => 'We only send useful articles about STL, slicers, materials, and the 3D model marketplace.',
         'button' => 'Subscribe',
     ],
+    'migrations_required' => 'The blog module is not installed on this server yet. Run: php artisan migrate --force',
+    'awaiting_migration_banner' => 'Blog database migrations have not been applied. After deploy, run php artisan migrate --force on the server.',
     'subscribe_success' => 'You are subscribed to blog updates.',
     'unsubscribe_success' => 'You have unsubscribed from blog updates.',
     'admin' => [

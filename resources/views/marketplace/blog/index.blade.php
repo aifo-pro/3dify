@@ -7,6 +7,9 @@
         @if(session('status'))
             <div class="mb-6 rounded-2xl border border-emerald-300/25 bg-emerald-300/[0.10] px-4 py-3 text-sm font-semibold text-emerald-100">{{ session('status') }}</div>
         @endif
+        @if(! empty($blogAwaitingMigration))
+            <div class="mb-6 rounded-2xl border border-amber-300/30 bg-amber-400/[0.08] px-4 py-3 text-sm font-semibold text-amber-100">{{ __('blog.awaiting_migration_banner') }}</div>
+        @endif
 
         <header class="grid gap-8 lg:grid-cols-[1fr_360px] lg:items-end">
             <div>
