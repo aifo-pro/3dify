@@ -3,14 +3,19 @@
     $seedRaw = old('blocks_json', $initialBlocksJson ?? '[]');
     $seedArr = json_decode(is_string($seedRaw) ? $seedRaw : '[]', true) ?: [];
     $typeLabels = __('blog.admin.block_types');
-@endphp
-<script>
-    window.__blogPostBlocksCfg = @json([
+    $blogPostBlocksCfg = [
         'initialBlocks' => $seedArr,
         'uploadUrl' => route('admin.blog.upload'),
         'csrf' => csrf_token(),
         'typeLabels' => $typeLabels,
-    ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    ];
+    $blogPostBlocksCfgJson = json_encode(
+        $blogPostBlocksCfg,
+        JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
+    ) ?: '{}';
+@endphp
+<script>
+    window.__blogPostBlocksCfg = {!! $blogPostBlocksCfgJson !!};
 </script>
 
 <x-layouts.admin
