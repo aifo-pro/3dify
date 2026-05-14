@@ -95,7 +95,7 @@ class BlogTaxonomyController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ]);
         $data['slug'] = $data['slug'] ?: Str::slug($data['name_en'] ?: Str::transliterate($data['name_uk']));
-        $data['is_active'] = $request->boolean('is_active', true);
+        $data['is_active'] = $request->boolean('is_active');
 
         return $data;
     }
