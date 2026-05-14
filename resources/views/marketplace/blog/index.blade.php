@@ -60,13 +60,13 @@
                 @endif
             </div>
 
-            <aside class="min-w-0 space-y-5 lg:sticky lg:top-28 lg:self-start">
-                <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+            <aside class="flex min-w-0 flex-col gap-8 lg:sticky lg:top-28 lg:self-start">
+                <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-lg shadow-black/20 ring-1 ring-white/[0.04]">
                     <h3 class="text-xs font-black uppercase tracking-[0.18em] text-zinc-500">{{ __('blog.categories') }}</h3>
                     @if($categories->isEmpty())
                         <p class="mt-3 text-xs leading-relaxed text-zinc-500">{{ __('blog.empty_categories') }}</p>
                     @else
-                        <nav class="mt-2 max-h-52 space-y-0.5 overflow-y-auto overscroll-contain pr-0.5 [scrollbar-width:thin]" aria-label="{{ __('blog.categories') }}">
+                        <nav class="mt-2 max-h-44 space-y-0.5 overflow-y-auto overscroll-contain pr-0.5 [scrollbar-width:thin]" aria-label="{{ __('blog.categories') }}">
                             @foreach($categories as $category)
                                 <a href="{{ route('blog.category', $category) }}" class="block truncate rounded-lg px-2 py-1.5 text-[13px] font-semibold leading-snug text-zinc-300 transition hover:bg-white/[0.07] hover:text-emerald-100">{{ $category->localized('name') }}</a>
                             @endforeach
@@ -74,7 +74,7 @@
                     @endif
                 </div>
 
-                <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-lg shadow-black/20 ring-1 ring-white/[0.04]">
                     <h3 class="text-xs font-black uppercase tracking-[0.18em] text-zinc-500">{{ __('blog.popular_tags') }}</h3>
                     @if($tags->isEmpty())
                         <p class="mt-3 text-xs leading-relaxed text-zinc-500">{{ __('blog.empty_tags') }}</p>
@@ -88,7 +88,7 @@
                 </div>
 
                 @if($popular->isNotEmpty())
-                    <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                    <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-lg shadow-black/20 ring-1 ring-white/[0.04]">
                         <h3 class="text-xs font-black uppercase tracking-[0.18em] text-zinc-500">{{ __('blog.popular_posts') }}</h3>
                         <ul class="mt-2 space-y-1">
                             @foreach($popular as $pop)
@@ -103,8 +103,8 @@
                     </div>
                 @endif
 
-                <div class="hidden lg:block">
-                    @include('marketplace.blog.partials.subscribe')
+                <div class="hidden lg:block lg:pt-1">
+                    @include('marketplace.blog.partials.subscribe', ['compact' => true])
                 </div>
             </aside>
         </div>
