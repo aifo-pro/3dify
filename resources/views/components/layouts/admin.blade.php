@@ -119,6 +119,8 @@
     <title>{{ $title ? $title.' · ' : '' }}{{ __('Admin') }} · {{ $siteName }}</title>
     <meta name="robots" content="noindex,nofollow">
     @if($faviconPath)<link rel="icon" href="{{ Storage::disk('public')->url($faviconPath) }}">@endif
+    {{-- Sync scripts here run before deferred Vite modules (Alpine), so e.g. TinyMCE is available on init. --}}
+    @stack('head-scripts')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body

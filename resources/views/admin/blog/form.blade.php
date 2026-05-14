@@ -295,7 +295,7 @@
         </aside>
     </form>
 
-    @push('scripts')
+    @push('head-scripts')
         <script src="https://cdn.jsdelivr.net/npm/tinymce@7.4.0/tinymce.min.js"></script>
     @endpush
 </x-layouts.admin>
