@@ -1,51 +1,3 @@
-@php
-    $tinyMceConfig = [
-        'menubar' => false,
-        'branding' => false,
-        'promotion' => false,
-        'license_key' => 'gpl',
-        'plugins' => 'link lists table code image autoresize',
-        'toolbar' => 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright | bullist numlist | blockquote | link image table | code removeformat',
-        'block_formats' => 'Paragraph=p;Heading 2=h2;Heading 3=h3;Preformatted=pre',
-        'relative_urls' => false,
-        'convert_urls' => true,
-        'autoresize_bottom_margin' => 24,
-        'content_style' => 'body{font-family:ui-sans-serif,system-ui,sans-serif;font-size:15px;background:#09090b;color:#e4e4e7;line-height:1.65}a{color:#34d399}img{max-width:100%;height:auto;border-radius:12px}table{width:100%;border-collapse:collapse}td,th{border:1px solid rgba(255,255,255,.12);padding:8px}',
-    ];
-    $blockLabels = [
-        'heading' => __('blog.admin.block_heading'),
-        'richtext' => __('blog.admin.block_richtext'),
-        'image' => __('blog.admin.block_image'),
-        'quote' => __('blog.admin.block_quote'),
-        'divider' => __('blog.admin.block_divider'),
-    ];
-    // Avoid @json / Js::from here: JSON_THROW_ON_ERROR turns bad UTF-8 in legacy HTML into a 500 on edit.
-    $blogBlocksEditorPayload = [
-        'initial' => $contentBlocksDocument,
-        'csrf' => csrf_token(),
-        'uploadUrl' => route('admin.blog.upload'),
-        'tinyDefaults' => $tinyMceConfig,
-        'tinyBaseUrl' => 'https://cdn.jsdelivr.net/npm/tinymce@7.4.0',
-        'labels' => $blockLabels,
-    ];
-    $blogBlocksEditorJsonFlags = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE;
-    $blogBlocksEditorPayloadJson = json_encode($blogBlocksEditorPayload, $blogBlocksEditorJsonFlags);
-    if ($blogBlocksEditorPayloadJson === false) {
-        $blogBlocksEditorPayloadJson = json_encode([
-            'initial' => ['version' => 1, 'blocks' => []],
-            'csrf' => csrf_token(),
-            'uploadUrl' => route('admin.blog.upload'),
-            'tinyDefaults' => $tinyMceConfig,
-            'tinyBaseUrl' => 'https://cdn.jsdelivr.net/npm/tinymce@7.4.0',
-            'labels' => $blockLabels,
-        ], $blogBlocksEditorJsonFlags) ?: '{}';
-    }
-@endphp
-
-<script>
-    window.__blogBlocksEditorPayload = {!! $blogBlocksEditorPayloadJson !!};
-</script>
-
 <x-layouts.admin
     :title="$post->exists ? __('Редагувати статтю') : __('Нова стаття')"
     :description="__('SEO-ready blog post with bilingual content, schema and RSS.')"
@@ -65,12 +17,9 @@
         action="{{ $post->exists ? route('admin.blog.update', $post) : route('admin.blog.store') }}"
         enctype="multipart/form-data"
         class="grid gap-8 xl:grid-cols-[1fr_320px]"
-        x-data="blogBlocksEditor()"
-        @submit="submitForm($event)"
     >
         @csrf
         @if($post->exists) @method('PUT') @endif
-        <input type="hidden" name="content_blocks" value="">
 
         <div class="space-y-8">
             <x-admin.section :title="__('Основне')">
@@ -113,137 +62,26 @@
                 </div>
             </x-admin.section>
 
-            <x-admin.section :title="__('blog.admin.blocks_title')" :description="__('blog.admin.blocks_hint')">
-                <div class="mb-4 flex flex-wrap gap-2">
-                    <button type="button" class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-bold text-zinc-300 transition hover:border-emerald-400/35 hover:bg-emerald-400/10 hover:text-emerald-100" @click="addBlock('heading')"><span class="text-emerald-400/90">+</span> {{ __('blog.admin.block_heading') }}</button>
-                    <button type="button" class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-bold text-zinc-300 transition hover:border-emerald-400/35 hover:bg-emerald-400/10 hover:text-emerald-100" @click="addBlock('richtext')"><span class="text-emerald-400/90">+</span> {{ __('blog.admin.block_richtext') }}</button>
-                    <button type="button" class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-bold text-zinc-300 transition hover:border-emerald-400/35 hover:bg-emerald-400/10 hover:text-emerald-100" @click="addBlock('image')"><span class="text-emerald-400/90">+</span> {{ __('blog.admin.block_image') }}</button>
-                    <button type="button" class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-bold text-zinc-300 transition hover:border-emerald-400/35 hover:bg-emerald-400/10 hover:text-emerald-100" @click="addBlock('quote')"><span class="text-emerald-400/90">+</span> {{ __('blog.admin.block_quote') }}</button>
-                    <button type="button" class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-bold text-zinc-300 transition hover:border-emerald-400/35 hover:bg-emerald-400/10 hover:text-emerald-100" @click="addBlock('divider')"><span class="text-emerald-400/90">+</span> {{ __('blog.admin.block_divider') }}</button>
-                </div>
-
-                <div class="space-y-4">
-                    <template x-if="doc.blocks.length === 0">
-                        <div class="rounded-2xl border border-white/10 bg-zinc-950/50 px-5 py-10 text-center text-sm text-zinc-500">
-                            {{ __('blog.admin.add_first_block') }}
-                        </div>
-                    </template>
-
-                    <template x-for="(block, index) in doc.blocks" :key="block.id">
-                        <div class="overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-zinc-950/60 shadow-lg shadow-black/20">
-                            <div class="flex items-center justify-between gap-3 border-b border-white/10 bg-zinc-950/40 px-4 py-2.5">
-                                <div class="flex min-w-0 items-center gap-2">
-                                    <span class="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-emerald-400/15 text-[11px] font-bold text-emerald-200" x-text="index + 1"></span>
-                                    <span class="truncate text-xs font-bold uppercase tracking-[0.12em] text-zinc-400" x-text="blockLabel(block.type)"></span>
-                                </div>
-                                <div class="flex shrink-0 items-center gap-1">
-                                    <button type="button" class="rounded-lg border border-white/10 px-2 py-1 text-[11px] font-semibold text-zinc-400 hover:bg-white/5" @click="moveBlock(index, -1)" :disabled="index === 0">↑</button>
-                                    <button type="button" class="rounded-lg border border-white/10 px-2 py-1 text-[11px] font-semibold text-zinc-400 hover:bg-white/5" @click="moveBlock(index, 1)" :disabled="index === doc.blocks.length - 1">↓</button>
-                                    <button type="button" class="rounded-lg border border-rose-400/30 px-2 py-1 text-[11px] font-semibold text-rose-200 hover:bg-rose-400/10" @click="removeBlock(index)">{{ __('Видалити') }}</button>
-                                </div>
-                            </div>
-
-                            <div class="p-4 sm:p-5">
-                                <template x-if="block.type === 'heading'">
-                                    <div class="grid gap-4 sm:grid-cols-2">
-                                        <div>
-                                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Заголовок UK') }}</label>
-                                            <input type="text" x-model="block.uk.text" class="w-full rounded-xl border border-white/10 bg-zinc-950/70 px-3 py-2 text-sm text-white">
-                                        </div>
-                                        <div>
-                                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Заголовок EN') }}</label>
-                                            <input type="text" x-model="block.en.text" class="w-full rounded-xl border border-white/10 bg-zinc-950/70 px-3 py-2 text-sm text-white">
-                                        </div>
-                                        <div class="sm:col-span-2">
-                                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">H2 / H3</label>
-                                            <select x-model.number="block.uk.level" @change="block.en.level = block.uk.level" class="h-10 w-full max-w-xs rounded-xl border border-white/10 bg-zinc-950/70 px-3 text-sm text-white">
-                                                <option :value="2">H2</option>
-                                                <option :value="3">H3</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </template>
-
-                                <template x-if="block.type === 'richtext'">
-                                    <div class="grid gap-4 lg:grid-cols-2">
-                                        <div>
-                                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Контент UK') }}</label>
-                                            <textarea
-                                                class="blog-block-mce min-h-[260px] w-full rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white"
-                                                :id="'mce_' + block.id + '_uk'"
-                                                x-init="$el.value = block.uk?.html ?? ''"
-                                                @input="block.uk.html = $event.target.value"
-                                            ></textarea>
-                                        </div>
-                                        <div>
-                                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Контент EN') }}</label>
-                                            <textarea
-                                                class="blog-block-mce min-h-[260px] w-full rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white"
-                                                :id="'mce_' + block.id + '_en'"
-                                                x-init="$el.value = block.en?.html ?? ''"
-                                                @input="block.en.html = $event.target.value"
-                                            ></textarea>
-                                        </div>
-                                    </div>
-                                </template>
-
-                                <template x-if="block.type === 'image'">
-                                    <div class="grid gap-5 lg:grid-cols-2">
-                                        <div>
-                                            <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Зображення') }}</label>
-                                            <div class="overflow-hidden rounded-xl border border-white/10 bg-zinc-900/50">
-                                                <template x-if="block.path">
-                                                    <img :src="imagePreviewUrl(block)" alt="" class="aspect-video w-full object-cover">
-                                                </template>
-                                                <template x-if="!block.path">
-                                                    <div class="grid aspect-video place-items-center text-xs text-zinc-500">{{ __('blog.admin.image_not_uploaded') }}</div>
-                                                </template>
-                                            </div>
-                                            <label class="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-xs font-bold text-emerald-100 hover:bg-emerald-400/15">
-                                                <span>{{ __('blog.admin.pick_image') }}</span>
-                                                <input type="file" accept="image/jpeg,image/png,image/webp,image/jpg" class="hidden" @change="uploadForBlock(index, $event)">
-                                            </label>
-                                        </div>
-                                        <div class="grid gap-3">
-                                            <div>
-                                                <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">Alt UK</label>
-                                                <input type="text" x-model="block.uk.alt" class="w-full rounded-xl border border-white/10 bg-zinc-950/70 px-3 py-2 text-sm text-white">
-                                            </div>
-                                            <div>
-                                                <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">Alt EN</label>
-                                                <input type="text" x-model="block.en.alt" class="w-full rounded-xl border border-white/10 bg-zinc-950/70 px-3 py-2 text-sm text-white">
-                                            </div>
-                                            <div>
-                                                <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Підпис UK') }}</label>
-                                                <input type="text" x-model="block.uk.caption" class="w-full rounded-xl border border-white/10 bg-zinc-950/70 px-3 py-2 text-sm text-white">
-                                            </div>
-                                            <div>
-                                                <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Підпис EN') }}</label>
-                                                <input type="text" x-model="block.en.caption" class="w-full rounded-xl border border-white/10 bg-zinc-950/70 px-3 py-2 text-sm text-white">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-
-                                <template x-if="block.type === 'quote'">
-                                    <div class="grid gap-4 sm:grid-cols-2">
-                                        <div>
-                                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Цитата UK') }}</label>
-                                            <textarea x-model="block.uk.text" rows="4" class="w-full rounded-xl border border-white/10 bg-zinc-950/70 px-3 py-2 text-sm text-white"></textarea>
-                                        </div>
-                                        <div>
-                                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Цитата EN') }}</label>
-                                            <textarea x-model="block.en.text" rows="4" class="w-full rounded-xl border border-white/10 bg-zinc-950/70 px-3 py-2 text-sm text-white"></textarea>
-                                        </div>
-                                    </div>
-                                </template>
-
-                                <template x-if="block.type === 'divider'">
-                                    <p class="text-sm text-zinc-500">{{ __('blog.admin.divider_hint') }}</p>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
+            <x-admin.section :title="__('blog.admin.body_title')" :description="__('blog.admin.body_hint')">
+                <div class="grid gap-6 lg:grid-cols-2">
+                    <div>
+                        <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Контент UK') }}</label>
+                        <textarea
+                            id="blog_content_uk"
+                            name="content_uk"
+                            rows="16"
+                            class="min-h-[320px] w-full rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 font-mono text-sm text-white"
+                        >{{ old('content_uk', $post->content_uk) }}</textarea>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Контент EN') }}</label>
+                        <textarea
+                            id="blog_content_en"
+                            name="content_en"
+                            rows="16"
+                            class="min-h-[320px] w-full rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 font-mono text-sm text-white"
+                        >{{ old('content_en', $post->content_en) }}</textarea>
+                    </div>
                 </div>
             </x-admin.section>
 
@@ -301,7 +139,84 @@
                 </div>
             </x-admin.section>
 
-            <button class="w-full rounded-2xl bg-emerald-400 px-5 py-4 text-sm font-black text-zinc-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-300">{{ __('Зберегти статтю') }}</button>
+            <button type="submit" class="w-full rounded-2xl bg-emerald-400 px-5 py-4 text-sm font-black text-zinc-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-300">{{ __('Зберегти статтю') }}</button>
         </aside>
     </form>
+
+    @push('scripts')
+        @php
+            $blogTinyBoot = [
+                'uploadUrl' => route('admin.blog.upload'),
+                'csrf' => csrf_token(),
+                'baseUrl' => 'https://cdn.jsdelivr.net/npm/tinymce@7.4.0',
+            ];
+        @endphp
+        <script>
+            (() => {
+                const cfg = @json($blogTinyBoot);
+                const form = document.getElementById('blog-post-form');
+                if (!form) {
+                    return;
+                }
+
+                form.addEventListener('submit', () => {
+                    window.tinymce?.triggerSave?.();
+                });
+
+                const boot = async () => {
+                    if (!window.tinymce) {
+                        return;
+                    }
+
+                    const shared = {
+                        menubar: false,
+                        branding: false,
+                        promotion: false,
+                        license_key: 'gpl',
+                        plugins: 'link lists table code image autoresize',
+                        toolbar:
+                            'undo redo | blocks | bold italic underline | alignleft aligncenter alignright | bullist numlist | blockquote | link image table | code removeformat',
+                        block_formats: 'Paragraph=p;Heading 2=h2;Heading 3=h3;Preformatted=pre',
+                        relative_urls: false,
+                        convert_urls: true,
+                        autoresize_bottom_margin: 24,
+                        height: 440,
+                        base_url: cfg.baseUrl,
+                        suffix: '.min',
+                        content_style:
+                            'body{font-family:ui-sans-serif,system-ui,sans-serif;font-size:15px;background:#09090b;color:#e4e4e7;line-height:1.65}a{color:#34d399}img{max-width:100%;height:auto;border-radius:12px}table{width:100%;border-collapse:collapse}td,th{border:1px solid rgba(255,255,255,.12);padding:8px}',
+                        images_upload_handler: (blobInfo) =>
+                            new Promise((resolve, reject) => {
+                                const fd = new FormData();
+                                fd.append('image', blobInfo.blob(), blobInfo.filename());
+                                fetch(cfg.uploadUrl, {
+                                    method: 'POST',
+                                    headers: { 'X-CSRF-TOKEN': cfg.csrf, Accept: 'application/json' },
+                                    body: fd,
+                                    credentials: 'same-origin',
+                                })
+                                    .then((r) => r.json())
+                                    .then((j) => (j.url ? resolve(j.url) : reject(new Error('upload'))))
+                                    .catch(() => reject(new Error('upload')));
+                            }),
+                    };
+
+                    for (const id of ['blog_content_uk', 'blog_content_en']) {
+                        const ta = document.getElementById(id);
+                        if (!ta) {
+                            continue;
+                        }
+                        window.tinymce.get(id)?.remove?.();
+                        await window.tinymce.init({ ...shared, selector: `#${id}` });
+                    }
+                };
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', boot);
+                } else {
+                    boot();
+                }
+            })();
+        </script>
+    @endpush
 </x-layouts.admin>

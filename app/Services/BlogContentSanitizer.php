@@ -11,6 +11,7 @@ class BlogContentSanitizer
         }
 
         $html = preg_replace('#<(script|style|object|embed|form|input|button)[^>]*>.*?</\1>#is', '', $html) ?? $html;
+        $html = preg_replace('#</?span\b[^>]*>#i', '', $html) ?? $html;
         $html = preg_replace('/\son\w+\s*=\s*(".*?"|\'.*?\'|[^\s>]+)/is', '', $html) ?? $html;
         $html = preg_replace('/(href|src)\s*=\s*([\'"])\s*javascript:[^\'"]*\2/is', '$1="#"', $html) ?? $html;
 
