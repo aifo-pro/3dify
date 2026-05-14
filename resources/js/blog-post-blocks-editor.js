@@ -19,14 +19,33 @@ function defaultsFor(type) {
     return JSON.parse(JSON.stringify(d[type] || {}));
 }
 
+function ensurePairedLocaleLists(data, type) {
+    if (type !== 'list' && type !== 'tips') {
+        return;
+    }
+    let a = Array.isArray(data.items_uk) ? [...data.items_uk] : [];
+    let b = Array.isArray(data.items_en) ? [...data.items_en] : [];
+    const n = Math.max(a.length, b.length, 1);
+    while (a.length < n) {
+        a.push('');
+    }
+    while (b.length < n) {
+        b.push('');
+    }
+    data.items_uk = a;
+    data.items_en = b;
+}
+
 function normalizeRow(raw) {
     const type = raw.type || 'paragraph';
+    const data = { ...defaultsFor(type), ...(raw.data && typeof raw.data === 'object' ? raw.data : {}) };
+    ensurePairedLocaleLists(data, type);
     return {
         _key: raw.id != null ? `db_${raw.id}` : `k_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
         serverId: raw.id ?? null,
         type,
         is_active: raw.is_active !== false,
-        data: { ...defaultsFor(type), ...(raw.data && typeof raw.data === 'object' ? raw.data : {}) },
+        data,
     };
 }
 
@@ -45,12 +64,14 @@ export function blogPostBlocksEditor() {
         },
 
         addBlock(type) {
+            const data = defaultsFor(type);
+            ensurePairedLocaleLists(data, type);
             this.blocks.push({
                 _key: `k_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
                 serverId: null,
                 type,
                 is_active: true,
-                data: defaultsFor(type),
+                data,
             });
             this.showPicker = false;
         },
@@ -73,17 +94,29 @@ export function blogPostBlocksEditor() {
             this.blocks[i].is_active = !this.blocks[i].is_active;
         },
 
-        listAddItem(block, field) {
-            if (!Array.isArray(block.data[field])) {
-                block.data[field] = [];
+        listAddPairedRow(block) {
+            if (!Array.isArray(block.data.items_uk)) {
+                block.data.items_uk = [];
             }
-            block.data[field].push('');
+            if (!Array.isArray(block.data.items_en)) {
+                block.data.items_en = [];
+            }
+            block.data.items_uk.push('');
+            block.data.items_en.push('');
         },
 
-        listRemoveItem(block, field, idx) {
-            block.data[field].splice(idx, 1);
-            if (block.data[field].length === 0) {
-                block.data[field].push('');
+        listRemovePairedRow(block, idx) {
+            if (!Array.isArray(block.data.items_uk)) {
+                block.data.items_uk = [];
+            }
+            if (!Array.isArray(block.data.items_en)) {
+                block.data.items_en = [];
+            }
+            block.data.items_uk.splice(idx, 1);
+            block.data.items_en.splice(idx, 1);
+            if (block.data.items_uk.length === 0) {
+                block.data.items_uk.push('');
+                block.data.items_en.push('');
             }
         },
 

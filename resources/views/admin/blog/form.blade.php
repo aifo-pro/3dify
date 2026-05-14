@@ -175,30 +175,21 @@
                                             <input type="text" x-model="block.data.title_en" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white" placeholder="List title EN">
                                             <select x-model="block.data.style" class="sm:col-span-2 h-10 max-w-xs rounded-xl border border-white/10 bg-zinc-950/80 px-3 text-sm text-white"><option value="bullets">Bullets</option><option value="checks">Checks</option><option value="numbers">Numbers</option></select>
                                         </div>
-                                        <div class="grid gap-6 lg:grid-cols-2">
-                                            <div class="space-y-2">
-                                                <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">UK</p>
-                                                <template x-for="(it, li) in block.data.items_uk" :key="'iuk'+index+li">
-                                                    <div class="flex gap-2">
-                                                        <input type="text" x-model="block.data.items_uk[li]" class="min-w-0 flex-1 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
-                                                        <button type="button" class="shrink-0 rounded-lg border border-white/10 px-2 text-xs" @click="listRemoveItem(block, 'items_uk', li)">×</button>
-                                                    </div>
-                                                </template>
+                                        <div class="space-y-2">
+                                            <div class="hidden gap-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500 sm:grid sm:grid-cols-[1fr_1fr_auto] sm:px-1">
+                                                <span>UK</span>
+                                                <span>EN</span>
+                                                <span class="w-8"></span>
                                             </div>
-                                            <div class="space-y-2">
-                                                <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-500">EN</p>
-                                                <template x-for="(it, li) in block.data.items_en" :key="'ien'+index+li">
-                                                    <div class="flex gap-2">
-                                                        <input type="text" x-model="block.data.items_en[li]" class="min-w-0 flex-1 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
-                                                        <button type="button" class="shrink-0 rounded-lg border border-white/10 px-2 text-xs" @click="listRemoveItem(block, 'items_en', li)">×</button>
-                                                    </div>
-                                                </template>
-                                            </div>
+                                            <template x-for="(it, li) in block.data.items_uk" :key="'lp'+index+li">
+                                                <div class="flex flex-col gap-2 rounded-xl border border-white/10 bg-zinc-950/50 p-3 sm:grid sm:grid-cols-[1fr_1fr_auto] sm:items-center sm:gap-2 sm:border-white/5 sm:bg-zinc-950/30 sm:p-2">
+                                                    <input type="text" x-model="block.data.items_uk[li]" class="min-w-0 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white" placeholder="Текст UK">
+                                                    <input type="text" x-model="block.data.items_en[li]" class="min-w-0 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white" placeholder="Text EN">
+                                                    <button type="button" class="shrink-0 self-end rounded-lg border border-white/10 px-3 py-2 text-xs text-zinc-300 sm:self-center sm:px-2 sm:py-1" @click="listRemovePairedRow(block, li)">×</button>
+                                                </div>
+                                            </template>
                                         </div>
-                                        <div class="flex flex-wrap gap-2">
-                                            <button type="button" class="rounded-xl border border-white/10 px-3 py-1 text-xs text-zinc-300" @click="listAddItem(block, 'items_uk')">+ UK item</button>
-                                            <button type="button" class="rounded-xl border border-white/10 px-3 py-1 text-xs text-zinc-300" @click="listAddItem(block, 'items_en')">+ EN item</button>
-                                        </div>
+                                        <button type="button" class="rounded-xl border border-emerald-400/25 px-3 py-1.5 text-xs text-emerald-200/90 hover:bg-emerald-400/10" @click="listAddPairedRow(block)">+ додати рядок</button>
                                     </div>
                                 </template>
                                 <template x-if="block.type === 'table'">
@@ -233,9 +224,19 @@
                                             <input type="text" x-model="block.data.title_en" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white" placeholder="Tips title EN">
                                             <input type="text" x-model="block.data.icon" class="sm:col-span-2 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white" placeholder="Icon (emoji optional)">
                                         </div>
-                                        <template x-for="(it, li) in block.data.items_uk" :key="'tuk'+index+li"><div class="flex gap-2"><input type="text" x-model="block.data.items_uk[li]" class="flex-1 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white"><button type="button" @click="listRemoveItem(block, 'items_uk', li)" class="rounded-lg border border-white/10 px-2">×</button></div></template>
-                                        <template x-for="(it, li) in block.data.items_en" :key="'ten'+index+li"><div class="flex gap-2"><input type="text" x-model="block.data.items_en[li]" class="flex-1 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white"><button type="button" @click="listRemoveItem(block, 'items_en', li)" class="rounded-lg border border-white/10 px-2">×</button></div></template>
-                                        <div class="flex gap-2"><button type="button" @click="listAddItem(block, 'items_uk')" class="rounded-xl border border-white/10 px-3 py-1 text-xs">+ UK</button><button type="button" @click="listAddItem(block, 'items_en')" class="rounded-xl border border-white/10 px-3 py-1 text-xs">+ EN</button></div>
+                                        <div class="hidden gap-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500 sm:grid sm:grid-cols-[1fr_1fr_auto] sm:px-1">
+                                            <span>UK</span>
+                                            <span>EN</span>
+                                            <span class="w-8"></span>
+                                        </div>
+                                        <template x-for="(it, li) in block.data.items_uk" :key="'tp'+index+li">
+                                            <div class="flex flex-col gap-2 rounded-xl border border-white/10 bg-zinc-950/50 p-3 sm:grid sm:grid-cols-[1fr_1fr_auto] sm:items-center sm:gap-2 sm:border-white/5 sm:bg-zinc-950/30 sm:p-2">
+                                                <input type="text" x-model="block.data.items_uk[li]" class="min-w-0 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white" placeholder="Текст UK">
+                                                <input type="text" x-model="block.data.items_en[li]" class="min-w-0 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white" placeholder="Text EN">
+                                                <button type="button" class="shrink-0 self-end rounded-lg border border-white/10 px-3 py-2 text-xs sm:self-center sm:px-2 sm:py-1" @click="listRemovePairedRow(block, li)">×</button>
+                                            </div>
+                                        </template>
+                                        <button type="button" @click="listAddPairedRow(block)" class="rounded-xl border border-emerald-400/25 px-3 py-1.5 text-xs text-emerald-200/90 hover:bg-emerald-400/10">+ додати рядок</button>
                                     </div>
                                 </template>
                                 <template x-if="block.type === 'warning'">
