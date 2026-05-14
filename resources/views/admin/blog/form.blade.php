@@ -2,6 +2,7 @@
     $tinyMceConfig = [
         'menubar' => false,
         'branding' => false,
+        'promotion' => false,
         'license_key' => 'gpl',
         'plugins' => 'link lists table code image autoresize',
         'toolbar' => 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright | bullist numlist | blockquote | link image table | code removeformat',
@@ -24,6 +25,7 @@
         'csrf' => csrf_token(),
         'uploadUrl' => route('admin.blog.upload'),
         'tinyDefaults' => $tinyMceConfig,
+        'tinyBaseUrl' => 'https://cdn.jsdelivr.net/npm/tinymce@7.4.0',
         'labels' => $blockLabels,
     ];
     $blogBlocksEditorJsonFlags = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE;
@@ -34,6 +36,7 @@
             'csrf' => csrf_token(),
             'uploadUrl' => route('admin.blog.upload'),
             'tinyDefaults' => $tinyMceConfig,
+            'tinyBaseUrl' => 'https://cdn.jsdelivr.net/npm/tinymce@7.4.0',
             'labels' => $blockLabels,
         ], $blogBlocksEditorJsonFlags) ?: '{}';
     }
@@ -169,6 +172,7 @@
                                                 class="blog-block-mce min-h-[260px] w-full rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white"
                                                 :id="'mce_' + block.id + '_uk'"
                                                 x-init="$el.value = block.uk?.html ?? ''"
+                                                @input="block.uk.html = $event.target.value"
                                             ></textarea>
                                         </div>
                                         <div>
@@ -177,6 +181,7 @@
                                                 class="blog-block-mce min-h-[260px] w-full rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white"
                                                 :id="'mce_' + block.id + '_en'"
                                                 x-init="$el.value = block.en?.html ?? ''"
+                                                @input="block.en.html = $event.target.value"
                                             ></textarea>
                                         </div>
                                     </div>

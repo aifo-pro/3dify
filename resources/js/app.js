@@ -36,7 +36,7 @@ Alpine.data('blogBlocksEditor', () => {
     },
 
     syncRichFromTiny() {
-        if (!window.tinymce) {
+        if (!this.doc?.blocks) {
             return;
         }
         this.doc.blocks.forEach((b) => {
@@ -44,10 +44,19 @@ Alpine.data('blogBlocksEditor', () => {
                 return;
             }
             ['uk', 'en'].forEach((loc) => {
-                const id = `mce_${b.id}_${loc}`;
-                const ed = window.tinymce.get(id);
-                if (ed && b[loc]) {
-                    b[loc].html = ed.getContent();
+                const sid = `mce_${b.id}_${loc}`;
+                let html = '';
+                const ed = window.tinymce?.get(sid);
+                if (ed) {
+                    html = ed.getContent() ?? '';
+                } else {
+                    const ta = document.getElementById(sid);
+                    if (ta) {
+                        html = ta.value ?? '';
+                    }
+                }
+                if (b[loc] && typeof b[loc] === 'object') {
+                    b[loc].html = html;
                 }
             });
         });
@@ -140,39 +149,47 @@ Alpine.data('blogBlocksEditor', () => {
             if (!window.tinymce || !cfg.tinyDefaults) {
                 return false;
             }
+            const needsMce = this.doc?.blocks?.some((b) => b.type === 'richtext');
+            if (!needsMce) {
+                return true;
+            }
+
             this.syncRichFromTiny();
-            document.querySelectorAll('textarea.blog-block-mce').forEach((ta) => {
-                const ed = window.tinymce.get(ta.id);
-                if (ed) {
-                    ed.remove();
-                }
+
+            const textareas = document.querySelectorAll('textarea.blog-block-mce');
+            if (textareas.length === 0) {
+                return false;
+            }
+
+            textareas.forEach((ta) => {
+                window.tinymce.get(ta.id)?.remove();
             });
+
             const { uploadUrl, csrf } = this;
-            document.querySelectorAll('textarea.blog-block-mce').forEach((ta) => {
-                const id = ta.id;
-                if (!id) {
-                    return;
-                }
-                window.tinymce.init({
-                    ...cfg.tinyDefaults,
-                    selector: `#${CSS.escape(id)}`,
-                    height: 280,
-                    images_upload_handler: (blobInfo) =>
-                        new Promise((resolve, reject) => {
-                            const form = new FormData();
-                            form.append('image', blobInfo.blob(), blobInfo.filename());
-                            fetch(uploadUrl, {
-                                method: 'POST',
-                                headers: { 'X-CSRF-TOKEN': csrf || '', Accept: 'application/json' },
-                                body: form,
-                                credentials: 'same-origin',
-                            })
-                                .then((r) => r.json())
-                                .then((j) => (j.url ? resolve(j.url) : reject(new Error('Upload failed'))))
-                                .catch(() => reject(new Error('Upload failed')));
-                        }),
-                });
+            const baseUrl = cfg.tinyBaseUrl || 'https://cdn.jsdelivr.net/npm/tinymce@7.4.0';
+
+            window.tinymce.init({
+                ...cfg.tinyDefaults,
+                base_url: baseUrl,
+                suffix: '.min',
+                selector: 'textarea.blog-block-mce',
+                height: 280,
+                images_upload_handler: (blobInfo) =>
+                    new Promise((resolve, reject) => {
+                        const form = new FormData();
+                        form.append('image', blobInfo.blob(), blobInfo.filename());
+                        fetch(uploadUrl, {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': csrf || '', Accept: 'application/json' },
+                            body: form,
+                            credentials: 'same-origin',
+                        })
+                            .then((r) => r.json())
+                            .then((j) => (j.url ? resolve(j.url) : reject(new Error('Upload failed'))))
+                            .catch(() => reject(new Error('Upload failed')));
+                    }),
             });
+
             return true;
         };
 
