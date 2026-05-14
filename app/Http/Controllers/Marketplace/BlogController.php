@@ -105,6 +105,12 @@ class BlogController extends Controller
 
         $toc = [];
         $locale = app()->getLocale();
+        $normalizeHeading = static function (string $s): string {
+            $s = trim(preg_replace('/\s+/u', ' ', $s) ?? '');
+
+            return $s === '' ? '' : mb_strtolower($s, 'UTF-8');
+        };
+        $postTitleNorm = $normalizeHeading($post->localized_title);
         foreach ($blocks as $block) {
             if ($block->type !== 'heading') {
                 continue;
@@ -118,6 +124,9 @@ class BlogController extends Controller
                 ? trim((string) (($d['title_en'] ?? '') ?: ($d['title_uk'] ?? '')))
                 : trim((string) (($d['title_uk'] ?? '') ?: ($d['title_en'] ?? '')));
             if ($text === '') {
+                continue;
+            }
+            if ($postTitleNorm !== '' && $normalizeHeading($text) === $postTitleNorm) {
                 continue;
             }
             $toc[] = [

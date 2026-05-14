@@ -79,11 +79,8 @@
                     </div>
 
                     <h1 class="mt-6 max-w-[52rem] text-[1.85rem] font-black leading-[1.14] tracking-tight text-white sm:text-[2.35rem] sm:leading-[1.12] lg:text-[2.75rem] lg:leading-[1.08]">{{ $post->localized_title }}</h1>
-                    @if($post->localized_excerpt)
-                        <p class="mt-6 max-w-[48rem] text-lg leading-[1.75] text-zinc-300 sm:text-xl sm:leading-[1.72]">{{ $post->localized_excerpt }}</p>
-                    @endif
 
-                    <div class="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4 border-t border-white/10 pt-8 text-sm text-zinc-400">
+                    <div class="mt-5 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-white/10 pt-5 text-sm text-zinc-400 sm:mt-6 sm:pt-6">
                         <div class="flex items-center gap-3">
                             <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-emerald-400/35 bg-emerald-400/12 text-sm font-black text-emerald-100" aria-hidden="true">{{ $authorInitial }}</span>
                             <div>
@@ -95,6 +92,10 @@
                         <span class="font-medium text-zinc-300">{{ number_format($post->views) }} {{ __('blog.views') }}</span>
                         <span class="font-medium text-emerald-200/90">{{ __('blog.reading_time', ['count' => $readMinutes]) }}</span>
                     </div>
+
+                    @if($post->localized_excerpt)
+                        <p class="mt-6 max-w-[48rem] text-lg leading-[1.75] text-zinc-300 sm:mt-7 sm:text-xl sm:leading-[1.72]">{{ $post->localized_excerpt }}</p>
+                    @endif
                 </div>
             </div>
 
@@ -157,7 +158,7 @@
                 </div>
             @else
                 @if($hasToc)
-                    <nav class="mx-auto mt-10 w-full rounded-2xl border border-white/[0.08] bg-gradient-to-b from-zinc-900/80 to-zinc-950/70 px-5 py-5 shadow-lg shadow-black/25 ring-1 ring-white/[0.04] lg:hidden" aria-label="{{ __('blog.toc') }}">
+                    <nav class="mx-auto mt-8 w-full rounded-2xl border border-white/[0.08] bg-gradient-to-b from-zinc-900/80 to-zinc-950/70 px-5 py-5 shadow-lg shadow-black/25 ring-1 ring-white/[0.04] lg:hidden" aria-label="{{ __('blog.toc') }}">
                         <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400/90">{{ __('blog.toc') }}</p>
                         <ol class="mt-3.5 flex list-none flex-col gap-0.5 p-0 text-[15px] leading-snug text-zinc-400">
                             @foreach($toc as $i => $item)
@@ -173,7 +174,7 @@
                 @endif
 
                 <div @class([
-                    'mx-auto mt-12 grid max-w-none gap-8 lg:items-start lg:gap-10 xl:gap-12',
+                    'mx-auto mt-8 grid max-w-none gap-8 lg:mt-10 lg:items-start lg:gap-10 xl:gap-12',
                     'lg:grid-cols-[11.5rem_minmax(0,1fr)_min(16.5rem,100%)] xl:grid-cols-[12.5rem_minmax(0,1fr)_min(18rem,100%)]' => $hasToc,
                     'lg:grid-cols-[minmax(0,1fr)_min(16.5rem,100%)] xl:grid-cols-[minmax(0,1fr)_min(18rem,100%)]' => ! $hasToc,
                 ])>
