@@ -20,6 +20,16 @@
     ];
 @endphp
 
+<script>
+    window.__blogBlocksEditorPayload = @json([
+        'initial' => $contentBlocksDocument,
+        'csrf' => csrf_token(),
+        'uploadUrl' => route('admin.blog.upload'),
+        'tinyDefaults' => $tinyMceConfig,
+        'labels' => $blockLabels,
+    ]);
+</script>
+
 <x-layouts.admin :title="$post->exists ? __('Редагувати статтю') : __('Нова стаття')" :description="__('SEO-ready blog post with bilingual content, schema and RSS.')" active="blog">
     @if(session('status'))
         <div class="mb-6 rounded-2xl border border-emerald-300/30 bg-emerald-300/[0.08] px-4 py-3 text-sm text-emerald-100">{{ session('status') }}</div>
@@ -34,13 +44,7 @@
         action="{{ $post->exists ? route('admin.blog.update', $post) : route('admin.blog.store') }}"
         enctype="multipart/form-data"
         class="grid gap-8 xl:grid-cols-[1fr_320px]"
-        x-data="blogBlocksEditor({
-            initial: @js($contentBlocksDocument),
-            csrf: @js(csrf_token()),
-            uploadUrl: @js(route('admin.blog.upload')),
-            tinyDefaults: @json($tinyMceConfig),
-            labels: @json($blockLabels),
-        })"
+        x-data="blogBlocksEditor()"
         @submit="submitForm($event)"
     >
         @csrf

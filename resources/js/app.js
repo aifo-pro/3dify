@@ -6,7 +6,10 @@ import persist from '@alpinejs/persist';
 Alpine.plugin(persist);
 window.Alpine = Alpine;
 
-Alpine.data('blogBlocksEditor', (cfg) => ({
+Alpine.data('blogBlocksEditor', () => {
+    const cfg = window.__blogBlocksEditorPayload ?? {};
+
+    return {
     doc: structuredClone(cfg.initial && typeof cfg.initial === 'object' ? cfg.initial : { version: 1, blocks: [] }),
     csrf: cfg.csrf || '',
     uploadUrl: cfg.uploadUrl || '',
@@ -174,7 +177,8 @@ Alpine.data('blogBlocksEditor', (cfg) => ({
     init() {
         this.$nextTick(() => this.refreshTinyMce());
     },
-}));
+};
+});
 
 Alpine.data('productPricing', () => ({
     licenseType: 'personal',
