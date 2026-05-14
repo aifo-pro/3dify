@@ -6,6 +6,176 @@ import persist from '@alpinejs/persist';
 Alpine.plugin(persist);
 window.Alpine = Alpine;
 
+Alpine.data('blogBlocksEditor', (cfg) => ({
+    doc: structuredClone(cfg.initial && typeof cfg.initial === 'object' ? cfg.initial : { version: 1, blocks: [] }),
+    csrf: cfg.csrf || '',
+    uploadUrl: cfg.uploadUrl || '',
+
+    uid() {
+        return `blk_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
+    },
+
+    blockLabel(type) {
+        const labels = cfg.labels || {};
+        return labels[type] || type;
+    },
+
+    submitForm(event) {
+        this.syncRichFromTiny();
+        const form = event.target;
+        const hidden = form.querySelector('input[name="content_blocks"]');
+        if (hidden) {
+            hidden.value = JSON.stringify(this.doc);
+        }
+        if (window.tinymce) {
+            window.tinymce.triggerSave();
+        }
+    },
+
+    syncRichFromTiny() {
+        if (!window.tinymce) {
+            return;
+        }
+        this.doc.blocks.forEach((b) => {
+            if (b.type !== 'richtext') {
+                return;
+            }
+            ['uk', 'en'].forEach((loc) => {
+                const id = `mce_${b.id}_${loc}`;
+                const ed = window.tinymce.get(id);
+                if (ed && b[loc]) {
+                    b[loc].html = ed.getContent();
+                }
+            });
+        });
+    },
+
+    addBlock(type) {
+        const id = this.uid();
+        let block;
+        switch (type) {
+            case 'heading':
+                block = { id, type, uk: { text: '', level: 2 }, en: { text: '', level: 2 } };
+                break;
+            case 'richtext':
+                block = { id, type, uk: { html: '' }, en: { html: '' } };
+                break;
+            case 'image':
+                block = { id, type, path: '', uk: { alt: '', caption: '' }, en: { alt: '', caption: '' } };
+                break;
+            case 'quote':
+                block = { id, type, uk: { text: '' }, en: { text: '' } };
+                break;
+            case 'divider':
+                block = { id, type, uk: {}, en: {} };
+                break;
+            default:
+                return;
+        }
+        this.doc.blocks.push(block);
+        this.$nextTick(() => this.refreshTinyMce());
+    },
+
+    removeBlock(index) {
+        this.syncRichFromTiny();
+        const b = this.doc.blocks[index];
+        if (b?.type === 'richtext' && window.tinymce) {
+            ['uk', 'en'].forEach((loc) => {
+                const ed = window.tinymce.get(`mce_${b.id}_${loc}`);
+                if (ed) {
+                    ed.remove();
+                }
+            });
+        }
+        this.doc.blocks.splice(index, 1);
+        this.$nextTick(() => this.refreshTinyMce());
+    },
+
+    moveBlock(index, dir) {
+        this.syncRichFromTiny();
+        const j = index + dir;
+        if (j < 0 || j >= this.doc.blocks.length) {
+            return;
+        }
+        const arr = this.doc.blocks;
+        [arr[index], arr[j]] = [arr[j], arr[index]];
+        this.$nextTick(() => this.refreshTinyMce());
+    },
+
+    async uploadForBlock(index, event) {
+        const file = event.target.files?.[0];
+        if (!file || !this.uploadUrl) {
+            return;
+        }
+        const formData = new FormData();
+        formData.append('image', file);
+        const res = await fetch(this.uploadUrl, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': this.csrf, Accept: 'application/json' },
+            body: formData,
+            credentials: 'same-origin',
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json.path) {
+            window.alert(typeof json.message === 'string' ? json.message : 'Upload failed');
+            return;
+        }
+        this.doc.blocks[index].path = json.path;
+        event.target.value = '';
+    },
+
+    imagePreviewUrl(block) {
+        if (!block.path) {
+            return '';
+        }
+        const p = String(block.path).replace(/^\/+/, '');
+        return `/storage/${p}`;
+    },
+
+    refreshTinyMce() {
+        if (!window.tinymce || !cfg.tinyDefaults) {
+            return;
+        }
+        this.syncRichFromTiny();
+        document.querySelectorAll('textarea.blog-block-mce').forEach((ta) => {
+            const ed = window.tinymce.get(ta.id);
+            if (ed) {
+                ed.remove();
+            }
+        });
+        const { uploadUrl, csrf } = this;
+        document.querySelectorAll('textarea.blog-block-mce').forEach((ta) => {
+            const id = ta.id;
+            if (!id) {
+                return;
+            }
+            window.tinymce.init({
+                ...cfg.tinyDefaults,
+                selector: `#${id}`,
+                height: 280,
+                images_upload_handler: (blobInfo) =>
+                    new Promise((resolve, reject) => {
+                        const form = new FormData();
+                        form.append('image', blobInfo.blob(), blobInfo.filename());
+                        fetch(uploadUrl, {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': csrf || '', Accept: 'application/json' },
+                            body: form,
+                            credentials: 'same-origin',
+                        })
+                            .then((r) => r.json())
+                            .then((j) => (j.url ? resolve(j.url) : reject(new Error('Upload failed'))))
+                            .catch(() => reject(new Error('Upload failed')));
+                    }),
+            });
+        });
+    },
+
+    init() {
+        this.$nextTick(() => this.refreshTinyMce());
+    },
+}));
+
 Alpine.data('productPricing', () => ({
     licenseType: 'personal',
     personalPrice: 0,

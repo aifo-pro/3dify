@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use App\Models\BlogTag;
+use App\Services\BlogBlockCompiler;
 use App\Services\BlogContentSanitizer;
 use App\Services\BlogImageService;
 use App\Services\BlogNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class BlogPostController extends Controller
 {
@@ -36,6 +38,7 @@ class BlogPostController extends Controller
             'post' => new BlogPost(['status' => 'draft', 'allow_index' => true]),
             'categories' => BlogCategory::orderBy('sort_order')->get(),
             'tags' => BlogTag::orderBy('name_uk')->get(),
+            'contentBlocksDocument' => app(BlogBlockCompiler::class)->defaultDocumentFromLegacy(null, null),
         ]);
     }
 
@@ -56,10 +59,16 @@ class BlogPostController extends Controller
     {
         $post->load(['categories', 'tags']);
 
+        $doc = $post->content_blocks;
+        if (! is_array($doc) || ! isset($doc['blocks'])) {
+            $doc = app(BlogBlockCompiler::class)->defaultDocumentFromLegacy($post->content_uk, $post->content_en);
+        }
+
         return view('admin.blog.form', [
             'post' => $post,
             'categories' => BlogCategory::orderBy('sort_order')->get(),
             'tags' => BlogTag::orderBy('name_uk')->get(),
+            'contentBlocksDocument' => $doc,
         ]);
     }
 
@@ -93,7 +102,10 @@ class BlogPostController extends Controller
 
         $path = $images->storeContentImage($data['image']);
 
-        return response()->json(['url' => $images->publicUrl($path)]);
+        return response()->json([
+            'url' => $images->publicUrl($path),
+            'path' => $path,
+        ]);
     }
 
     private function validated(Request $request, ?BlogPost $post = null): array
@@ -104,8 +116,7 @@ class BlogPostController extends Controller
             'slug' => ['nullable', 'alpha_dash', 'max:255', Rule::unique('blog_posts', 'slug')->ignore($post?->id)],
             'excerpt_uk' => ['nullable', 'string'],
             'excerpt_en' => ['nullable', 'string'],
-            'content_uk' => ['nullable', 'string'],
-            'content_en' => ['nullable', 'string'],
+            'content_blocks' => ['required', 'string', 'max:600000'],
             'cover_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'og_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'cover_alt_uk' => ['nullable', 'string', 'max:255'],
@@ -129,8 +140,16 @@ class BlogPostController extends Controller
     private function prepareData(array $data, Request $request, BlogContentSanitizer $sanitizer, BlogImageService $images): array
     {
         $data['slug'] = $data['slug'] ?: Str::slug($data['title_en'] ?: Str::transliterate($data['title_uk']));
-        $data['content_uk'] = $sanitizer->clean($data['content_uk'] ?? null);
-        $data['content_en'] = $sanitizer->clean($data['content_en'] ?? null);
+
+        $document = json_decode($data['content_blocks'] ?? 'null', true);
+        if (! is_array($document)) {
+            throw ValidationException::withMessages(['content_blocks' => [__('Некоректний JSON конструктора.')]]);
+        }
+        $this->assertValidBlockDocument($document);
+        $compiled = app(BlogBlockCompiler::class)->compile($document);
+        $data['content_blocks'] = $document;
+        $data['content_uk'] = $sanitizer->clean($compiled['uk'] ?: null);
+        $data['content_en'] = $sanitizer->clean($compiled['en'] ?: null);
         $data['is_featured'] = $request->boolean('is_featured');
         $data['allow_index'] = $request->boolean('allow_index', true);
         $data['published_at'] = $data['published_at'] ?: ($data['status'] === 'published' ? now() : null);
@@ -148,5 +167,37 @@ class BlogPostController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * @param  array<string, mixed>  $document
+     */
+    private function assertValidBlockDocument(array $document): void
+    {
+        $blocks = $document['blocks'] ?? null;
+        if (! is_array($blocks)) {
+            throw ValidationException::withMessages(['content_blocks' => [__('Відсутній масив blocks.')]]);
+        }
+        if (count($blocks) > 60) {
+            throw ValidationException::withMessages(['content_blocks' => [__('Забагато блоків (макс. 60).')]]);
+        }
+
+        $allowed = ['heading', 'richtext', 'image', 'quote', 'divider'];
+
+        foreach ($blocks as $i => $block) {
+            if (! is_array($block)) {
+                throw ValidationException::withMessages(['content_blocks' => [__('Некоректний блок #:idx.', ['idx' => $i])]]);
+            }
+            $type = (string) ($block['type'] ?? '');
+            if (! in_array($type, $allowed, true)) {
+                throw ValidationException::withMessages(['content_blocks' => [__('Недозволений тип блоку: :type', ['type' => $type])]]);
+            }
+            if ($type === 'image') {
+                $path = (string) ($block['path'] ?? '');
+                if ($path !== '' && (str_contains($path, '..') || ! preg_match('#^blog/#', $path))) {
+                    throw ValidationException::withMessages(['content_blocks' => [__('Некоректний шлях зображення.')]]);
+                }
+            }
+        }
     }
 }
