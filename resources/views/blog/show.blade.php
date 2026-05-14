@@ -109,10 +109,51 @@
             @endif
 
             @if(! ($hasActiveBlocks ?? false))
-                <div class="mx-auto mt-14 max-w-2xl rounded-3xl border border-amber-400/25 bg-amber-400/[0.07] px-8 py-12 text-center shadow-lg shadow-black/20">
-                    <p class="text-lg font-black text-amber-50">{{ __('blog.blocks_empty_title') }}</p>
-                    <p class="mt-4 text-sm leading-relaxed text-amber-100/80">{{ __('blog.blocks_empty_hint') }}</p>
-                    <a href="{{ route('blog.index') }}" class="mt-8 inline-flex items-center justify-center rounded-2xl bg-emerald-400 px-8 py-3 text-sm font-black text-zinc-950 transition hover:bg-emerald-300">{{ __('blog.breadcrumb_blog') }} →</a>
+                <div class="mx-auto mt-12 grid max-w-[1280px] gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+                    <div class="min-w-0 space-y-8">
+                        @if($post->localized_excerpt)
+                            <section class="rounded-3xl border border-white/10 bg-white/[0.03] p-8 sm:p-10 shadow-xl shadow-black/20" aria-labelledby="article-lead-label">
+                                <p id="article-lead-label" class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">{{ __('blog.blocks_empty_lead') }}</p>
+                                <p class="mt-4 text-lg leading-relaxed text-zinc-200 sm:text-xl">{{ $post->localized_excerpt }}</p>
+                            </section>
+                        @endif
+
+                        <section class="rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-400/[0.12] via-zinc-950 to-zinc-950 p-8 sm:p-10 shadow-2xl shadow-black/30 ring-1 ring-white/10">
+                            <div class="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xl font-black tracking-tight text-amber-50 sm:text-2xl">{{ __('blog.blocks_empty_title') }}</p>
+                                    <p class="mt-3 max-w-2xl text-sm leading-relaxed text-amber-100/85 sm:text-base">{{ __('blog.blocks_empty_hint') }}</p>
+                                </div>
+                                <div class="flex shrink-0 flex-col gap-2 sm:items-end">
+                                    <a href="{{ route('blog.index') }}" class="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-5 py-2.5 text-sm font-bold text-white transition hover:border-emerald-400/40 hover:bg-emerald-400/10">{{ __('blog.blocks_empty_back_blog') }}</a>
+                                    @auth
+                                        @if(auth()->user()->isAdmin())
+                                            <a href="{{ route('admin.blog.edit', $post) }}" class="inline-flex items-center justify-center rounded-2xl bg-emerald-400 px-5 py-2.5 text-sm font-black text-zinc-950 transition hover:bg-emerald-300">{{ __('blog.blocks_empty_admin_cta') }}</a>
+                                        @endif
+                                    @endauth
+                                </div>
+                            </div>
+
+                            <div class="mt-8 rounded-2xl border border-white/10 bg-black/40 p-5 font-mono text-xs leading-relaxed text-zinc-300 sm:text-sm">
+                                <p class="font-sans text-[10px] font-bold uppercase tracking-wider text-zinc-500">{{ __('blog.blocks_empty_cli_title') }}</p>
+                                <p class="mt-2 font-sans text-sm text-zinc-400">{{ __('blog.blocks_empty_cli_hint') }}</p>
+                                <p class="mt-3 text-emerald-200/90">php artisan migrate --force</p>
+                                <p class="mt-1 text-emerald-200/90">php artisan blog:install-petg-demo</p>
+                            </div>
+                        </section>
+                    </div>
+
+                    <aside class="hidden min-w-0 space-y-6 lg:block lg:sticky lg:top-28">
+                        @include('marketplace.blog.partials.subscribe', ['compact' => true])
+                        <div class="rounded-3xl border border-emerald-400/20 bg-emerald-400/[0.06] p-6 text-center shadow-lg">
+                            <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-200">{{ __('blog.sidebar_models_title') }}</p>
+                            <a href="{{ route('products.index') }}" class="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-emerald-400 py-3 text-sm font-black text-zinc-950 transition hover:bg-emerald-300">{{ __('blog.sidebar_models_button') }}</a>
+                        </div>
+                    </aside>
+                </div>
+
+                <div class="mx-auto mt-10 max-w-[1280px] lg:hidden">
+                    @include('marketplace.blog.partials.subscribe')
                 </div>
             @else
                 @if($hasToc)
@@ -155,8 +196,8 @@
                     @endif
 
                     <div class="min-w-0 space-y-10">
-                        <div class="space-y-10 rounded-3xl border border-white/10 bg-white/[0.02] p-6 sm:p-9 lg:p-10">
-                            @foreach($post->blocks()->active()->orderBy('sort_order')->get() as $block)
+                        <div class="space-y-12 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-6 sm:p-9 lg:p-12 shadow-inner shadow-black/20">
+                            @foreach($blocks as $block)
                                 @if(\Illuminate\Support\Facades\View::exists('blog.blocks.'.$block->type))
                                     @include('blog.blocks.'.$block->type, ['block' => $block, 'headingIds' => $headingIds ?? []])
                                 @endif
@@ -174,9 +215,11 @@
                 </div>
             @endif
 
-            <div class="mt-12 lg:hidden">
-                @include('marketplace.blog.partials.subscribe')
-            </div>
+            @if($hasActiveBlocks ?? false)
+                <div class="mt-12 lg:hidden">
+                    @include('marketplace.blog.partials.subscribe')
+                </div>
+            @endif
         </div>
 
         @if($related->isNotEmpty())
