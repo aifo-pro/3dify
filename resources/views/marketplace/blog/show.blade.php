@@ -109,7 +109,7 @@
 
         @if($related->isNotEmpty())
             <section class="mt-14">
-                <x-section-heading :eyebrow="__('blog.related_heading_eyebrow')" :title="__('blog.related_heading_title')" />
+                <x-ui.section-heading :eyebrow="__('blog.related_heading_eyebrow')" :title="__('blog.related_heading_title')" />
                 <div class="mt-6 grid gap-6 md:grid-cols-3">
                     @foreach($related as $relatedPost)
                         @include('marketplace.blog.partials.card', ['post' => $relatedPost])
