@@ -16,11 +16,11 @@
         'border-rose-400/35 bg-rose-500/[0.10] text-rose-50' => $tone === 'red',
     ])>
         @if($title !== '')
-            <h3 class="text-lg font-bold">{{ $title }}</h3>
+            <h3 class="text-xl font-bold">{{ $title }}</h3>
         @endif
         @if($text !== '')
             <div @class([
-                'prose prose-invert max-w-none text-sm leading-relaxed prose-p:my-1 prose-a:font-semibold',
+                'prose prose-invert max-w-none text-base leading-[1.78] prose-p:my-2 prose-a:font-semibold',
                 'prose-amber prose-a:text-amber-200' => $tone === 'amber',
                 'prose-rose prose-a:text-rose-200' => $tone === 'red',
             ])>{!! $text !!}</div>

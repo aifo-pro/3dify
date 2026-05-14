@@ -20,7 +20,7 @@
                 <h3 class="text-2xl font-black tracking-tight text-white">{{ $title }}</h3>
             @endif
             @if($text !== '')
-                <div class="prose prose-invert prose-emerald max-w-none text-zinc-200 prose-p:leading-relaxed">{!! $text !!}</div>
+                <div class="prose prose-lg prose-invert prose-emerald max-w-none text-zinc-200 leading-[1.82] prose-p:leading-[1.82]">{!! $text !!}</div>
             @endif
             @if($btn !== '' && $url !== '')
                 <a href="{{ $url }}" class="inline-flex items-center justify-center rounded-2xl bg-emerald-400 px-8 py-3.5 text-sm font-black text-zinc-950 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-300">{{ $btn }}</a>

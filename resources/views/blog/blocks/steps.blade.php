@@ -7,12 +7,12 @@
     $steps = is_array($d['steps'] ?? null) ? $d['steps'] : [];
 @endphp
 @if($title !== '' || $steps !== [])
-    <div class="rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
+    <div class="rounded-[1.75rem] border border-white/[0.08] bg-white/[0.04] p-7 sm:p-9">
         @if($title !== '')
-            <h3 class="text-lg font-bold text-white">{{ $title }}</h3>
+            <h3 class="text-xl font-bold tracking-tight text-white">{{ $title }}</h3>
         @endif
         @if($steps !== [])
-            <ol class="mt-6 space-y-5">
+            <ol class="mt-7 space-y-6">
                 @foreach($steps as $si => $st)
                     @if(is_array($st))
                         @php
@@ -31,7 +31,7 @@
                                         <p class="text-base font-bold text-white">{{ $stTitle }}</p>
                                     @endif
                                     @if($stText !== '')
-                                        <div class="prose prose-invert prose-sm prose-emerald max-w-none text-zinc-300 prose-p:my-1">{!! $stText !!}</div>
+                                        <div class="prose prose-invert prose-base prose-emerald max-w-none text-zinc-200 leading-[1.78] prose-p:my-1 prose-a:text-emerald-300">{!! $stText !!}</div>
                                     @endif
                                 </div>
                             </li>

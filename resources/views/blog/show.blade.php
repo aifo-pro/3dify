@@ -51,7 +51,7 @@
     <article class="blog-show-v2 relative pb-20 pt-8 sm:pt-12">
         <div class="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-emerald-500/12 to-transparent sm:h-40"></div>
 
-        <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="relative mx-auto max-w-[min(100%,88rem)] px-4 sm:px-6 lg:px-8 xl:px-10">
             @if(session('status'))
                 <div class="mb-8 rounded-3xl border border-emerald-300/25 bg-emerald-300/[0.10] px-5 py-4 text-sm font-semibold text-emerald-100">{{ session('status') }}</div>
             @endif
@@ -78,9 +78,9 @@
                         @endforelse
                     </div>
 
-                    <h1 class="mt-6 max-w-4xl text-3xl font-black leading-[1.12] tracking-tight text-white sm:text-4xl lg:text-5xl">{{ $post->localized_title }}</h1>
+                    <h1 class="mt-6 max-w-[52rem] text-[1.85rem] font-black leading-[1.14] tracking-tight text-white sm:text-[2.35rem] sm:leading-[1.12] lg:text-[2.75rem] lg:leading-[1.08]">{{ $post->localized_title }}</h1>
                     @if($post->localized_excerpt)
-                        <p class="mt-5 max-w-3xl text-base leading-relaxed text-zinc-400 sm:text-lg">{{ $post->localized_excerpt }}</p>
+                        <p class="mt-6 max-w-[48rem] text-lg leading-[1.75] text-zinc-300 sm:text-xl sm:leading-[1.72]">{{ $post->localized_excerpt }}</p>
                     @endif
 
                     <div class="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4 border-t border-white/10 pt-8 text-sm text-zinc-400">
@@ -99,7 +99,7 @@
             </div>
 
             @if($post->cover_url)
-                <div class="relative mx-auto mt-10 max-w-6xl">
+                <div class="relative mx-auto mt-10 max-w-[min(76rem,100%)]">
                     <div class="overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 shadow-2xl shadow-black/40 ring-1 ring-emerald-400/10">
                         <div class="relative aspect-[21/9] min-h-[200px] sm:aspect-[2/1]">
                             <img src="{{ $post->cover_url }}" alt="{{ $post->localized('cover_alt') ?: $post->localized_title }}" width="1600" height="800" loading="eager" fetchpriority="high" class="absolute inset-0 h-full w-full object-cover">
@@ -109,7 +109,7 @@
             @endif
 
             @if(! ($hasActiveBlocks ?? false))
-                <div class="mx-auto mt-12 grid max-w-[1280px] gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+                <div class="mx-auto mt-12 grid max-w-none gap-10 lg:grid-cols-[minmax(0,1fr)_min(20rem,100%)] lg:items-start lg:gap-12">
                     <div class="min-w-0 space-y-8">
                         @if($post->localized_excerpt)
                             <section class="rounded-3xl border border-white/10 bg-white/[0.03] p-8 sm:p-10 shadow-xl shadow-black/20" aria-labelledby="article-lead-label">
@@ -152,19 +152,19 @@
                     </aside>
                 </div>
 
-                <div class="mx-auto mt-10 max-w-[1280px] lg:hidden">
+                <div class="mx-auto mt-10 max-w-none lg:hidden">
                     @include('marketplace.blog.partials.subscribe')
                 </div>
             @else
                 @if($hasToc)
-                    <nav class="mx-auto mt-10 max-w-3xl rounded-3xl border border-white/10 bg-zinc-950/60 px-5 py-5 lg:hidden" aria-label="{{ __('blog.toc') }}">
-                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">{{ __('blog.toc') }}</p>
-                        <ol class="mt-3 flex list-none flex-col gap-1 p-0 text-sm text-zinc-400">
+                    <nav class="mx-auto mt-10 w-full rounded-2xl border border-white/[0.08] bg-gradient-to-b from-zinc-900/80 to-zinc-950/70 px-5 py-5 shadow-lg shadow-black/25 ring-1 ring-white/[0.04] lg:hidden" aria-label="{{ __('blog.toc') }}">
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400/90">{{ __('blog.toc') }}</p>
+                        <ol class="mt-3.5 flex list-none flex-col gap-0.5 p-0 text-[15px] leading-snug text-zinc-400">
                             @foreach($toc as $i => $item)
                                 <li>
-                                    <a href="#{{ $item['id'] }}" class="flex gap-2 rounded-xl py-1.5 transition hover:bg-white/[0.05] hover:text-emerald-100 {{ $item['level'] === 3 ? 'pl-4' : '' }}">
-                                        <span class="w-6 shrink-0 font-mono text-xs text-emerald-500">{{ $i + 1 }}.</span>
-                                        <span>{{ $item['text'] }}</span>
+                                    <a href="#{{ $item['id'] }}" class="flex gap-2 rounded-xl py-2 transition hover:bg-emerald-400/[0.06] hover:text-emerald-100 {{ $item['level'] === 3 ? 'pl-3' : '' }}">
+                                        <span class="w-6 shrink-0 font-mono text-xs text-emerald-500/85">{{ $i + 1 }}.</span>
+                                        <span class="min-w-0 break-words">{{ $item['text'] }}</span>
                                     </a>
                                 </li>
                             @endforeach
@@ -173,20 +173,20 @@
                 @endif
 
                 <div @class([
-                    'mx-auto mt-12 grid max-w-[1280px] gap-10 lg:items-start',
-                    'lg:grid-cols-[13rem_minmax(0,1fr)_17rem]' => $hasToc,
-                    'lg:grid-cols-[minmax(0,1fr)_17rem]' => ! $hasToc,
+                    'mx-auto mt-12 grid max-w-none gap-8 lg:items-start lg:gap-10 xl:gap-12',
+                    'lg:grid-cols-[11.5rem_minmax(0,1fr)_min(16.5rem,100%)] xl:grid-cols-[12.5rem_minmax(0,1fr)_min(18rem,100%)]' => $hasToc,
+                    'lg:grid-cols-[minmax(0,1fr)_min(16.5rem,100%)] xl:grid-cols-[minmax(0,1fr)_min(18rem,100%)]' => ! $hasToc,
                 ])>
                     @if($hasToc)
                         <aside class="hidden lg:block">
-                            <nav class="sticky top-28 rounded-3xl border border-emerald-400/20 bg-zinc-950/70 px-4 py-5 shadow-xl shadow-black/30" aria-label="{{ __('blog.toc') }}">
-                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">{{ __('blog.toc') }}</p>
-                                <ol class="mt-3 flex list-none flex-col gap-1 p-0 text-[13px] leading-snug text-zinc-400">
+                            <nav class="sticky top-28 rounded-2xl border border-white/[0.08] bg-gradient-to-b from-zinc-900/90 to-zinc-950/80 px-3.5 py-5 shadow-lg shadow-black/20 ring-1 ring-white/[0.04]" aria-label="{{ __('blog.toc') }}">
+                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400/90">{{ __('blog.toc') }}</p>
+                                <ol class="mt-3.5 flex list-none flex-col gap-0.5 p-0 text-[13px] leading-[1.45] text-zinc-400">
                                     @foreach($toc as $i => $item)
                                         <li>
-                                            <a href="#{{ $item['id'] }}" class="flex gap-2 rounded-lg border-l-2 border-transparent py-1.5 pl-2 transition hover:border-emerald-400/60 hover:bg-emerald-400/[0.06] hover:text-emerald-50 {{ $item['level'] === 3 ? 'pl-4' : '' }}">
-                                                <span class="w-5 shrink-0 font-mono text-[11px] text-emerald-500/90">{{ $i + 1 }}.</span>
-                                                <span>{{ $item['text'] }}</span>
+                                            <a href="#{{ $item['id'] }}" class="flex gap-2 rounded-lg border-l-2 border-transparent py-2 pl-2 pr-1 transition hover:border-emerald-400/50 hover:bg-emerald-400/[0.07] hover:text-emerald-50 {{ $item['level'] === 3 ? 'pl-3' : '' }}">
+                                                <span class="w-5 shrink-0 pt-0.5 font-mono text-[11px] text-emerald-500/80">{{ $i + 1 }}.</span>
+                                                <span class="min-w-0 break-words">{{ $item['text'] }}</span>
                                             </a>
                                         </li>
                                     @endforeach
@@ -196,7 +196,7 @@
                     @endif
 
                     <div class="min-w-0 space-y-10">
-                        <div class="space-y-12 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-6 sm:p-9 lg:p-12 shadow-inner shadow-black/20">
+                        <div class="space-y-10 rounded-[1.75rem] border border-white/[0.07] bg-gradient-to-br from-zinc-900/50 via-zinc-950/40 to-zinc-950/80 p-7 shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset] sm:space-y-12 sm:p-9 lg:space-y-14 lg:p-11 xl:rounded-[2rem] xl:p-14 ring-1 ring-white/[0.04]">
                             @foreach($blocks as $block)
                                 @if(\Illuminate\Support\Facades\View::exists('blog.blocks.'.$block->type))
                                     @include('blog.blocks.'.$block->type, ['block' => $block, 'headingIds' => $headingIds ?? []])
@@ -223,7 +223,7 @@
         </div>
 
         @if($related->isNotEmpty())
-            <div class="mx-auto mt-20 max-w-7xl border-t border-white/10 px-4 pt-16 sm:px-6 lg:px-8">
+            <div class="mx-auto mt-20 max-w-[min(100%,88rem)] border-t border-white/10 px-4 pt-16 sm:px-6 lg:px-8 xl:px-10">
                 <x-ui.section-heading :eyebrow="__('blog.related_heading_eyebrow')" :title="__('blog.related_heading_title')" />
                 <div class="mt-10 grid gap-6 md:grid-cols-3">
                     @foreach($related as $relatedPost)

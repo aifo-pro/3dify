@@ -32,7 +32,7 @@
 @layer components {
     /* Article HTML from editor — use real list markers (reliable in prod builds). */
     .blog-content {
-        @apply max-w-none text-[16px] leading-[1.72] text-zinc-300 sm:text-[17px] sm:leading-[1.75];
+        @apply max-w-none text-[17px] leading-[1.82] text-zinc-200 sm:text-[1.125rem] sm:leading-[1.84] lg:text-[1.1875rem] lg:leading-[1.86];
     }
     .blog-content > *:first-child {
         @apply mt-0;
@@ -42,16 +42,16 @@
         @apply mt-0;
     }
     .blog-content h2 {
-        @apply mt-10 scroll-mt-28 border-b border-white/10 pb-2.5 text-xl font-bold tracking-tight text-white sm:mt-11 sm:text-2xl sm:pb-3;
+        @apply mt-12 scroll-mt-28 border-b border-white/10 pb-3 text-2xl font-bold tracking-tight text-white sm:mt-14 sm:text-[1.65rem] sm:pb-3.5 lg:text-[1.75rem];
     }
     .blog-content h3 {
-        @apply mt-8 scroll-mt-28 text-lg font-bold tracking-tight text-white sm:mt-9 sm:text-xl;
+        @apply mt-10 scroll-mt-28 text-xl font-bold tracking-tight text-white sm:mt-11 sm:text-2xl;
     }
     .blog-content h4 {
-        @apply mt-6 text-base font-semibold text-zinc-100 sm:text-lg;
+        @apply mt-7 text-lg font-semibold text-zinc-100 sm:mt-8 sm:text-xl;
     }
     .blog-content p {
-        @apply mt-4;
+        @apply mt-5 sm:mt-6;
     }
     .blog-content strong {
         @apply font-semibold text-zinc-100;
@@ -63,14 +63,14 @@
         @apply font-semibold text-emerald-300 underline decoration-emerald-400/35 underline-offset-[4px] transition hover:text-emerald-100 hover:decoration-emerald-300/60;
     }
     .blog-content ul {
-        @apply mt-4 list-disc space-y-1.5 pl-6 marker:text-emerald-400;
+        @apply mt-5 list-disc space-y-2.5 pl-6 marker:text-emerald-400/80 sm:mt-6;
     }
     .blog-content ol {
-        @apply mt-4 list-decimal space-y-1.5 pl-6 marker:font-semibold marker:text-emerald-400/90;
+        @apply mt-5 list-decimal space-y-2.5 pl-6 marker:font-semibold marker:text-emerald-400/75 sm:mt-6;
     }
     .blog-content li > ul,
     .blog-content li > ol {
-        @apply mt-2 space-y-1;
+        @apply mt-2.5 space-y-2;
     }
     .blog-content li {
         @apply pl-1;

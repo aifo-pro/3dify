@@ -10,8 +10,8 @@
     $items = array_values(array_filter($items, fn ($i) => is_string($i) && trim(strip_tags($i)) !== ''));
 @endphp
 @if($title !== '' || $items !== [])
-    <div class="rounded-3xl border border-emerald-400/25 bg-gradient-to-br from-emerald-400/[0.12] via-emerald-500/[0.05] to-transparent p-6 sm:p-8 shadow-lg shadow-emerald-900/20">
-        <div class="flex items-start gap-3">
+    <div class="rounded-[1.75rem] border border-emerald-400/25 bg-gradient-to-br from-emerald-400/[0.12] via-emerald-500/[0.05] to-transparent p-7 sm:p-9 shadow-lg shadow-emerald-900/20">
+        <div class="flex items-start gap-4">
             @if($icon !== '')
                 <span class="text-2xl leading-none" aria-hidden="true">{{ $icon }}</span>
             @else
@@ -21,14 +21,14 @@
             @endif
             <div class="min-w-0 flex-1 space-y-3">
                 @if($title !== '')
-                    <h3 class="text-lg font-bold text-white">{{ $title }}</h3>
+                    <h3 class="text-xl font-bold tracking-tight text-white">{{ $title }}</h3>
                 @endif
                 @if($items !== [])
-                    <ul class="space-y-2 text-sm leading-relaxed text-emerald-50/90">
+                    <ul class="space-y-3 text-base leading-[1.75] text-emerald-50/95">
                         @foreach($items as $item)
-                            <li class="flex gap-2">
-                                <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300/90"></span>
-                                <span class="prose prose-invert prose-sm prose-emerald max-w-none prose-p:my-0">{!! $item !!}</span>
+                            <li class="flex gap-3">
+                                <span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300/90"></span>
+                                <span class="prose prose-invert prose-base prose-emerald max-w-none prose-p:my-0">{!! $item !!}</span>
                             </li>
                         @endforeach
                     </ul>

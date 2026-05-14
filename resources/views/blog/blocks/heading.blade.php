@@ -9,5 +9,5 @@
     $id = $headingIds[$block->id] ?? \App\Support\BlogBlockPlainText::headingFragmentId($block, $d);
 @endphp
 @if($title !== '')
-    <{{ $tag }} id="{{ $id }}" class="scroll-mt-28 text-2xl font-bold tracking-tight text-white sm:text-3xl">{{ $title }}</{{ $tag }}>
+    <{{ $tag }} id="{{ $id }}" class="scroll-mt-28 text-[1.65rem] font-bold leading-snug tracking-tight text-white sm:text-[1.85rem] lg:text-[2.05rem]">{{ $title }}</{{ $tag }}>
 @endif
