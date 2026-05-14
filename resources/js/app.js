@@ -136,42 +136,56 @@ Alpine.data('blogBlocksEditor', () => {
     },
 
     refreshTinyMce() {
-        if (!window.tinymce || !cfg.tinyDefaults) {
+        const run = () => {
+            if (!window.tinymce || !cfg.tinyDefaults) {
+                return false;
+            }
+            this.syncRichFromTiny();
+            document.querySelectorAll('textarea.blog-block-mce').forEach((ta) => {
+                const ed = window.tinymce.get(ta.id);
+                if (ed) {
+                    ed.remove();
+                }
+            });
+            const { uploadUrl, csrf } = this;
+            document.querySelectorAll('textarea.blog-block-mce').forEach((ta) => {
+                const id = ta.id;
+                if (!id) {
+                    return;
+                }
+                window.tinymce.init({
+                    ...cfg.tinyDefaults,
+                    selector: `#${CSS.escape(id)}`,
+                    height: 280,
+                    images_upload_handler: (blobInfo) =>
+                        new Promise((resolve, reject) => {
+                            const form = new FormData();
+                            form.append('image', blobInfo.blob(), blobInfo.filename());
+                            fetch(uploadUrl, {
+                                method: 'POST',
+                                headers: { 'X-CSRF-TOKEN': csrf || '', Accept: 'application/json' },
+                                body: form,
+                                credentials: 'same-origin',
+                            })
+                                .then((r) => r.json())
+                                .then((j) => (j.url ? resolve(j.url) : reject(new Error('Upload failed'))))
+                                .catch(() => reject(new Error('Upload failed')));
+                        }),
+                });
+            });
+            return true;
+        };
+
+        if (run()) {
             return;
         }
-        this.syncRichFromTiny();
-        document.querySelectorAll('textarea.blog-block-mce').forEach((ta) => {
-            const ed = window.tinymce.get(ta.id);
-            if (ed) {
-                ed.remove();
+        let tries = 0;
+        const timer = window.setInterval(() => {
+            tries += 1;
+            if (run() || tries >= 80) {
+                window.clearInterval(timer);
             }
-        });
-        const { uploadUrl, csrf } = this;
-        document.querySelectorAll('textarea.blog-block-mce').forEach((ta) => {
-            const id = ta.id;
-            if (!id) {
-                return;
-            }
-            window.tinymce.init({
-                ...cfg.tinyDefaults,
-                selector: `#${id}`,
-                height: 280,
-                images_upload_handler: (blobInfo) =>
-                    new Promise((resolve, reject) => {
-                        const form = new FormData();
-                        form.append('image', blobInfo.blob(), blobInfo.filename());
-                        fetch(uploadUrl, {
-                            method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': csrf || '', Accept: 'application/json' },
-                            body: form,
-                            credentials: 'same-origin',
-                        })
-                            .then((r) => r.json())
-                            .then((j) => (j.url ? resolve(j.url) : reject(new Error('Upload failed'))))
-                            .catch(() => reject(new Error('Upload failed')));
-                    }),
-            });
-        });
+        }, 50);
     },
 
     init() {

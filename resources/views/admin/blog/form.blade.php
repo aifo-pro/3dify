@@ -43,7 +43,12 @@
     window.__blogBlocksEditorPayload = {!! $blogBlocksEditorPayloadJson !!};
 </script>
 
-<x-layouts.admin :title="$post->exists ? __('Редагувати статтю') : __('Нова стаття')" :description="__('SEO-ready blog post with bilingual content, schema and RSS.')" active="blog">
+<x-layouts.admin
+    :title="$post->exists ? __('Редагувати статтю') : __('Нова стаття')"
+    :description="__('SEO-ready blog post with bilingual content, schema and RSS.')"
+    active="blog"
+    :load-tiny-mce="true"
+>
     @if(session('status'))
         <div class="mb-6 rounded-2xl border border-emerald-300/30 bg-emerald-300/[0.08] px-4 py-3 text-sm text-emerald-100">{{ session('status') }}</div>
     @endif
@@ -294,8 +299,4 @@
             <button class="w-full rounded-2xl bg-emerald-400 px-5 py-4 text-sm font-black text-zinc-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-300">{{ __('Зберегти статтю') }}</button>
         </aside>
     </form>
-
-    @push('head-scripts')
-        <script src="https://cdn.jsdelivr.net/npm/tinymce@7.4.0/tinymce.min.js"></script>
-    @endpush
 </x-layouts.admin>
