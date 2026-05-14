@@ -18,16 +18,29 @@
         'quote' => __('blog.admin.block_quote'),
         'divider' => __('blog.admin.block_divider'),
     ];
-@endphp
-
-<script>
-    window.__blogBlocksEditorPayload = @json([
+    // Avoid @json / Js::from here: JSON_THROW_ON_ERROR turns bad UTF-8 in legacy HTML into a 500 on edit.
+    $blogBlocksEditorPayload = [
         'initial' => $contentBlocksDocument,
         'csrf' => csrf_token(),
         'uploadUrl' => route('admin.blog.upload'),
         'tinyDefaults' => $tinyMceConfig,
         'labels' => $blockLabels,
-    ]);
+    ];
+    $blogBlocksEditorJsonFlags = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE;
+    $blogBlocksEditorPayloadJson = json_encode($blogBlocksEditorPayload, $blogBlocksEditorJsonFlags);
+    if ($blogBlocksEditorPayloadJson === false) {
+        $blogBlocksEditorPayloadJson = json_encode([
+            'initial' => ['version' => 1, 'blocks' => []],
+            'csrf' => csrf_token(),
+            'uploadUrl' => route('admin.blog.upload'),
+            'tinyDefaults' => $tinyMceConfig,
+            'labels' => $blockLabels,
+        ], $blogBlocksEditorJsonFlags) ?: '{}';
+    }
+@endphp
+
+<script>
+    window.__blogBlocksEditorPayload = {!! $blogBlocksEditorPayloadJson !!};
 </script>
 
 <x-layouts.admin :title="$post->exists ? __('Редагувати статтю') : __('Нова стаття')" :description="__('SEO-ready blog post with bilingual content, schema and RSS.')" active="blog">
