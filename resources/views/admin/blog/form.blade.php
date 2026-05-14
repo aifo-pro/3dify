@@ -19,7 +19,7 @@
     active="blog"
     :load-tiny-mce="false"
 >
-    @if(! empty($blogBlocksMigrationMissing))
+    @if($blogBlocksMigrationMissing ?? false)
         <div class="mb-6 rounded-2xl border border-amber-300/35 bg-amber-400/[0.10] px-4 py-3 text-sm font-semibold text-amber-100">{{ __('blog.admin.blocks_table_missing') }}</div>
     @endif
     @if(session('status'))

@@ -84,7 +84,7 @@ class BlogPostController extends Controller
             'post' => $post,
             'categories' => BlogCategory::orderBy('sort_order')->get(),
             'tags' => BlogTag::orderBy('name_uk')->get(),
-            'initialBlocksJson' => json_encode($initial, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE),
+            'initialBlocksJson' => $this->safeJsonEncode($initial),
             'blogBlocksMigrationMissing' => ! BlogPost::hasBlogPostBlocksTable(),
         ]);
     }
@@ -198,5 +198,19 @@ class BlogPostController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * @param  array<mixed>  $payload
+     */
+    private function safeJsonEncode(array $payload): string
+    {
+        $flags = JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE;
+        if (defined('JSON_PARTIAL_OUTPUT_ON_ERROR')) {
+            $flags |= JSON_PARTIAL_OUTPUT_ON_ERROR;
+        }
+        $json = json_encode($payload, $flags);
+
+        return $json === false ? '[]' : $json;
     }
 }
