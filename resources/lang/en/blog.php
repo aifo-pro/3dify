@@ -78,6 +78,7 @@ return [
         'add_block' => 'Add block',
         'choose_block' => 'Choose block type',
         'blocks_json_invalid' => 'Invalid blocks JSON.',
+        'blocks_table_missing' => 'The blog_post_blocks table is missing. Run php artisan migrate on the server, then reload this page.',
         'blocks_too_many' => 'Too many blocks (max 80).',
         'blocks_invalid' => 'Invalid block #:idx.',
         'block_bad_type' => 'Disallowed type: :type',

@@ -78,6 +78,7 @@ return [
         'add_block' => 'Додати блок',
         'choose_block' => 'Оберіть тип блоку',
         'blocks_json_invalid' => 'Некоректний JSON блоків.',
+        'blocks_table_missing' => 'Таблиця blog_post_blocks ще не створена. На сервері виконайте php artisan migrate, потім оновіть сторінку.',
         'blocks_too_many' => 'Забагато блоків (макс. 80).',
         'blocks_invalid' => 'Некоректний блок #:idx.',
         'block_bad_type' => 'Недозволений тип: :type',

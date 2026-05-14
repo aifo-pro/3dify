@@ -5,11 +5,17 @@ namespace App\Models;
 use App\Support\BlogBlockPlainText;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class BlogPost extends Model
 {
     public const STATUSES = ['draft', 'published', 'scheduled'];
+
+    public static function hasBlogPostBlocksTable(): bool
+    {
+        return Schema::hasTable('blog_post_blocks');
+    }
 
     protected $fillable = [
         'user_id', 'title_uk', 'title_en', 'slug', 'excerpt_uk', 'excerpt_en',
@@ -123,6 +129,13 @@ class BlogPost extends Model
 
     public function readingMinutes(): int
     {
+        if (! self::hasBlogPostBlocksTable()) {
+            $plain = trim(strip_tags($this->localized('excerpt')));
+            preg_match_all('/\S+/u', $plain, $m);
+
+            return max(1, (int) ceil(count($m[0] ?? []) / 200));
+        }
+
         $blocks = $this->blocks()->active()->orderBy('sort_order')->get();
 
         return BlogBlockPlainText::readingMinutes(

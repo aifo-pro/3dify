@@ -39,6 +39,7 @@ class BlogPostController extends Controller
             'categories' => BlogCategory::orderBy('sort_order')->get(),
             'tags' => BlogTag::orderBy('name_uk')->get(),
             'initialBlocksJson' => '[]',
+            'blogBlocksMigrationMissing' => ! BlogPost::hasBlogPostBlocksTable(),
         ]);
     }
 
@@ -59,26 +60,32 @@ class BlogPostController extends Controller
         $blockService->syncBlocks($post, $blocks, $sanitizer);
         $post->categories()->sync($request->input('categories', []));
         $post->tags()->sync($request->input('tags', []));
-        $notifications->sendPublished($post->fresh(['blocks']));
+        $notifications->sendPublished($post->fresh(BlogPost::hasBlogPostBlocksTable() ? ['blocks'] : []));
 
         return redirect()->route('admin.blog.edit', $post)->with('status', __('blog.admin.post_created'));
     }
 
     public function edit(BlogPost $post)
     {
-        $post->load(['categories', 'tags', 'blocks']);
-        $initial = $post->blocks->map(fn ($b) => [
-            'id' => $b->id,
-            'type' => $b->type,
-            'is_active' => $b->is_active,
-            'data' => $b->data,
-        ])->values()->all();
+        $post->load(['categories', 'tags']);
+
+        $initial = [];
+        if (BlogPost::hasBlogPostBlocksTable()) {
+            $post->load('blocks');
+            $initial = $post->blocks->map(fn ($b) => [
+                'id' => $b->id,
+                'type' => $b->type,
+                'is_active' => $b->is_active,
+                'data' => $b->data,
+            ])->values()->all();
+        }
 
         return view('admin.blog.form', [
             'post' => $post,
             'categories' => BlogCategory::orderBy('sort_order')->get(),
             'tags' => BlogTag::orderBy('name_uk')->get(),
             'initialBlocksJson' => json_encode($initial, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE),
+            'blogBlocksMigrationMissing' => ! BlogPost::hasBlogPostBlocksTable(),
         ]);
     }
 
@@ -103,7 +110,7 @@ class BlogPostController extends Controller
         $blockService->syncBlocks($post, $blocks, $sanitizer);
         $post->categories()->sync($request->input('categories', []));
         $post->tags()->sync($request->input('tags', []));
-        $notifications->sendPublished($post->fresh(['blocks']));
+        $notifications->sendPublished($post->fresh(BlogPost::hasBlogPostBlocksTable() ? ['blocks'] : []));
 
         return redirect()->route('admin.blog.edit', $post)->with('status', __('blog.admin.post_updated'));
     }

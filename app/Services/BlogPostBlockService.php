@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\BlogPost;
 use App\Models\BlogPostBlock;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class BlogPostBlockService
@@ -19,6 +20,10 @@ class BlogPostBlockService
      */
     public function syncBlocks(BlogPost $post, array $blocks, BlogContentSanitizer $sanitizer): void
     {
+        if (! Schema::hasTable('blog_post_blocks')) {
+            return;
+        }
+
         $normalized = $this->validateAndNormalize($blocks);
 
         DB::transaction(function () use ($post, $normalized, $sanitizer) {

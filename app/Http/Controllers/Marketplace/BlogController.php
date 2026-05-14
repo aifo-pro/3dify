@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Marketplace;
 use App\Http\Controllers\Controller;
 use App\Models\BlogCategory;
 use App\Models\BlogPost;
+use App\Models\BlogPostBlock;
 use App\Models\BlogTag;
 use App\Support\BlogBlockPlainText;
 use Illuminate\Http\Request;
@@ -45,8 +46,13 @@ class BlogController extends Controller
                 ->first();
         }
 
+        $with = ['categories', 'tags', 'author'];
+        if (BlogPost::hasBlogPostBlocksTable()) {
+            $with[] = 'blocks';
+        }
+
         $posts = BlogPost::query()
-            ->with(['categories', 'tags', 'author', 'blocks'])
+            ->with($with)
             ->published()
             ->when($q !== '', fn ($query) => $query->where(function ($inner) use ($q) {
                 $like = '%'.$q.'%';
@@ -66,10 +72,14 @@ class BlogController extends Controller
 
         return view('marketplace.blog.index', [
             'posts' => $posts,
-            'featured' => BlogPost::with(['categories', 'blocks'])->published()->featured()->latest('published_at')->first(),
+            'featured' => BlogPost::hasBlogPostBlocksTable()
+                ? BlogPost::with(['categories', 'blocks'])->published()->featured()->latest('published_at')->first()
+                : BlogPost::with(['categories'])->published()->featured()->latest('published_at')->first(),
             'categories' => BlogCategory::where('is_active', true)->orderBy('sort_order')->get(),
             'tags' => BlogTag::where('is_active', true)->orderBy('name_uk')->limit(24)->get(),
-            'popular' => BlogPost::with('blocks')->published()->orderByDesc('views')->limit(5)->get(),
+            'popular' => BlogPost::hasBlogPostBlocksTable()
+                ? BlogPost::with('blocks')->published()->orderByDesc('views')->limit(5)->get()
+                : BlogPost::query()->published()->orderByDesc('views')->limit(5)->get(),
             'q' => $q,
             'activeCategorySlug' => $activeCategory?->slug ?? '',
             'blogAwaitingMigration' => false,
@@ -82,7 +92,9 @@ class BlogController extends Controller
         $post->increment('views');
         $post->load(['categories', 'tags', 'author']);
 
-        $blocks = $post->blocks()->active()->orderBy('sort_order')->get();
+        $blocks = BlogPost::hasBlogPostBlocksTable()
+            ? $post->blocks()->active()->orderBy('sort_order')->get()
+            : collect();
 
         $headingIds = [];
         foreach ($blocks as $b) {
@@ -123,8 +135,13 @@ class BlogController extends Controller
             trim(strip_tags($post->localized('excerpt')))
         );
 
+        $relatedWith = ['categories'];
+        if (BlogPost::hasBlogPostBlocksTable()) {
+            $relatedWith[] = 'blocks';
+        }
+
         $related = BlogPost::query()
-            ->with(['categories', 'blocks'])
+            ->with($relatedWith)
             ->published()
             ->whereKeyNot($post->id)
             ->where(function ($query) use ($post) {
@@ -153,7 +170,11 @@ class BlogController extends Controller
         return view('marketplace.blog.term', [
             'term' => $category,
             'type' => 'category',
-            'posts' => $category->posts()->with(['categories', 'tags', 'blocks'])->published()->latest('published_at')->paginate(9),
+            'posts' => $category->posts()->with(
+                BlogPost::hasBlogPostBlocksTable()
+                    ? ['categories', 'tags', 'blocks']
+                    : ['categories', 'tags']
+            )->published()->latest('published_at')->paginate(9),
         ]);
     }
 
@@ -164,12 +185,16 @@ class BlogController extends Controller
         return view('marketplace.blog.term', [
             'term' => $tag,
             'type' => 'tag',
-            'posts' => $tag->posts()->with(['categories', 'tags', 'blocks'])->published()->latest('published_at')->paginate(9),
+            'posts' => $tag->posts()->with(
+                BlogPost::hasBlogPostBlocksTable()
+                    ? ['categories', 'tags', 'blocks']
+                    : ['categories', 'tags']
+            )->published()->latest('published_at')->paginate(9),
         ]);
     }
 
     /**
-     * @param  Collection<int, \App\Models\BlogPostBlock>  $blocks
+     * @param  Collection<int, BlogPostBlock>  $blocks
      */
     private function buildFaqJsonLd($blocks, string $locale): ?array
     {
