@@ -66,9 +66,20 @@
                     @if($categories->isEmpty())
                         <p class="mt-3 text-xs leading-relaxed text-zinc-500">{{ __('blog.empty_categories') }}</p>
                     @else
-                        <nav class="mt-2 max-h-44 space-y-0.5 overflow-y-auto overscroll-contain pr-0.5 [scrollbar-width:thin]" aria-label="{{ __('blog.categories') }}">
+                        <nav
+                            @class([
+                                'mt-3 grid grid-cols-2 gap-2',
+                                'max-h-64 overflow-y-auto overscroll-contain pr-0.5 [scrollbar-width:thin]' => $categories->count() > 12,
+                            ])
+                            aria-label="{{ __('blog.categories') }}"
+                        >
                             @foreach($categories as $category)
-                                <a href="{{ route('blog.category', $category) }}" class="block truncate rounded-lg px-2 py-1.5 text-[13px] font-semibold leading-snug text-zinc-300 transition hover:bg-white/[0.07] hover:text-emerald-100">{{ $category->localized('name') }}</a>
+                                <a
+                                    href="{{ route('blog.category', $category) }}"
+                                    class="flex min-h-[2.75rem] items-center rounded-xl border border-white/10 bg-zinc-950/40 px-2.5 py-2 text-left text-[11px] font-semibold leading-snug text-zinc-300 transition hover:border-emerald-300/40 hover:bg-emerald-400/[0.10] hover:text-emerald-50 sm:text-[12px]"
+                                >
+                                    <span class="line-clamp-3 min-w-0 break-words">{{ $category->localized('name') }}</span>
+                                </a>
                             @endforeach
                         </nav>
                     @endif
