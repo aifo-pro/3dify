@@ -19,7 +19,7 @@
             <p class="mt-3 line-clamp-3 text-sm leading-6 text-zinc-400">{{ $post->localized_excerpt }}</p>
             <div class="mt-5 flex items-center justify-between text-xs font-semibold text-zinc-500">
                 <time datetime="{{ optional($post->published_at)->toAtomString() }}">{{ optional($post->published_at)->translatedFormat('d M Y') }}</time>
-                <span class="text-emerald-300">{{ __('blog.read_more') }} →</span>
+                <span class="text-emerald-300/90">{{ __('blog.reading_time', ['count' => $post->readingMinutes()]) }}</span>
             </div>
         </div>
     </a>

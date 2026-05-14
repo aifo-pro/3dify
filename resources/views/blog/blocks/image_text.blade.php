@@ -1,0 +1,39 @@
+@php
+    use Illuminate\Support\Facades\Storage;
+    $locale = app()->getLocale();
+    $d = $block->data ?? [];
+    $path = trim((string) ($d['path'] ?? ''));
+    if ($path === '') {
+        $src = null;
+    } else {
+        $u = Storage::disk('public')->url($path);
+        $src = str_starts_with($u, 'http') ? $u : url($u);
+    }
+    $title = $locale === 'en'
+        ? (trim((string) ($d['title_en'] ?? '')) ?: trim((string) ($d['title_uk'] ?? '')))
+        : (trim((string) ($d['title_uk'] ?? '')) ?: trim((string) ($d['title_en'] ?? '')));
+    $body = $locale === 'en'
+        ? (trim((string) ($d['text_en'] ?? '')) ?: trim((string) ($d['text_uk'] ?? '')))
+        : (trim((string) ($d['text_uk'] ?? '')) ?: trim((string) ($d['text_en'] ?? '')));
+    $pos = ($d['image_position'] ?? 'left') === 'right' ? 'right' : 'left';
+    $imgFirst = $pos === 'left';
+@endphp
+@if($src || $title !== '' || $body !== '')
+    <div class="grid gap-6 rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-8 lg:grid-cols-2 lg:items-center">
+        @if($src)
+            <div class="overflow-hidden rounded-2xl border border-white/10 bg-zinc-950 {{ $imgFirst ? '' : 'lg:order-2' }}">
+                <img src="{{ $src }}" alt="{{ $title }}" loading="lazy" width="800" height="520" class="h-full w-full object-cover">
+            </div>
+        @endif
+        <div class="min-w-0 space-y-3 {{ $src && ! $imgFirst ? 'lg:order-1' : '' }}">
+            @if($title !== '')
+                <h3 class="text-xl font-bold text-white">{{ $title }}</h3>
+            @endif
+            @if($body !== '')
+                <div class="prose prose-invert prose-emerald max-w-none text-zinc-300 prose-p:leading-relaxed prose-a:text-emerald-300">
+                    {!! $body !!}
+                </div>
+            @endif
+        </div>
+    </div>
+@endif

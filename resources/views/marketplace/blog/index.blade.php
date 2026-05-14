@@ -19,11 +19,36 @@
             </div>
             <form method="GET" action="{{ route('blog.index') }}" class="min-w-0 rounded-3xl border border-white/10 bg-white/[0.05] p-2 lg:self-stretch">
                 <div class="flex gap-2">
+                    @if(! empty($activeCategorySlug))
+                        <input type="hidden" name="category" value="{{ $activeCategorySlug }}">
+                    @endif
                     <input name="q" value="{{ $q }}" placeholder="{{ __('blog.search_placeholder') }}" class="h-12 min-w-0 flex-1 rounded-2xl border border-white/10 bg-zinc-950/70 px-4 text-sm text-white placeholder:text-zinc-500">
                     <button type="submit" class="shrink-0 rounded-2xl bg-emerald-400 px-5 text-sm font-black text-zinc-950">{{ __('blog.search_button') }}</button>
                 </div>
             </form>
         </header>
+
+        @if(empty($blogAwaitingMigration) && $categories->isNotEmpty())
+            <div class="mt-6 flex flex-wrap items-center gap-2">
+                <span class="mr-1 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">{{ __('blog.filter_label') }}</span>
+                <a
+                    href="{{ route('blog.index', array_filter(['q' => $q])) }}"
+                    @class([
+                        'rounded-full border px-3 py-1.5 text-xs font-bold transition',
+                        $activeCategorySlug === '' ? 'border-emerald-400/50 bg-emerald-400/15 text-emerald-100' : 'border-white/10 bg-white/[0.04] text-zinc-400 hover:border-emerald-300/35 hover:text-emerald-100',
+                    ])
+                >{{ __('blog.filter_all') }}</a>
+                @foreach($categories as $category)
+                    <a
+                        href="{{ route('blog.index', array_filter(['q' => $q, 'category' => $category->slug])) }}"
+                        @class([
+                            'rounded-full border px-3 py-1.5 text-xs font-bold transition',
+                            $activeCategorySlug === $category->slug ? 'border-emerald-400/50 bg-emerald-400/15 text-emerald-100' : 'border-white/10 bg-white/[0.04] text-zinc-400 hover:border-emerald-300/35 hover:text-emerald-100',
+                        ])
+                    >{{ $category->localized('name') }}</a>
+                @endforeach
+            </div>
+        @endif
 
         @if($featured)
             <a href="{{ $featured->url }}" class="mt-10 grid overflow-hidden rounded-3xl border border-emerald-300/20 bg-white/[0.05] shadow-2xl shadow-black/30 transition hover:border-emerald-300/40 lg:grid-cols-[1.1fr_.9fr]">
@@ -34,6 +59,7 @@
                     <x-ui.badge>{{ __('blog.featured') }}</x-ui.badge>
                     <h2 class="mt-5 text-3xl font-black text-white">{{ $featured->localized_title }}</h2>
                     <p class="mt-4 leading-7 text-zinc-400">{{ $featured->localized_excerpt }}</p>
+                    <p class="mt-3 text-xs font-semibold text-zinc-500">{{ __('blog.reading_time', ['count' => $featured->readingMinutes()]) }}</p>
                     <span class="mt-8 inline-flex h-12 items-center rounded-2xl bg-emerald-400 px-6 text-sm font-black text-zinc-950">{{ __('blog.read_article') }} →</span>
                 </div>
             </a>

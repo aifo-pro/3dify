@@ -2,9 +2,12 @@ import './bootstrap';
 
 import Alpine from 'alpinejs';
 import persist from '@alpinejs/persist';
+import { blogPostBlocksEditor } from './blog-post-blocks-editor';
 
 Alpine.plugin(persist);
 window.Alpine = Alpine;
+
+Alpine.data('blogPostBlocksEditor', blogPostBlocksEditor);
 
 Alpine.data('productPricing', () => ({
     licenseType: 'personal',

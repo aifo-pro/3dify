@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\BlogBlockPlainText;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
@@ -12,7 +13,7 @@ class BlogPost extends Model
 
     protected $fillable = [
         'user_id', 'title_uk', 'title_en', 'slug', 'excerpt_uk', 'excerpt_en',
-        'content_uk', 'content_en', 'cover_image', 'cover_alt_uk', 'cover_alt_en',
+        'cover_image', 'cover_alt_uk', 'cover_alt_en',
         'seo_title_uk', 'seo_title_en', 'seo_description_uk', 'seo_description_en',
         'seo_keywords', 'og_image', 'status', 'published_at', 'notification_sent_at',
         'views', 'is_featured', 'allow_index',
@@ -39,6 +40,11 @@ class BlogPost extends Model
     public function tags()
     {
         return $this->belongsToMany(BlogTag::class, 'blog_post_tag');
+    }
+
+    public function blocks()
+    {
+        return $this->hasMany(BlogPostBlock::class)->orderBy('sort_order');
     }
 
     public function scopePublished(Builder $query): Builder
@@ -115,8 +121,14 @@ class BlogPost extends Model
         return $this->localized('excerpt');
     }
 
-    public function getLocalizedContentAttribute(): string
+    public function readingMinutes(): int
     {
-        return $this->localized('content');
+        $blocks = $this->blocks()->active()->orderBy('sort_order')->get();
+
+        return BlogBlockPlainText::readingMinutes(
+            $blocks,
+            app()->getLocale(),
+            trim(strip_tags($this->localized('excerpt')))
+        );
     }
 }

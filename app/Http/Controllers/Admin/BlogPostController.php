@@ -9,9 +9,11 @@ use App\Models\BlogTag;
 use App\Services\BlogContentSanitizer;
 use App\Services\BlogImageService;
 use App\Services\BlogNotificationService;
+use App\Services\BlogPostBlockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class BlogPostController extends Controller
 {
@@ -36,44 +38,72 @@ class BlogPostController extends Controller
             'post' => new BlogPost(['status' => 'draft', 'allow_index' => true]),
             'categories' => BlogCategory::orderBy('sort_order')->get(),
             'tags' => BlogTag::orderBy('name_uk')->get(),
+            'initialBlocksJson' => '[]',
         ]);
     }
 
-    public function store(Request $request, BlogContentSanitizer $sanitizer, BlogImageService $images, BlogNotificationService $notifications)
-    {
-        $data = $this->validated($request);
+    public function store(
+        Request $request,
+        BlogContentSanitizer $sanitizer,
+        BlogImageService $images,
+        BlogNotificationService $notifications,
+        BlogPostBlockService $blockService,
+    ) {
+        $validated = $this->validated($request);
+        $blocks = $this->decodeBlocksJson($validated['blocks_json']);
+        unset($validated['blocks_json']);
+
+        $data = $this->preparePostData($validated, $request, $images);
         $data['user_id'] = auth()->id();
-        $data = $this->prepareData($data, $request, $sanitizer, $images);
         $post = BlogPost::create($data);
+        $blockService->syncBlocks($post, $blocks, $sanitizer);
         $post->categories()->sync($request->input('categories', []));
         $post->tags()->sync($request->input('tags', []));
-        $notifications->sendPublished($post->fresh());
+        $notifications->sendPublished($post->fresh(['blocks']));
 
         return redirect()->route('admin.blog.edit', $post)->with('status', __('blog.admin.post_created'));
     }
 
     public function edit(BlogPost $post)
     {
-        $post->load(['categories', 'tags']);
+        $post->load(['categories', 'tags', 'blocks']);
+        $initial = $post->blocks->map(fn ($b) => [
+            'id' => $b->id,
+            'type' => $b->type,
+            'is_active' => $b->is_active,
+            'data' => $b->data,
+        ])->values()->all();
 
         return view('admin.blog.form', [
             'post' => $post,
             'categories' => BlogCategory::orderBy('sort_order')->get(),
             'tags' => BlogTag::orderBy('name_uk')->get(),
+            'initialBlocksJson' => json_encode($initial, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE),
         ]);
     }
 
-    public function update(Request $request, BlogPost $post, BlogContentSanitizer $sanitizer, BlogImageService $images, BlogNotificationService $notifications)
-    {
+    public function update(
+        Request $request,
+        BlogPost $post,
+        BlogContentSanitizer $sanitizer,
+        BlogImageService $images,
+        BlogNotificationService $notifications,
+        BlogPostBlockService $blockService,
+    ) {
         $prevStatus = $post->status;
-        $data = $this->prepareData($this->validated($request, $post), $request, $sanitizer, $images);
+        $validated = $this->validated($request, $post);
+        $blocks = $this->decodeBlocksJson($validated['blocks_json']);
+        unset($validated['blocks_json']);
+
+        $data = $this->preparePostData($validated, $request, $images);
         if ($prevStatus === 'published' && ($data['status'] ?? '') !== 'published') {
             $data['notification_sent_at'] = null;
         }
         $post->update($data);
+        $blockService->syncBlocks($post, $blocks, $sanitizer);
         $post->categories()->sync($request->input('categories', []));
         $post->tags()->sync($request->input('tags', []));
-        $notifications->sendPublished($post->fresh());
+        $notifications->sendPublished($post->fresh(['blocks']));
 
         return redirect()->route('admin.blog.edit', $post)->with('status', __('blog.admin.post_updated'));
     }
@@ -107,8 +137,7 @@ class BlogPostController extends Controller
             'slug' => ['nullable', 'alpha_dash', 'max:255', Rule::unique('blog_posts', 'slug')->ignore($post?->id)],
             'excerpt_uk' => ['nullable', 'string'],
             'excerpt_en' => ['nullable', 'string'],
-            'content_uk' => ['nullable', 'string', 'max:500000'],
-            'content_en' => ['nullable', 'string', 'max:500000'],
+            'blocks_json' => ['required', 'string', 'max:2000000'],
             'cover_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'og_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'cover_alt_uk' => ['nullable', 'string', 'max:255'],
@@ -129,12 +158,22 @@ class BlogPostController extends Controller
         ]);
     }
 
-    private function prepareData(array $data, Request $request, BlogContentSanitizer $sanitizer, BlogImageService $images): array
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function decodeBlocksJson(string $json): array
+    {
+        $decoded = json_decode($json, true);
+        if (! is_array($decoded)) {
+            throw ValidationException::withMessages(['blocks_json' => [__('blog.admin.blocks_json_invalid')]]);
+        }
+
+        return $decoded;
+    }
+
+    private function preparePostData(array $data, Request $request, BlogImageService $images): array
     {
         $data['slug'] = $data['slug'] ?: Str::slug($data['title_en'] ?: Str::transliterate($data['title_uk']));
-
-        $data['content_uk'] = $sanitizer->clean($data['content_uk'] ?? null);
-        $data['content_en'] = $sanitizer->clean($data['content_en'] ?? null);
         $data['is_featured'] = $request->boolean('is_featured');
         $data['allow_index'] = $request->boolean('allow_index', true);
         $data['published_at'] = $data['published_at'] ?: ($data['status'] === 'published' ? now() : null);
