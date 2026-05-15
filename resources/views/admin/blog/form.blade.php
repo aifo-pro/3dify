@@ -92,19 +92,22 @@
                     </button>
                 </div>
 
-                <div class="mt-6 space-y-4">
+                <div class="mt-6 space-y-4" data-sortable-blocks>
                     <template x-for="(block, index) in blocks" :key="block._key">
-                        <div class="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-zinc-950/70 shadow-xl shadow-black/25" :class="!block.is_active && 'opacity-50'">
+                        <div class="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-zinc-950/70 shadow-xl shadow-black/25 transition-opacity" :class="!block.is_active && 'opacity-50'">
                             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-zinc-950/50 px-4 py-3">
                                 <div class="flex min-w-0 items-center gap-2">
+                                    {{-- Drag handle --}}
+                                    <span data-drag-handle class="cursor-grab active:cursor-grabbing grid h-8 w-6 shrink-0 place-items-center rounded-lg text-zinc-600 hover:text-zinc-300 select-none" title="Drag to reorder">
+                                        <svg viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4"><circle cx="8" cy="6" r="1.5"/><circle cx="16" cy="6" r="1.5"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg>
+                                    </span>
                                     <span class="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-emerald-400/15 text-[11px] font-bold text-emerald-200" x-text="index + 1"></span>
                                     <span class="truncate text-xs font-bold uppercase tracking-[0.12em] text-zinc-400" x-text="typeLabel(block.type)"></span>
                                     <span x-show="!block.is_active" class="rounded-full border border-amber-400/30 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-200">hidden</span>
                                 </div>
                                 <div class="flex flex-wrap gap-1">
-                                    <button type="button" class="rounded-xl border border-white/10 px-2 py-1 text-[11px] text-zinc-400 hover:bg-white/5" @click="move(index, -1)" :disabled="index === 0">↑</button>
-                                    <button type="button" class="rounded-xl border border-white/10 px-2 py-1 text-[11px] text-zinc-400 hover:bg-white/5" @click="move(index, 1)" :disabled="index === blocks.length - 1">↓</button>
                                     <button type="button" class="rounded-xl border border-white/10 px-2 py-1 text-[11px] text-zinc-300 hover:bg-white/5" @click="toggleActive(index)" x-text="block.is_active ? 'hide' : 'show'"></button>
+                                    <button type="button" class="rounded-xl border border-white/10 px-2 py-1 text-[11px] text-zinc-400 hover:bg-white/5" @click="duplicateBlock(index)" title="Duplicate">⧉</button>
                                     <button type="button" class="rounded-xl border border-rose-400/30 px-2 py-1 text-[11px] text-rose-200 hover:bg-rose-400/10" @click="removeBlock(index)">{{ __('Видалити') }}</button>
                                 </div>
                             </div>
@@ -123,8 +126,14 @@
                                 </template>
                                 <template x-if="block.type === 'paragraph'">
                                     <div class="grid gap-4 lg:grid-cols-2">
-                                        <div><label class="mb-1 block text-[10px] font-bold uppercase text-zinc-500">HTML UK</label><textarea x-model="block.data.text_uk" rows="8" class="min-h-[180px] w-full rounded-2xl border border-white/10 bg-zinc-950/90 px-3 py-2 font-mono text-sm text-zinc-100"></textarea></div>
-                                        <div><label class="mb-1 block text-[10px] font-bold uppercase text-zinc-500">HTML EN</label><textarea x-model="block.data.text_en" rows="8" class="min-h-[180px] w-full rounded-2xl border border-white/10 bg-zinc-950/90 px-3 py-2 font-mono text-sm text-zinc-100"></textarea></div>
+                                        <div>
+                                            <label class="mb-2 block text-[10px] font-bold uppercase text-zinc-500">Text UK</label>
+                                            <div :id="'tiptap_' + block._key + '_uk'" class="tiptap-wrap"></div>
+                                        </div>
+                                        <div>
+                                            <label class="mb-2 block text-[10px] font-bold uppercase text-zinc-500">Text EN</label>
+                                            <div :id="'tiptap_' + block._key + '_en'" class="tiptap-wrap"></div>
+                                        </div>
                                     </div>
                                 </template>
                                 <template x-if="block.type === 'image' || block.type === 'image_text'">
@@ -303,6 +312,121 @@
                                 <template x-if="block.type === 'divider'">
                                     <p class="text-sm text-zinc-500">— horizontal rule —</p>
                                 </template>
+
+                                {{-- GALLERY --}}
+                                <template x-if="block.type === 'gallery'">
+                                    <div class="space-y-4">
+                                        <div class="grid gap-3 sm:grid-cols-2">
+                                            <input type="text" x-model="block.data.title_uk" placeholder="Gallery title UK" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                            <input type="text" x-model="block.data.title_en" placeholder="Gallery title EN" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                            <select x-model="block.data.style" class="h-10 max-w-xs rounded-xl border border-white/10 bg-zinc-950/80 px-3 text-sm text-white"><option value="grid">Grid</option><option value="masonry">Masonry</option><option value="slider">Slider</option></select>
+                                        </div>
+                                        <div class="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                                            <template x-for="(img, gi) in block.data.images" :key="'gi'+gi">
+                                                <div class="relative overflow-hidden rounded-xl border border-white/10">
+                                                    <img :src="'/storage/' + img.path.replace(/^\/+/, '')" class="aspect-square w-full object-cover">
+                                                    <button type="button" @click="galleryRemoveImage(block, gi)" class="absolute right-1 top-1 rounded-full bg-black/70 px-2 text-xs text-white">×</button>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <label class="inline-flex cursor-pointer rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-xs font-bold text-emerald-100">
+                                            + Upload images
+                                            <input type="file" class="hidden" accept="image/*" multiple @change="galleryUpload(block, $event)">
+                                        </label>
+                                    </div>
+                                </template>
+
+                                {{-- CODE --}}
+                                <template x-if="block.type === 'code'">
+                                    <div class="space-y-3">
+                                        <div class="flex gap-3">
+                                            <select x-model="block.data.language" class="h-10 rounded-xl border border-white/10 bg-zinc-950/80 px-3 text-sm text-white">
+                                                <option value="plaintext">Plain text</option>
+                                                <option value="javascript">JavaScript</option>
+                                                <option value="python">Python</option>
+                                                <option value="bash">Bash</option>
+                                                <option value="php">PHP</option>
+                                                <option value="gcode">G-code</option>
+                                                <option value="json">JSON</option>
+                                            </select>
+                                            <input type="text" x-model="block.data.caption" placeholder="Caption" class="flex-1 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        </div>
+                                        <textarea x-model="block.data.code" rows="8" spellcheck="false" class="w-full rounded-2xl border border-white/10 bg-zinc-950/90 px-4 py-3 font-mono text-sm text-emerald-100"></textarea>
+                                    </div>
+                                </template>
+
+                                {{-- FILAMENT CARD --}}
+                                <template x-if="block.type === 'filament_card'">
+                                    <div class="grid gap-3 sm:grid-cols-2">
+                                        <input type="text" x-model="block.data.name_uk" placeholder="Name UK" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <input type="text" x-model="block.data.name_en" placeholder="Name EN" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <input type="text" x-model="block.data.brand" placeholder="Brand" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <select x-model="block.data.material" class="h-10 rounded-xl border border-white/10 bg-zinc-950/80 px-3 text-sm text-white"><option>PLA</option><option>PETG</option><option>ABS</option><option>ASA</option><option>TPU</option><option>Nylon</option><option>Other</option></select>
+                                        <input type="text" x-model="block.data.temp_nozzle" placeholder="Nozzle °C" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <input type="text" x-model="block.data.temp_bed" placeholder="Bed °C" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <input type="text" x-model="block.data.color" placeholder="Color" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <input type="text" x-model="block.data.price" placeholder="Price (USD/kg)" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <input type="text" x-model="block.data.href" placeholder="Buy link" class="sm:col-span-2 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                    </div>
+                                </template>
+
+                                {{-- PRINTER CARD --}}
+                                <template x-if="block.type === 'printer_card'">
+                                    <div class="grid gap-3 sm:grid-cols-2">
+                                        <input type="text" x-model="block.data.name_uk" placeholder="Name UK" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <input type="text" x-model="block.data.name_en" placeholder="Name EN" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <input type="text" x-model="block.data.brand" placeholder="Brand" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <input type="text" x-model="block.data.build_volume" placeholder="Build volume (mm)" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <select x-model="block.data.tech" class="h-10 rounded-xl border border-white/10 bg-zinc-950/80 px-3 text-sm text-white"><option>FDM</option><option>MSLA</option><option>SLA</option></select>
+                                        <input type="text" x-model="block.data.price" placeholder="Price (USD)" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <input type="text" x-model="block.data.href" placeholder="Buy link" class="sm:col-span-2 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                    </div>
+                                </template>
+
+                                {{-- MATERIAL CARD --}}
+                                <template x-if="block.type === 'material_card'">
+                                    <div class="space-y-3">
+                                        <div class="grid gap-3 sm:grid-cols-2">
+                                            <input type="text" x-model="block.data.name_uk" placeholder="Name UK" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                            <input type="text" x-model="block.data.name_en" placeholder="Name EN" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                            <input type="text" x-model="block.data.brand" placeholder="Brand" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                            <input type="text" x-model="block.data.type" placeholder="Type (PLA, PETG...)" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                            <input type="text" x-model="block.data.href" placeholder="Link" class="sm:col-span-2 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        </div>
+                                        <template x-for="(it, li) in block.data.items_uk" :key="'mc'+index+li">
+                                            <div class="flex flex-col gap-2 sm:grid sm:grid-cols-[1fr_1fr_auto] sm:items-center sm:gap-2">
+                                                <input type="text" x-model="block.data.items_uk[li]" placeholder="Pro UK" class="min-w-0 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                                <input type="text" x-model="block.data.items_en[li]" placeholder="Pro EN" class="min-w-0 rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                                <button type="button" @click="listRemovePairedRow(block, li)" class="rounded-lg border border-white/10 px-2 py-1 text-xs">×</button>
+                                            </div>
+                                        </template>
+                                        <button type="button" @click="listAddPairedRow(block)" class="rounded-xl border border-emerald-400/25 px-3 py-1.5 text-xs text-emerald-200/90">+ pro/con row</button>
+                                    </div>
+                                </template>
+
+                                {{-- SUBSCRIBE BOX --}}
+                                <template x-if="block.type === 'subscribe_box'">
+                                    <div class="grid gap-3 sm:grid-cols-2">
+                                        <input type="text" x-model="block.data.title_uk" placeholder="Title UK" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <input type="text" x-model="block.data.title_en" placeholder="Title EN" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <input type="text" x-model="block.data.text_uk" placeholder="Text UK" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                        <input type="text" x-model="block.data.text_en" placeholder="Text EN" class="rounded-xl border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-white">
+                                    </div>
+                                </template>
+
+                                {{-- SPACER --}}
+                                <template x-if="block.type === 'spacer'">
+                                    <div>
+                                        <label class="mb-2 block text-[10px] font-bold uppercase text-zinc-500">Size</label>
+                                        <select x-model="block.data.size" class="h-10 max-w-xs rounded-xl border border-white/10 bg-zinc-950/80 px-3 text-sm text-white">
+                                            <option value="sm">Small (1rem)</option>
+                                            <option value="md">Medium (2.5rem)</option>
+                                            <option value="lg">Large (5rem)</option>
+                                            <option value="xl">XL (8rem)</option>
+                                        </select>
+                                    </div>
+                                </template>
+
                             </div>
                         </div>
                     </template>

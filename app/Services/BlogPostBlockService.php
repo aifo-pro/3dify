@@ -13,6 +13,8 @@ class BlogPostBlockService
     public const TYPES = [
         'heading', 'paragraph', 'image', 'image_text', 'quote', 'list', 'table',
         'tips', 'warning', 'steps', 'product_cards', 'related_models', 'faq', 'cta', 'divider',
+        'gallery', 'code', 'filament_card', 'printer_card', 'material_card',
+        'subscribe_box', 'spacer',
     ];
 
     /**
@@ -157,8 +159,82 @@ class BlogPostBlockService
                 'button_url' => trim((string) ($data['button_url'] ?? '')),
             ],
             'divider' => [],
+            'gallery' => [
+                'title_uk' => trim((string) ($data['title_uk'] ?? '')),
+                'title_en' => trim((string) ($data['title_en'] ?? '')),
+                'style' => in_array($data['style'] ?? 'grid', ['grid', 'masonry', 'slider'], true) ? $data['style'] : 'grid',
+                'images' => $this->sanitizeGalleryImages($data['images'] ?? []),
+            ],
+            'code' => [
+                'language' => trim(strip_tags((string) ($data['language'] ?? 'plaintext'))),
+                'code' => trim((string) ($data['code'] ?? '')),
+                'caption' => trim(strip_tags((string) ($data['caption'] ?? ''))),
+            ],
+            'filament_card' => [
+                'name_uk' => trim((string) ($data['name_uk'] ?? '')),
+                'name_en' => trim((string) ($data['name_en'] ?? '')),
+                'brand' => trim(strip_tags((string) ($data['brand'] ?? ''))),
+                'material' => trim(strip_tags((string) ($data['material'] ?? 'PLA'))),
+                'temp_nozzle' => trim(strip_tags((string) ($data['temp_nozzle'] ?? ''))),
+                'temp_bed' => trim(strip_tags((string) ($data['temp_bed'] ?? ''))),
+                'color' => trim(strip_tags((string) ($data['color'] ?? ''))),
+                'price' => trim(strip_tags((string) ($data['price'] ?? ''))),
+                'href' => trim((string) ($data['href'] ?? '')),
+            ],
+            'printer_card' => [
+                'name_uk' => trim((string) ($data['name_uk'] ?? '')),
+                'name_en' => trim((string) ($data['name_en'] ?? '')),
+                'brand' => trim(strip_tags((string) ($data['brand'] ?? ''))),
+                'build_volume' => trim(strip_tags((string) ($data['build_volume'] ?? ''))),
+                'tech' => in_array($data['tech'] ?? 'FDM', ['FDM', 'MSLA', 'SLA'], true) ? $data['tech'] : 'FDM',
+                'price' => trim(strip_tags((string) ($data['price'] ?? ''))),
+                'href' => trim((string) ($data['href'] ?? '')),
+            ],
+            'material_card' => [
+                'name_uk' => trim((string) ($data['name_uk'] ?? '')),
+                'name_en' => trim((string) ($data['name_en'] ?? '')),
+                'brand' => trim(strip_tags((string) ($data['brand'] ?? ''))),
+                'type' => trim(strip_tags((string) ($data['type'] ?? ''))),
+                'items_uk' => $this->sanitizeStringList($data['items_uk'] ?? [], $sanitizer, false),
+                'items_en' => $this->sanitizeStringList($data['items_en'] ?? [], $sanitizer, false),
+                'href' => trim((string) ($data['href'] ?? '')),
+            ],
+            'subscribe_box' => [
+                'title_uk' => trim((string) ($data['title_uk'] ?? '')),
+                'title_en' => trim((string) ($data['title_en'] ?? '')),
+                'text_uk' => trim((string) ($data['text_uk'] ?? '')),
+                'text_en' => trim((string) ($data['text_en'] ?? '')),
+            ],
+            'spacer' => [
+                'size' => in_array($data['size'] ?? 'md', ['sm', 'md', 'lg', 'xl'], true) ? $data['size'] : 'md',
+            ],
             default => $data,
         };
+    }
+
+    /**
+     * @param  list<mixed>  $images
+     * @return list<array<string,string>>
+     */
+    private function sanitizeGalleryImages(array $images): array
+    {
+        $out = [];
+        foreach (array_slice($images, 0, 50) as $img) {
+            if (! is_array($img)) {
+                continue;
+            }
+            $path = trim((string) ($img['path'] ?? ''));
+            if ($path === '') {
+                continue;
+            }
+            $out[] = [
+                'path' => $path,
+                'alt_uk' => trim(strip_tags((string) ($img['alt_uk'] ?? ''))),
+                'alt_en' => trim(strip_tags((string) ($img['alt_en'] ?? ''))),
+            ];
+        }
+
+        return $out;
     }
 
     /**
