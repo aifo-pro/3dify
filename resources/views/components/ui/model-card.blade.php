@@ -49,10 +49,10 @@
             </div>
         @endif
         <div class="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-4 text-xs text-zinc-500">
-            <span class="inline-flex items-center gap-1.5 truncate">
+            <a href="{{ route('authors.show', $product->author) }}" class="inline-flex items-center gap-1.5 truncate hover:text-emerald-300 transition">
                 {{ $product->author->name }}
                 <x-ui.verified-badge :user="$product->author" size="xs" :show-label="false" />
-            </span>
+            </a>
             <div class="flex shrink-0 items-center gap-3 text-zinc-500">
                 @if($product->downloads_count > 0)
                     <span class="flex items-center gap-1" title="{{ __('Завантажень') }}">
