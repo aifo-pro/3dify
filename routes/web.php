@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\BlogTaxonomyController;
 use App\Http\Controllers\Admin\BulkActionController;
 use App\Http\Controllers\Admin\BundleAdminController;
 use App\Http\Controllers\Admin\ContentController;
+use App\Http\Controllers\Admin\PrintChallengeAdminController;
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\FeaturedProductsController;
 use App\Http\Controllers\Admin\LegalPagesController;
@@ -34,7 +35,13 @@ use App\Http\Controllers\Marketplace\BlogSubscriptionController;
 use App\Http\Controllers\Marketplace\BulkDownloadController;
 use App\Http\Controllers\Marketplace\BundleController;
 use App\Http\Controllers\Marketplace\CheckoutController;
+use App\Http\Controllers\Marketplace\CompareController;
+use App\Http\Controllers\Marketplace\LeaderboardController;
 use App\Http\Controllers\Marketplace\MakesGalleryController;
+use App\Http\Controllers\Marketplace\PrintChallengeController;
+use App\Http\Controllers\Marketplace\ReferralController;
+use App\Http\Controllers\Marketplace\SearchController;
+use App\Http\Controllers\Marketplace\CommentLikeController;
 use App\Http\Controllers\Marketplace\CommentController;
 use App\Http\Controllers\Marketplace\DashboardController;
 use App\Http\Controllers\Marketplace\DownloadController;
@@ -75,6 +82,11 @@ Route::redirect('/catalog', '/models')->name('catalog');
 Route::get('/models', [ProductController::class, 'index'])->name('products.index');
 Route::get('/bundles/{bundle:slug}', [BundleController::class, 'show'])->name('bundles.show');
 Route::get('/makes', MakesGalleryController::class)->name('makes.gallery');
+Route::get('/search', SearchController::class)->name('search');
+Route::get('/compare', [CompareController::class, 'show'])->name('compare');
+Route::get('/leaderboard', LeaderboardController::class)->name('leaderboard');
+Route::get('/challenges', [PrintChallengeController::class, 'index'])->name('challenges.index');
+Route::get('/challenges/{challenge:slug}', [PrintChallengeController::class, 'show'])->name('challenges.show');
 Route::get('/categories/{category:slug}', [ProductController::class, 'index'])->name('categories.show');
 Route::get('/models/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/models/{product:slug}/embed', [ProductController::class, 'embed'])->name('products.embed');
@@ -190,6 +202,14 @@ Route::middleware('auth')->group(function () {
 
     // Download library — all purchased models in one place
     Route::get('/my/library', LibraryController::class)->name('library');
+    Route::get('/profile/referrals', ReferralController::class)->name('referral');
+
+    // Challenges
+    Route::post('/challenges/{challenge:slug}/enter', [PrintChallengeController::class, 'enter'])->name('challenges.enter');
+    Route::post('/challenges/entries/{entry}/vote', [PrintChallengeController::class, 'vote'])->name('challenges.vote');
+
+    // Comment likes
+    Route::post('/comments/{comment}/like', [CommentLikeController::class, 'toggle'])->name('comments.like');
     Route::get('/my/library/download-all', [BulkDownloadController::class, 'library'])->name('library.download-all');
     Route::get('/models/{product:slug}/download-all', [BulkDownloadController::class, 'product'])->name('products.download-all');
 
@@ -361,6 +381,14 @@ Route::middleware(['auth', 'role:admin,moderator'])->prefix('admin')->name('admi
 
     // Analytics
     Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics');
+
+    // Print Challenges
+    Route::get('/challenges', [PrintChallengeAdminController::class, 'index'])->name('challenges.index');
+    Route::get('/challenges/create', [PrintChallengeAdminController::class, 'create'])->name('challenges.create');
+    Route::post('/challenges', [PrintChallengeAdminController::class, 'store'])->name('challenges.store');
+    Route::get('/challenges/{challenge}/edit', [PrintChallengeAdminController::class, 'edit'])->name('challenges.edit');
+    Route::put('/challenges/{challenge}', [PrintChallengeAdminController::class, 'update'])->name('challenges.update');
+    Route::patch('/challenges/entries/{entry}/moderate', [PrintChallengeAdminController::class, 'moderateEntry'])->name('challenges.entries.moderate');
 
     // Bundles
     Route::get('/bundles', [BundleAdminController::class, 'index'])->name('bundles.index');

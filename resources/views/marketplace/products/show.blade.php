@@ -274,7 +274,8 @@
                 @endif
 
                 {{-- Quick stats --}}
-                <div class="grid gap-3 sm:grid-cols-3">
+                @php $printTime = app(\App\Services\PrintTimeEstimator::class)->estimate($product); @endphp
+                <div class="grid gap-3 sm:grid-cols-{{ $printTime ? '4' : '3' }}">
                     <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
                         <span class="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">{{ __('Перегляди') }}</span>
                         <strong class="mt-2 block text-2xl font-black text-white">{{ number_format((int) $product->views_count) }}</strong>
@@ -289,6 +290,12 @@
                             {{ $product->files->pluck('extension')->unique()->map(fn ($ext) => strtoupper($ext))->join(' · ') ?: '3D' }}
                         </strong>
                     </div>
+                    @if($printTime)
+                        <div class="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.05] p-5">
+                            <span class="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-400">{{ __('~Час друку') }}</span>
+                            <strong class="mt-2 block text-2xl font-black text-white">{{ $printTime }}</strong>
+                        </div>
+                    @endif
                 </div>
             </div>
 

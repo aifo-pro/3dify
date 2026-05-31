@@ -271,6 +271,19 @@ class ProductController extends Controller
             throw $e;
         }
 
+        // Notify buyers if new files were uploaded
+        if (! empty($uploadedPaths) && $product->status === 'published') {
+            $buyers = \App\Models\User::query()
+                ->whereHas('orders', fn ($q) => $q
+                    ->where('status', 'paid')
+                    ->whereHas('items', fn ($i) => $i->where('product_id', $product->id)))
+                ->where('id', '!=', $request->user()->id)
+                ->get();
+            foreach ($buyers as $buyer) {
+                $buyer->notify(new \App\Notifications\ProductFilesUpdatedNotification($product));
+            }
+        }
+
         return back()->with('status', 'Модель оновлено.');
     }
 

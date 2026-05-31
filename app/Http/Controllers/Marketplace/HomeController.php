@@ -67,13 +67,38 @@ class HomeController extends Controller
             'views' => (int) Product::query()->published()->sum('views_count'),
         ];
 
+        $popularThisWeek = Product::query()
+            ->with(['author', 'category'])
+            ->published()
+            ->where('updated_at', '>=', now()->subDays(7))
+            ->orderByDesc('downloads_count')
+            ->take(4)
+            ->get();
+
+        if ($popularThisWeek->count() < 4) {
+            $popularThisWeek = Product::query()
+                ->with(['author', 'category'])
+                ->published()
+                ->orderByDesc('downloads_count')
+                ->take(4)
+                ->get();
+        }
+
         return view('marketplace.home', [
-            'featuredProducts' => Product::query()->with(['author', 'category'])->published()->where('is_featured', true)->latest('published_at')->take(8)->get(),
-            'popularProducts' => Product::query()->with(['author', 'category'])->published()->orderByDesc('views_count')->latest('published_at')->take(8)->get(),
-            'latestProducts' => Product::query()->with(['author', 'category'])->published()->latest('published_at')->take(8)->get(),
-            'freeProducts' => Product::query()->with(['author', 'category'])->published()->where('is_free', true)->latest('published_at')->take(4)->get(),
-            'categories' => Category::query()->where('is_active', true)->orderBy('sort_order')->take(8)->get(),
-            'stats' => $stats,
+            'featuredProducts'   => Product::query()->with(['author', 'category'])->published()->where('is_featured', true)->latest('published_at')->take(8)->get(),
+            'popularProducts'    => Product::query()->with(['author', 'category'])->published()->orderByDesc('views_count')->latest('published_at')->take(8)->get(),
+            'popularThisWeek'    => $popularThisWeek,
+            'latestProducts'     => Product::query()->with(['author', 'category'])->published()->latest('published_at')->take(8)->get(),
+            'freeProducts'       => Product::query()->with(['author', 'category'])->published()->where('is_free', true)->latest('published_at')->take(4)->get(),
+            'categories'         => Category::query()->where('is_active', true)->orderBy('sort_order')->take(8)->get(),
+            'stats'              => $stats,
+            'topAuthors'         => User::query()
+                ->whereHas('products', fn ($q) => $q->where('status', 'published'))
+                ->withCount(['products as published_count' => fn ($q) => $q->where('status', 'published')])
+                ->withSum(['products as total_downloads' => fn ($q) => $q->where('status', 'published')], 'downloads_count')
+                ->orderByDesc('total_downloads')
+                ->take(6)
+                ->get(),
         ]);
     }
 
