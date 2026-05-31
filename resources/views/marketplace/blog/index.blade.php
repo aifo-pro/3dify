@@ -82,10 +82,10 @@
         @endif
 
         {{-- ═══ MAIN GRID + SIDEBAR ═══ --}}
-        <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_23rem] xl:gap-12">
+        <div class="grid gap-10 lg:grid-cols-3 lg:items-start xl:gap-12">
 
             {{-- Posts --}}
-            <div class="min-w-0">
+            <div class="min-w-0 lg:col-span-2">
                 @if($posts->isEmpty())
                     <x-ui.empty-state :title="__('blog.empty_posts')" :description="__('blog.empty_posts_hint')" />
                 @else
