@@ -10,4 +10,5 @@ return [
     'by'             => 'by',
     'purchased'      => 'Purchased',
     'no_files'       => 'No files available.',
+    'download_all'   => 'Download entire library',
 ];

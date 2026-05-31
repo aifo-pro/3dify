@@ -24,7 +24,7 @@ use App\Notifications\TemplatedPasswordResetNotification;
     'bio', 'bio_uk', 'bio_en', 'avatar_path', 'cover_path', 'website_url', 'telegram_url',
     'instagram_url', 'youtube_url', 'github_url', 'twitter_url', 'location', 'country_code', 'city',
     'contact_enabled', 'github_id', 'telegram_id', 'telegram_username', 'locale',
-    'is_suspended', 'manual_verification',
+    'is_suspended', 'manual_verification', 'referral_code', 'referred_by',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable

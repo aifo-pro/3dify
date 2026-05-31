@@ -157,6 +157,32 @@
                         <button type="submit" class="mt-2 inline-flex h-8 w-full items-center justify-center rounded-xl bg-emerald-400 text-xs font-bold text-zinc-950 hover:bg-emerald-300">{{ __('Застосувати') }}</button>
                     </div>
 
+                    {{-- Rating filter --}}
+                    <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                        <p class="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Мінімальний рейтинг') }}</p>
+                        <div class="flex gap-1.5">
+                            @foreach([0, 3, 4, 5] as $r)
+                                <label class="flex-1 cursor-pointer text-center">
+                                    <input type="radio" name="min_rating" value="{{ $r ?: '' }}" @checked((int)($filters['min_rating'] ?? 0) === $r) onchange="this.form.submit()" class="sr-only">
+                                    <span class="{{ (int)($filters['min_rating'] ?? 0) === $r ? 'border-amber-400/50 bg-amber-400/15 text-amber-300' : 'border-white/10 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.07]' }} block rounded-xl border py-2 text-xs font-bold transition">
+                                        {{ $r ? $r.'★' : __('Будь-який') }}
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Max dimension filter --}}
+                    <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                        <p class="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Макс. розмір (мм)') }}</p>
+                        <select name="max_dim" onchange="this.form.submit()" class="h-10 w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3 text-sm text-white">
+                            <option value="">{{ __('Будь-який') }}</option>
+                            @foreach([50, 100, 150, 200, 300] as $dim)
+                                <option value="{{ $dim }}" @selected((int)($filters['max_dim'] ?? 0) === $dim)>≤ {{ $dim }} мм</option>
+                            @endforeach
+                        </select>
+                    </div>
+
                 @if($hasFilters)
                     <a href="{{ route('products.index') }}" class="inline-flex h-9 items-center justify-center rounded-xl border border-rose-300/30 bg-rose-300/[0.06] text-xs font-bold text-rose-200 hover:bg-rose-300/[0.10]">
                         {{ __('Скинути всі фільтри') }}

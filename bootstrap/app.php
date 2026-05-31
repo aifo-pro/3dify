@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AllowSocialCrawlers;
+use App\Http\Middleware\CaptureReferral;
 use App\Http\Middleware\EnsureBlogTablesExist;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SetLocale;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->web(append: [
             SetLocale::class,
+            CaptureReferral::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

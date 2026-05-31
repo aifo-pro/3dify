@@ -11,6 +11,7 @@ use App\Models\TipPayment;
 use App\Notifications\NewTipNotification;
 use App\Services\AifoPaymentService;
 use App\Services\AuditLogger;
+use App\Services\ReferralService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -183,6 +184,9 @@ class PaymentWebhookController extends Controller
             foreach ($payment->order->items as $item) {
                 Mail::to($item->author)->queue(new SaleNotificationMail($payment->order, $item->author));
             }
+
+            // Credit referral reward if applicable
+            app(ReferralService::class)->creditReferrer($payment->order);
         }
 
         return response()->json(['ok' => true]);

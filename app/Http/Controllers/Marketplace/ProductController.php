@@ -20,11 +20,13 @@ class ProductController extends Controller
 {
     public function index(Request $request, ?Category $category = null)
     {
-        $minPrice = $request->filled('min_price') ? max(0, (float) $request->input('min_price')) : null;
-        $maxPrice = $request->filled('max_price') ? max(0, (float) $request->input('max_price')) : null;
+        $minPrice    = $request->filled('min_price') ? max(0, (float) $request->input('min_price')) : null;
+        $maxPrice    = $request->filled('max_price') ? max(0, (float) $request->input('max_price')) : null;
         $licenseSlugs = (array) $request->input('license', []);
-        $formatExt = (array) $request->input('format', []);
+        $formatExt   = (array) $request->input('format', []);
         $categorySlug = $category?->slug ?: (string) $request->input('category', '');
+        $minRating   = $request->filled('min_rating') ? max(1, min(5, (int) $request->input('min_rating'))) : null;
+        $maxDim      = $request->filled('max_dim') ? max(1, (int) $request->input('max_dim')) : null;
 
         if (! $category && $request->filled('category') && count($request->query()) === 1) {
             $cleanCategory = Category::query()
@@ -54,6 +56,16 @@ class ProductController extends Controller
             ->when(! empty($formatExt), fn ($query) => $query->whereHas('files', fn ($q) => $q->whereIn('extension', array_map('strtolower', $formatExt))))
             ->when($minPrice !== null, fn ($query) => $query->where('price', '>=', $minPrice))
             ->when($maxPrice !== null, fn ($query) => $query->where('price', '<=', $maxPrice))
+            ->when($minRating !== null, fn ($q) => $q->whereHas('reviews', fn ($r) => $r->where('status', 'published'), '>=', 1)
+                ->withAvg(['reviews as avg_rating' => fn ($r) => $r->where('status', 'published')], 'rating')
+                ->havingRaw('avg_rating >= ?', [$minRating]))
+            ->when($maxDim !== null, fn ($q) => $q->where(function ($inner) use ($maxDim) {
+                $inner->whereNull('dim_x')->orWhere('dim_x', '<=', $maxDim);
+            })->where(function ($inner) use ($maxDim) {
+                $inner->whereNull('dim_y')->orWhere('dim_y', '<=', $maxDim);
+            })->where(function ($inner) use ($maxDim) {
+                $inner->whereNull('dim_z')->orWhere('dim_z', '<=', $maxDim);
+            }))
             ->when($request->input('sort') === 'popular', fn ($query) => $query->orderByDesc('views_count'))
             ->when($request->input('sort') === 'downloads', fn ($query) => $query->orderByDesc('downloads_count'))
             ->when($request->input('sort') === 'price_asc', fn ($query) => $query->orderBy('price'))
@@ -85,9 +97,11 @@ class ProductController extends Controller
                 'free' => $request->boolean('free'),
                 'license' => $licenseSlugs,
                 'format' => array_map('strtolower', $formatExt),
-                'min_price' => $minPrice,
-                'max_price' => $maxPrice,
-                'sort' => (string) $request->input('sort', 'latest'),
+                'min_price'  => $minPrice,
+                'max_price'  => $maxPrice,
+                'min_rating' => $minRating,
+                'max_dim'    => $maxDim,
+                'sort'       => (string) $request->input('sort', 'latest'),
             ],
         ]);
     }

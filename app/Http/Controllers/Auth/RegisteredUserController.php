@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendOnboardingTipsEmail;
 use App\Mail\DatabaseTemplateMail;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -39,10 +40,12 @@ class RegisteredUserController extends Controller
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name'        => $request->name,
+            'email'       => $request->email,
+            'password'    => Hash::make($request->password),
+            'referred_by' => session('referral_user_id'),
         ]);
+        session()->forget(['referral_code', 'referral_user_id']);
 
         event(new Registered($user));
 
@@ -52,6 +55,9 @@ class RegisteredUserController extends Controller
                 'email' => $user->email,
             ],
         ]));
+
+        // Send onboarding tips 2 days after registration
+        SendOnboardingTipsEmail::dispatch($user->id)->delay(now()->addDays(2));
 
         Auth::login($user);
 

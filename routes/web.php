@@ -31,8 +31,10 @@ use App\Http\Controllers\Marketplace\BlogController;
 use App\Http\Controllers\Marketplace\BlogFeedController;
 use App\Http\Controllers\Marketplace\BlogSitemapController;
 use App\Http\Controllers\Marketplace\BlogSubscriptionController;
+use App\Http\Controllers\Marketplace\BulkDownloadController;
 use App\Http\Controllers\Marketplace\BundleController;
 use App\Http\Controllers\Marketplace\CheckoutController;
+use App\Http\Controllers\Marketplace\MakesGalleryController;
 use App\Http\Controllers\Marketplace\CommentController;
 use App\Http\Controllers\Marketplace\DashboardController;
 use App\Http\Controllers\Marketplace\DownloadController;
@@ -72,6 +74,7 @@ Route::get('/feed.xml', BlogFeedController::class)->name('feed');
 Route::redirect('/catalog', '/models')->name('catalog');
 Route::get('/models', [ProductController::class, 'index'])->name('products.index');
 Route::get('/bundles/{bundle:slug}', [BundleController::class, 'show'])->name('bundles.show');
+Route::get('/makes', MakesGalleryController::class)->name('makes.gallery');
 Route::get('/categories/{category:slug}', [ProductController::class, 'index'])->name('categories.show');
 Route::get('/models/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/models/{product:slug}/embed', [ProductController::class, 'embed'])->name('products.embed');
@@ -187,6 +190,8 @@ Route::middleware('auth')->group(function () {
 
     // Download library — all purchased models in one place
     Route::get('/my/library', LibraryController::class)->name('library');
+    Route::get('/my/library/download-all', [BulkDownloadController::class, 'library'])->name('library.download-all');
+    Route::get('/models/{product:slug}/download-all', [BulkDownloadController::class, 'product'])->name('products.download-all');
 
     // Bundle checkout
     Route::post('/bundles/{bundle:slug}/checkout', [BundleController::class, 'checkout'])->middleware('throttle:10,1')->name('bundles.checkout');

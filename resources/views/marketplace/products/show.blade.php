@@ -347,11 +347,37 @@
                     <div class="mt-4 grid gap-2">
                         <div class="rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.06] p-4">
                             <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-200">{{ __('Що входить') }}</p>
-                            <ul class="mt-3 grid gap-2 text-sm text-zinc-300">
-                                <li class="flex gap-2"><span class="text-emerald-300">✓</span><span>{{ __('Захищені файли моделі після оплати') }}</span></li>
-                                <li class="flex gap-2"><span class="text-emerald-300">✓</span><span>{{ __('Доступ до download center і slicer-посилань') }}</span></li>
-                                <li class="flex gap-2"><span class="text-emerald-300">✓</span><span>{{ __('Покупка привʼязується до вашого акаунта') }}</span></li>
-                            </ul>
+                            @php
+                                $sourceFiles = $product->files->where('type', 'source')->where('is_preview', false)->values();
+                            @endphp
+                            @if($sourceFiles->isNotEmpty())
+                                <ul class="mt-3 space-y-1.5">
+                                    @foreach($sourceFiles as $f)
+                                        <li class="flex items-center justify-between gap-2 rounded-lg bg-black/20 px-3 py-2 text-xs">
+                                            <span class="flex items-center gap-2 text-zinc-200">
+                                                <svg class="h-3.5 w-3.5 shrink-0 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                                {{ $f->original_name }}
+                                            </span>
+                                            <span class="flex shrink-0 items-center gap-2">
+                                                <span class="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 font-bold uppercase text-emerald-300">{{ $f->extension }}</span>
+                                                @if($f->size)
+                                                    <span class="text-zinc-600">{{ $f->size >= 1048576 ? round($f->size/1048576,1).'MB' : round($f->size/1024,0).'KB' }}</span>
+                                                @endif
+                                                @if(!empty($f->validation_warnings))
+                                                    <span class="text-amber-400" title="{{ implode(' ', $f->validation_warnings) }}">⚠</span>
+                                                @endif
+                                            </span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                                <p class="mt-2 text-xs text-zinc-500">{{ $sourceFiles->count() }} {{ trans_choice('{1}файл|[2,4]файли|[5,*]файлів', $sourceFiles->count()) }} · {{ strtoupper($sourceFiles->pluck('extension')->unique()->join(', ')) }}</p>
+                            @else
+                                <ul class="mt-3 grid gap-2 text-sm text-zinc-300">
+                                    <li class="flex gap-2"><span class="text-emerald-300">✓</span><span>{{ __('Захищені файли моделі після оплати') }}</span></li>
+                                    <li class="flex gap-2"><span class="text-emerald-300">✓</span><span>{{ __('Доступ до download center і slicer-посилань') }}</span></li>
+                                    <li class="flex gap-2"><span class="text-emerald-300">✓</span><span>{{ __('Покупка привʼязується до вашого акаунта') }}</span></li>
+                                </ul>
+                            @endif
                         </div>
                         <div class="rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-xs leading-5 text-zinc-400">
                             <strong class="text-zinc-200">{{ __('Повернення') }}:</strong>

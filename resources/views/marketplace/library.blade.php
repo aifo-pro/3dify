@@ -4,9 +4,18 @@
 >
     <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
 
-        <div class="mb-8">
-            <h1 class="text-3xl font-black text-white">{{ __('library.title') }}</h1>
-            <p class="mt-2 text-zinc-400">{{ __('library.subtitle') }}</p>
+        <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-black text-white">{{ __('library.title') }}</h1>
+                <p class="mt-2 text-zinc-400">{{ __('library.subtitle') }}</p>
+            </div>
+            @if(! $orders->isEmpty())
+                <a href="{{ route('library.download-all') }}"
+                   class="inline-flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-2.5 text-sm font-bold text-emerald-300 transition hover:bg-emerald-400/20">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                    {{ __('library.download_all') }}
+                </a>
+            @endif
         </div>
 
         @if($orders->isEmpty())

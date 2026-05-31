@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Marketplace;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendAbandonedCartEmail;
 use App\Mail\PurchaseReceiptMail;
 use App\Mail\SaleNotificationMail;
 use App\Models\Order;
@@ -103,6 +104,11 @@ class CheckoutController extends Controller
                     'order_item_total' => $itemTotal,
                 ]),
             ]);
+        }
+
+        // Schedule abandoned cart email if order stays pending after 1 hour
+        if ($payment->status !== 'paid') {
+            SendAbandonedCartEmail::dispatch($order->id)->delay(now()->addHour());
         }
 
         if ($payment->status === 'paid') {
