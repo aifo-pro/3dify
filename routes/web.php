@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BlogPostController as AdminBlogPostController;
 use App\Http\Controllers\Admin\BlogTaxonomyController;
 use App\Http\Controllers\Admin\BulkActionController;
+use App\Http\Controllers\Admin\BundleAdminController;
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\FeaturedProductsController;
@@ -30,10 +31,12 @@ use App\Http\Controllers\Marketplace\BlogController;
 use App\Http\Controllers\Marketplace\BlogFeedController;
 use App\Http\Controllers\Marketplace\BlogSitemapController;
 use App\Http\Controllers\Marketplace\BlogSubscriptionController;
+use App\Http\Controllers\Marketplace\BundleController;
 use App\Http\Controllers\Marketplace\CheckoutController;
 use App\Http\Controllers\Marketplace\CommentController;
 use App\Http\Controllers\Marketplace\DashboardController;
 use App\Http\Controllers\Marketplace\DownloadController;
+use App\Http\Controllers\Marketplace\LibraryController;
 use App\Http\Controllers\Marketplace\DownloadOptionsController;
 use App\Http\Controllers\Marketplace\HomeController;
 use App\Http\Controllers\Marketplace\MakeController;
@@ -68,6 +71,7 @@ Route::get('/sitemap-blog.xml', BlogSitemapController::class)->name('sitemap.blo
 Route::get('/feed.xml', BlogFeedController::class)->name('feed');
 Route::redirect('/catalog', '/models')->name('catalog');
 Route::get('/models', [ProductController::class, 'index'])->name('products.index');
+Route::get('/bundles/{bundle:slug}', [BundleController::class, 'show'])->name('bundles.show');
 Route::get('/categories/{category:slug}', [ProductController::class, 'index'])->name('categories.show');
 Route::get('/models/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/models/{product:slug}/embed', [ProductController::class, 'embed'])->name('products.embed');
@@ -180,6 +184,12 @@ Route::middleware('auth')->group(function () {
     // Tips (donate to author for any model, free or paid); POST requires login.
     Route::post('/models/{product:slug}/tip', [TipController::class, 'store'])->name('products.tip');
     Route::get('/tips/{tip}/success', TipSuccessController::class)->name('tips.success');
+
+    // Download library — all purchased models in one place
+    Route::get('/my/library', LibraryController::class)->name('library');
+
+    // Bundle checkout
+    Route::post('/bundles/{bundle:slug}/checkout', [BundleController::class, 'checkout'])->middleware('throttle:10,1')->name('bundles.checkout');
 
     // Refund requests
     Route::get('/refunds', [RefundRequestController::class, 'index'])->name('refunds.index');
@@ -346,6 +356,14 @@ Route::middleware(['auth', 'role:admin,moderator'])->prefix('admin')->name('admi
 
     // Analytics
     Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics');
+
+    // Bundles
+    Route::get('/bundles', [BundleAdminController::class, 'index'])->name('bundles.index');
+    Route::get('/bundles/create', [BundleAdminController::class, 'create'])->name('bundles.create');
+    Route::post('/bundles', [BundleAdminController::class, 'store'])->name('bundles.store');
+    Route::get('/bundles/{bundle}/edit', [BundleAdminController::class, 'edit'])->name('bundles.edit');
+    Route::put('/bundles/{bundle}', [BundleAdminController::class, 'update'])->name('bundles.update');
+    Route::delete('/bundles/{bundle}', [BundleAdminController::class, 'destroy'])->name('bundles.destroy');
 
     // API tokens
     Route::get('/api-tokens', [ApiTokenController::class, 'index'])->name('api-tokens');

@@ -8,9 +8,9 @@ class ModelFile extends Model
 {
     public const ALLOWED_EXTENSIONS = ['stl', 'obj', 'glb', 'gltf', 'zip', '3mf'];
 
-    protected $fillable = ['product_id', 'type', 'disk', 'path', 'original_name', 'extension', 'size', 'is_preview'];
+    protected $fillable = ['product_id', 'type', 'disk', 'path', 'original_name', 'extension', 'size', 'is_preview', 'validation_warnings'];
 
-    protected $casts = ['is_preview' => 'boolean'];
+    protected $casts = ['is_preview' => 'boolean', 'validation_warnings' => 'array'];
 
     public function product()
     {

@@ -8,6 +8,7 @@ use App\Models\License;
 use App\Models\ModelFile;
 use App\Models\Product;
 use App\Models\Tag;
+use App\Services\ModelFileValidator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -420,9 +421,15 @@ class ProductController extends Controller
 
     private function storeFiles(Product $product, Request $request, array &$uploadedPaths = []): void
     {
+        $validator = app(ModelFileValidator::class);
+
         foreach ((array) $request->file('files', []) as $file) {
             $extension = strtolower($file->getClientOriginalExtension());
             abort_unless(in_array($extension, ModelFile::ALLOWED_EXTENSIONS, true), 422, 'Unsupported file type.');
+
+            $validation = $validator->validate($file, $extension);
+            abort_unless($validation['valid'], 422, implode(' ', $validation['errors']));
+
             $path = $file->store('models/'.$product->id, 'private');
             $uploadedPaths[] = ['private', $path];
             $product->files()->create([
@@ -432,6 +439,7 @@ class ProductController extends Controller
                 'original_name' => $file->getClientOriginalName(),
                 'extension' => $extension,
                 'size' => $file->getSize(),
+                'validation_warnings' => $validation['warnings'] ?: null,
             ]);
         }
 

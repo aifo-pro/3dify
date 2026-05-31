@@ -238,6 +238,7 @@ class AdminController extends Controller
 
             if ($data['status'] === 'published' && $previousStatus !== 'published') {
                 Mail::to($author)->queue(new DatabaseTemplateMail('model_approved', $author, $payload));
+                \App\Events\ProductPublished::dispatch($product);
             }
 
             if ($data['status'] === 'rejected' && $previousStatus !== 'rejected') {

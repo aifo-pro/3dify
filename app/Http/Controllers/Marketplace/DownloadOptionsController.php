@@ -38,15 +38,24 @@ class DownloadOptionsController extends Controller
                     ]
                 );
 
+                $ext = strtolower($file->extension);
+                $isSlicerCompatible = in_array($ext, ['stl', '3mf', 'obj'], true);
+
                 return [
-                    'id' => $file->id,
-                    'name' => $file->original_name,
-                    'extension' => strtolower($file->extension),
-                    'extension_label' => strtoupper($file->extension),
-                    'size' => $this->formatBytes((int) $file->size),
-                    'is_slicer_compatible' => in_array(strtolower($file->extension), ['stl', '3mf', 'obj'], true),
-                    'download_url' => route('products.download', [$product, $file]),
-                    'signed_url' => $signedUrl,
+                    'id'                  => $file->id,
+                    'name'                => $file->original_name,
+                    'extension'           => $ext,
+                    'extension_label'     => strtoupper($file->extension),
+                    'size'                => $this->formatBytes((int) $file->size),
+                    'is_slicer_compatible' => $isSlicerCompatible,
+                    'download_url'        => route('products.download', [$product, $file]),
+                    'signed_url'          => $signedUrl,
+                    // Slicer deep-link protocol URLs
+                    'slicer_urls' => $isSlicerCompatible ? [
+                        'bambu'   => 'bambustudio://open?url='.urlencode($signedUrl),
+                        'orca'    => 'orcaslicer://open?url='.urlencode($signedUrl),
+                        'prusa'   => 'prusaslicer://open?url='.urlencode($signedUrl),
+                    ] : [],
                 ];
             })
             ->values();

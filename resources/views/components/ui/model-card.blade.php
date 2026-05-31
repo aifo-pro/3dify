@@ -53,7 +53,20 @@
                 {{ $product->author->name }}
                 <x-ui.verified-badge :user="$product->author" size="xs" :show-label="false" />
             </span>
-            <span class="truncate text-zinc-400">{{ $product->category?->localized('name') ?? __('3D модель') }}</span>
+            <div class="flex shrink-0 items-center gap-3 text-zinc-500">
+                @if($product->downloads_count > 0)
+                    <span class="flex items-center gap-1" title="{{ __('Завантажень') }}">
+                        <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                        {{ $product->downloads_count >= 1000 ? round($product->downloads_count / 1000, 1).'k' : $product->downloads_count }}
+                    </span>
+                @endif
+                @if($product->reviews()->exists() || ($product->relationLoaded('reviews') && $product->reviews->isNotEmpty()))
+                    <span class="flex items-center gap-0.5 text-amber-400/80" title="{{ __('Рейтинг') }}">
+                        <svg class="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        {{ number_format($product->reviews_avg_rating ?? $product->reviews()->avg('rating') ?? 0, 1) }}
+                    </span>
+                @endif
+            </div>
         </div>
     </div>
 </a>
