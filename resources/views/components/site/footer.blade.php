@@ -38,9 +38,9 @@
         <div>
             <h3 class="text-xs font-bold uppercase tracking-[0.16em] text-zinc-300">Спільнота</h3>
             <div class="mt-4 grid gap-2.5">
-                <x-ui.footer-link :href="route('makes.gallery')">📸 Галерея друків</x-ui.footer-link>
-                <x-ui.footer-link :href="route('challenges.index')">🏆 Челенджі</x-ui.footer-link>
-                <x-ui.footer-link :href="route('leaderboard')">🏅 Рейтинг авторів</x-ui.footer-link>
+                <x-ui.footer-link :href="route('makes.gallery')">Галерея друків</x-ui.footer-link>
+                <x-ui.footer-link :href="route('challenges.index')">Челенджі</x-ui.footer-link>
+                <x-ui.footer-link :href="route('leaderboard')">Рейтинг авторів</x-ui.footer-link>
                 <x-ui.footer-link :href="route('blog.index')">Блог</x-ui.footer-link>
                 @auth
                     <x-ui.footer-link :href="route('referral')">Реферальна програма</x-ui.footer-link>

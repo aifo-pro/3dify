@@ -45,19 +45,24 @@
                      class="absolute left-0 top-full z-[9999] mt-2 w-52 origin-top-left overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/95 shadow-2xl shadow-black/50 backdrop-blur-xl">
                     <div class="py-1.5">
                         <a href="{{ route('makes.gallery') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">
-                            <span class="text-base">📸</span> {{ __('Галерея друків') }}
+                            <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            {{ __('Галерея друків') }}
                         </a>
                         <a href="{{ route('challenges.index') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">
-                            <span class="text-base">🏆</span> {{ __('Челенджі') }}
+                            <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+                            {{ __('Челенджі') }}
                         </a>
                         <a href="{{ route('leaderboard') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">
-                            <span class="text-base">🏅</span> {{ __('Рейтинг авторів') }}
+                            <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                            {{ __('Рейтинг авторів') }}
                         </a>
                         <a href="{{ route('search') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">
-                            <span class="text-base">🔍</span> {{ __('Глобальний пошук') }}
+                            <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            {{ __('Глобальний пошук') }}
                         </a>
                         <a href="{{ route('compare') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">
-                            <span class="text-base">⚖️</span> {{ __('Порівняти моделі') }}
+                            <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                            {{ __('Порівняти моделі') }}
                         </a>
                     </div>
                 </div>
@@ -238,10 +243,22 @@
 
             <div class="my-2 border-t border-white/[0.06] pt-2">
                 <p class="mb-1 px-4 text-[10px] font-black uppercase tracking-widest text-zinc-600">Спільнота</p>
-                <a href="{{ route('makes.gallery') }}" class="rounded-xl px-4 py-2.5 text-sm text-zinc-300 transition hover:bg-white/[0.06] hover:text-white flex items-center gap-2">📸 {{ __('Галерея друків') }}</a>
-                <a href="{{ route('challenges.index') }}" class="rounded-xl px-4 py-2.5 text-sm text-zinc-300 transition hover:bg-white/[0.06] hover:text-white flex items-center gap-2">🏆 {{ __('Челенджі') }}</a>
-                <a href="{{ route('leaderboard') }}" class="rounded-xl px-4 py-2.5 text-sm text-zinc-300 transition hover:bg-white/[0.06] hover:text-white flex items-center gap-2">🏅 {{ __('Рейтинг авторів') }}</a>
-                <a href="{{ route('compare') }}" class="rounded-xl px-4 py-2.5 text-sm text-zinc-300 transition hover:bg-white/[0.06] hover:text-white flex items-center gap-2">⚖️ {{ __('Порівняти') }}</a>
+                <a href="{{ route('makes.gallery') }}" class="rounded-xl px-4 py-2.5 text-sm text-zinc-300 transition hover:bg-white/[0.06] hover:text-white flex items-center gap-2.5">
+                    <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    {{ __('Галерея друків') }}
+                </a>
+                <a href="{{ route('challenges.index') }}" class="rounded-xl px-4 py-2.5 text-sm text-zinc-300 transition hover:bg-white/[0.06] hover:text-white flex items-center gap-2.5">
+                    <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+                    {{ __('Челенджі') }}
+                </a>
+                <a href="{{ route('leaderboard') }}" class="rounded-xl px-4 py-2.5 text-sm text-zinc-300 transition hover:bg-white/[0.06] hover:text-white flex items-center gap-2.5">
+                    <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                    {{ __('Рейтинг авторів') }}
+                </a>
+                <a href="{{ route('compare') }}" class="rounded-xl px-4 py-2.5 text-sm text-zinc-300 transition hover:bg-white/[0.06] hover:text-white flex items-center gap-2.5">
+                    <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    {{ __('Порівняти') }}
+                </a>
             </div>
 
             <a href="{{ auth()->check() ? route('author.products.create') : route('register') }}" class="mt-2 inline-flex items-center justify-center rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-bold text-zinc-950 transition hover:bg-emerald-300">{{ __('Продати модель') }}</a>
@@ -249,7 +266,7 @@
             @auth
                 <div class="my-2 border-t border-white/[0.06] pt-2">
                     <p class="mb-1 px-4 text-[10px] font-black uppercase tracking-widest text-zinc-600">Мій акаунт</p>
-                    <a href="{{ route('library') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">📦 {{ __('Бібліотека') }}</a>
+                    <a href="{{ route('library') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">{{ __('Бібліотека') }}</a>
                     <a href="{{ route('dashboard') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">{{ __('Покупки') }}</a>
                     <a href="{{ route('author.products.index') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">{{ __('Мої моделі') }}</a>
                     <a href="{{ route('referral') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">{{ __('Реферальна програма') }}</a>
