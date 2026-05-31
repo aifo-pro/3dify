@@ -6,8 +6,8 @@
         <div class="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
             <h1 class="mb-6 text-center text-3xl font-black text-white sm:text-4xl">Пошук по 3Dify</h1>
             <form method="GET" action="{{ route('search') }}">
-                <div class="relative">
-                    <svg class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500"
+                <div class="flex items-center gap-2 rounded-2xl border border-white/10 bg-zinc-900/80 px-4 focus-within:border-emerald-400/50 focus-within:ring-2 focus-within:ring-emerald-400/20 transition">
+                    <svg class="h-5 w-5 shrink-0 text-zinc-500"
                          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -18,10 +18,10 @@
                         autofocus
                         autocomplete="off"
                         placeholder="Моделі, автори, статті…"
-                        class="h-14 w-full rounded-2xl border border-white/10 bg-zinc-900/80 pl-12 pr-32 text-base text-white placeholder:text-zinc-500 focus:border-emerald-400/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/20"
+                        class="h-14 min-w-0 flex-1 bg-transparent text-base text-white placeholder:text-zinc-500 focus:outline-none"
                     >
                     <button type="submit"
-                            class="absolute right-2 top-2 h-10 rounded-xl bg-emerald-400 px-5 text-sm font-black text-zinc-950 transition hover:bg-emerald-300">
+                            class="shrink-0 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-black text-zinc-950 transition hover:bg-emerald-300">
                         Шукати
                     </button>
                 </div>
