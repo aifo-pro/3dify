@@ -205,13 +205,22 @@ class ProductController extends Controller
         $this->authorize('create', Product::class);
 
         $data = $this->validated($request);
-        $product = DB::transaction(function () use ($request, $data) {
-            $product = Product::create($this->productPayload($request, $data));
-            $this->syncTags($product, $request);
-            $this->storeFiles($product, $request);
+        $uploadedPaths = [];
+        try {
+            $product = DB::transaction(function () use ($request, $data, &$uploadedPaths) {
+                $payload = $this->productPayload($request, $data, null, $uploadedPaths);
+                $product = Product::create($payload);
+                $this->syncTags($product, $request);
+                $this->storeFiles($product, $request, $uploadedPaths);
 
-            return $product;
-        });
+                return $product;
+            });
+        } catch (\Throwable $e) {
+            foreach ($uploadedPaths as [$disk, $path]) {
+                Storage::disk($disk)->delete($path);
+            }
+            throw $e;
+        }
 
         return redirect()->route('author.products.edit', $product)->with('status', 'Модель збережено та відправлено на модерацію.');
     }
@@ -233,11 +242,19 @@ class ProductController extends Controller
         $this->authorize('update', $product);
 
         $data = $this->validated($request);
-        DB::transaction(function () use ($request, $product, $data) {
-            $product->update($this->productPayload($request, $data, $product));
-            $this->syncTags($product, $request);
-            $this->storeFiles($product, $request);
-        });
+        $uploadedPaths = [];
+        try {
+            DB::transaction(function () use ($request, $product, $data, &$uploadedPaths) {
+                $product->update($this->productPayload($request, $data, $product, $uploadedPaths));
+                $this->syncTags($product, $request);
+                $this->storeFiles($product, $request, $uploadedPaths);
+            });
+        } catch (\Throwable $e) {
+            foreach ($uploadedPaths as [$disk, $path]) {
+                Storage::disk($disk)->delete($path);
+            }
+            throw $e;
+        }
 
         return back()->with('status', 'Модель оновлено.');
     }
@@ -298,7 +315,7 @@ class ProductController extends Controller
         ]);
     }
 
-    private function productPayload(Request $request, array $data, ?Product $product = null): array
+    private function productPayload(Request $request, array $data, ?Product $product = null, array &$uploadedPaths = []): array
     {
         $titleEn = $data['title_en'] ?? null;
         $shortDescriptionUk = $data['short_description_uk'] ?? '';
@@ -306,6 +323,7 @@ class ProductController extends Controller
         $cover = $product?->cover_path;
         if ($request->hasFile('cover')) {
             $cover = $request->file('cover')->store('covers', 'public');
+            $uploadedPaths[] = ['public', $cover];
         }
         $gallery = array_values(array_filter((array) ($product?->gallery ?? [])));
         $removeGallery = collect((array) $request->input('gallery_remove', []))
@@ -324,7 +342,9 @@ class ProductController extends Controller
         $gallery = array_values($gallery);
 
         foreach ((array) $request->file('gallery', []) as $image) {
-            $gallery[] = $image->store('gallery', 'public');
+            $path = $image->store('gallery', 'public');
+            $gallery[] = $path;
+            $uploadedPaths[] = ['public', $path];
         }
         if (! $cover && count($gallery) > 0) {
             $cover = $gallery[0];
@@ -347,6 +367,7 @@ class ProductController extends Controller
             }
             $printProfilePath = $pp->store('print-profiles/'.($product?->id ?? 'new'), 'private');
             $printProfileName = $pp->getClientOriginalName();
+            $uploadedPaths[] = ['private', $printProfilePath];
         }
 
         $settings = array_filter((array) ($data['print_profile_settings'] ?? []), fn ($v) => filled($v));
@@ -397,15 +418,17 @@ class ProductController extends Controller
         $product->tags()->sync($request->input('tags', []));
     }
 
-    private function storeFiles(Product $product, Request $request): void
+    private function storeFiles(Product $product, Request $request, array &$uploadedPaths = []): void
     {
         foreach ((array) $request->file('files', []) as $file) {
             $extension = strtolower($file->getClientOriginalExtension());
             abort_unless(in_array($extension, ModelFile::ALLOWED_EXTENSIONS, true), 422, 'Unsupported file type.');
+            $path = $file->store('models/'.$product->id, 'private');
+            $uploadedPaths[] = ['private', $path];
             $product->files()->create([
                 'type' => 'source',
                 'disk' => 'private',
-                'path' => $file->store('models/'.$product->id, 'private'),
+                'path' => $path,
                 'original_name' => $file->getClientOriginalName(),
                 'extension' => $extension,
                 'size' => $file->getSize(),
@@ -417,11 +440,13 @@ class ProductController extends Controller
             $extension = strtolower($file->getClientOriginalExtension());
             $allowedPreview = ['glb', 'gltf', 'obj', 'stl', 'gif', 'png', 'jpg', 'jpeg', 'webp'];
             abort_unless(in_array($extension, $allowedPreview, true), 422, 'Unsupported preview file type.');
+            $path = $file->store('previews/'.$product->id, 'public');
+            $uploadedPaths[] = ['public', $path];
             $product->files()->where('is_preview', true)->update(['is_preview' => false]);
             $product->files()->create([
                 'type' => 'preview',
                 'disk' => 'public',
-                'path' => $file->store('previews/'.$product->id, 'public'),
+                'path' => $path,
                 'original_name' => $file->getClientOriginalName(),
                 'extension' => $extension,
                 'size' => $file->getSize(),

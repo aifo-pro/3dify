@@ -8,16 +8,16 @@ use App\Models\Product;
 use App\Models\ProductAccessEvent;
 use App\Models\User;
 use App\Services\MarketplaceAccess;
+use App\Services\ModelDownloadBundler;
 use App\Services\ProductAccessLogger;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class DownloadController extends Controller
 {
     /**
      * Authenticated direct download. Re-checks access via MarketplaceAccess.
      */
-    public function __invoke(Product $product, ModelFile $file, MarketplaceAccess $access, ProductAccessLogger $logger)
+    public function __invoke(Product $product, ModelFile $file, MarketplaceAccess $access, ProductAccessLogger $logger, ModelDownloadBundler $bundler)
     {
         abort_unless($file->product_id === $product->id, 404);
         abort_unless($access->canDownload(auth()->user(), $product), 403);
@@ -25,19 +25,14 @@ class DownloadController extends Controller
         $this->logDownload($product, $file, auth()->id());
         $logger->log($product, auth()->user(), ProductAccessEvent::EVENT_DOWNLOAD, $file);
 
-        return Storage::disk($file->disk)->download($file->path, $file->original_name);
+        return $bundler->download($product, $file);
     }
 
     /**
      * Signed download endpoint used by slicer custom-protocol opens.
-     * The signed URL is generated server-side for users with confirmed access
-     * and expires in 5 minutes; the slicer process can fetch it without the
-     * browser's auth session.
      */
-    public function signed(Request $request, Product $product, ModelFile $file, MarketplaceAccess $access, ProductAccessLogger $logger)
+    public function signed(Request $request, Product $product, ModelFile $file, MarketplaceAccess $access, ProductAccessLogger $logger, ModelDownloadBundler $bundler)
     {
-        // The 'signed' middleware already validated signature/expiry before
-        // reaching the controller; double-check the file belongs to product.
         abort_unless($file->product_id === $product->id, 404);
 
         $userId = (int) $request->query('uid') ?: null;
@@ -54,7 +49,7 @@ class DownloadController extends Controller
             $request->query('via') ?: 'signed-url'
         );
 
-        return Storage::disk($file->disk)->download($file->path, $file->original_name);
+        return $bundler->download($product, $file);
     }
 
     private function logDownload(Product $product, ModelFile $file, ?int $userId): void

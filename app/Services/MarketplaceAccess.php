@@ -14,6 +14,10 @@ class MarketplaceAccess
             return false;
         }
 
+        if ($user->is_suspended) {
+            return false;
+        }
+
         if ($product->is_free || $product->user_id === $user->id || $user->canModerate()) {
             return true;
         }

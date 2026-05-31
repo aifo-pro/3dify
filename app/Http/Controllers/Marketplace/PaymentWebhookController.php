@@ -13,6 +13,7 @@ use App\Services\AifoPaymentService;
 use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class PaymentWebhookController extends Controller
@@ -59,13 +60,25 @@ class PaymentWebhookController extends Controller
                 $candidates[] = hash('sha256', "{$shopId}:{$sumString}:{$secret}:{$orderReference}");
             }
 
-            abort_unless(collect($candidates)->contains(fn ($expected) => hash_equals($expected, (string) $directSignature)), 403);
+            if (! collect($candidates)->contains(fn ($expected) => hash_equals($expected, (string) $directSignature))) {
+                Log::warning('AIFO webhook: invalid direct signature', [
+                    'ip' => $request->ip(),
+                    'invoice' => $invoice,
+                ]);
+                abort(403);
+            }
 
             return;
         }
 
         $expected = hash_hmac('sha256', $request->getContent(), $secret);
-        abort_unless(hash_equals($expected, (string) $request->header('X-Aifo-Signature')), 403);
+        if (! hash_equals($expected, (string) $request->header('X-Aifo-Signature'))) {
+            Log::warning('AIFO webhook: invalid HMAC signature', [
+                'ip' => $request->ip(),
+                'path' => $request->path(),
+            ]);
+            abort(403);
+        }
     }
 
     private function referenceFromRequest(Request $request): ?string

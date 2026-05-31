@@ -75,7 +75,7 @@ Route::get('/models/{product:slug}/embed', [ProductController::class, 'embed'])-
 Route::get('/models/{product:slug}/tip', [TipController::class, 'redirect'])->name('products.tip.redirect');
 
 // Public report submit (anonymous allowed) — auth optional, captured if present.
-Route::post('/models/{product:slug}/report', [ReportController::class, 'store'])->name('products.report');
+Route::post('/models/{product:slug}/report', [ReportController::class, 'store'])->middleware('throttle:5,10')->name('products.report');
 
 // Public authors directory and profiles.
 Route::get('/authors', [AuthorController::class, 'index'])->name('authors.index');
@@ -116,7 +116,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::post('/checkout/{product:slug}', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::post('/checkout/{product:slug}', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('checkout.store');
     Route::get('/checkout/{order}/success', [CheckoutController::class, 'success'])->name('checkout.success');
     Route::get('/checkout/{order}/failed', [CheckoutController::class, 'failed'])->name('checkout.failed');
     Route::post('/checkout/{order}/demo-confirm', [CheckoutController::class, 'demoConfirm'])->name('checkout.demo-confirm');

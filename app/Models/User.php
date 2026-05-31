@@ -153,7 +153,7 @@ class User extends Authenticatable
         }
 
         if (str_starts_with($this->avatar_path, 'http://') || str_starts_with($this->avatar_path, 'https://')) {
-            return null;
+            return $this->avatar_path;
         }
 
         return Storage::disk('public')->url($this->avatar_path);

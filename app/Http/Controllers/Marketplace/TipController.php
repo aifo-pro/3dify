@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Marketplace;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Tip;
-use App\Models\TipPayment;
 use App\Services\AifoPaymentService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -16,20 +15,7 @@ class TipController extends Controller
 {
     public function redirect(Product $product)
     {
-        try {
-            return redirect()->route('products.show', $product);
-        } catch (\Throwable $e) {
-            try {
-                Log::error('Tip shortcut redirect failed', [
-                    'product_id' => $product->id,
-                    'message' => $e->getMessage(),
-                ]);
-            } catch (\Throwable) {
-            }
-            error_log('[3dify-tip-redirect] '.$e->getMessage());
-
-            return redirect()->route('products.index');
-        }
+        return redirect()->route('products.show', $product);
     }
 
     public function store(Request $request, Product $product, AifoPaymentService $payments)
@@ -108,44 +94,19 @@ class TipController extends Controller
 
             return redirect()->away($checkoutUrl);
         } catch (\Throwable $e) {
-            try {
-                Log::error('Tip checkout failed', [
-                    'product_id' => $product->id,
-                    'tip_id' => $tip?->id,
-                    'message' => $e->getMessage(),
-                    'exception' => $e::class,
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                ]);
-            } catch (\Throwable) {
-                // Avoid secondary 500 if logging path is not writable.
-            }
+            Log::error('Tip checkout failed', [
+                'product_id' => $product->id,
+                'tip_id' => $tip?->id,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+            report($e);
 
-            try {
-                report($e);
-            } catch (\Throwable) {
-            }
-
-            error_log(sprintf(
-                '[3dify-tip] %s: %s @ %s:%d',
-                $e::class,
-                $e->getMessage(),
-                $e->getFile(),
-                $e->getLine()
-            ));
-
-            try {
-                if ($tipPayment instanceof TipPayment) {
-                    $tipPayment->delete();
-                }
-            } catch (\Throwable) {
-            }
-
-            try {
-                if ($tip instanceof Tip && $tip->exists) {
-                    $tip->delete();
-                }
-            } catch (\Throwable) {
+            $tipPayment?->delete();
+            if ($tip instanceof Tip && $tip->exists) {
+                $tip->delete();
             }
 
             $userError = __('Тимчасова помилка при оплаті подяки. Якщо вона повторюється, перевірте лог сервера та міграції бази (таблиці tips / tip_payments).');
@@ -157,18 +118,9 @@ class TipController extends Controller
                 $userError .= ' '.Str::limit('['.$e::class.'] '.$e->getMessage(), 400);
             }
 
-            try {
-                return redirect()
-                    ->route('products.show', $product)
-                    ->with('error', $userError);
-            } catch (\Throwable $redirectException) {
-                error_log('[3dify-tip] redirect failed: '.$redirectException->getMessage());
-
-                return response(
-                    __('Тимчасова помилка сервера. Перевірте права на storage/logs та php artisan migrate.'),
-                    503
-                );
-            }
+            return redirect()
+                ->route('products.show', $product)
+                ->with('error', $userError);
         }
     }
 

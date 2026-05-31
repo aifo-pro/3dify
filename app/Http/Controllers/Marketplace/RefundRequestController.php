@@ -28,13 +28,15 @@ class RefundRequestController extends Controller
     {
         abort_unless($order->user_id === $request->user()->id, 403);
 
-        // Only paid orders within 14 days are eligible.
+        $refundWindowDays = (int) config('marketplace.refund_window_days', 14);
+
+        // Only paid orders within the refund window are eligible.
         if ($order->status !== 'paid') {
             return back()->withErrors(['order' => __('Повернути можна лише оплачене замовлення.')]);
         }
         $paidAt = $order->updated_at ?? $order->created_at;
-        if ($paidAt && $paidAt->diffInDays(now()) > 14) {
-            return back()->withErrors(['order' => __('Повернення можливе протягом 14 днів після оплати.')]);
+        if ($paidAt && $paidAt->diffInDays(now()) > $refundWindowDays) {
+            return back()->withErrors(['order' => __('Повернення можливе протягом :days днів після оплати.', ['days' => $refundWindowDays])]);
         }
 
         $exists = RefundRequest::query()
