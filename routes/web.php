@@ -32,6 +32,8 @@ use App\Http\Controllers\Marketplace\BlogController;
 use App\Http\Controllers\Marketplace\BlogFeedController;
 use App\Http\Controllers\Marketplace\BlogSitemapController;
 use App\Http\Controllers\Marketplace\BlogSubscriptionController;
+use App\Http\Controllers\Admin\AdvertisementController;
+use App\Http\Controllers\Marketplace\AdClickController;
 use App\Http\Controllers\Marketplace\BulkDownloadController;
 use App\Http\Controllers\Marketplace\BundleController;
 use App\Http\Controllers\Marketplace\CheckoutController;
@@ -82,6 +84,8 @@ Route::redirect('/catalog', '/models')->name('catalog');
 Route::get('/models', [ProductController::class, 'index'])->name('products.index');
 Route::get('/bundles/{bundle:slug}', [BundleController::class, 'show'])->name('bundles.show');
 Route::get('/makes', MakesGalleryController::class)->name('makes.gallery');
+Route::get('/ads/{ad}/click', [AdClickController::class, 'click'])->name('ads.click');
+Route::post('/ads/{ad}/impression', [AdClickController::class, 'impression'])->name('ads.impression');
 Route::get('/search', SearchController::class)->name('search');
 Route::get('/compare', [CompareController::class, 'show'])->name('compare');
 Route::get('/leaderboard', LeaderboardController::class)->name('leaderboard');
@@ -381,6 +385,15 @@ Route::middleware(['auth', 'role:admin,moderator'])->prefix('admin')->name('admi
 
     // Analytics
     Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics');
+
+    // Advertisements
+    Route::get('/ads', [AdvertisementController::class, 'index'])->name('ads.index');
+    Route::get('/ads/create', [AdvertisementController::class, 'create'])->name('ads.create');
+    Route::post('/ads', [AdvertisementController::class, 'store'])->name('ads.store');
+    Route::get('/ads/{ad}/edit', [AdvertisementController::class, 'edit'])->name('ads.edit');
+    Route::put('/ads/{ad}', [AdvertisementController::class, 'update'])->name('ads.update');
+    Route::delete('/ads/{ad}', [AdvertisementController::class, 'destroy'])->name('ads.destroy');
+    Route::patch('/ads/{ad}/toggle', [AdvertisementController::class, 'toggle'])->name('ads.toggle');
 
     // Print Challenges
     Route::get('/challenges', [PrintChallengeAdminController::class, 'index'])->name('challenges.index');

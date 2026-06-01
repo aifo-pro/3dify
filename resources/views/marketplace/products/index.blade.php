@@ -221,9 +221,16 @@
                     <p class="text-sm text-zinc-400">{{ __('Знайдено') }}: <strong class="text-white">{{ $products->total() }}</strong></p>
                 </div>
                 @if($products->isNotEmpty())
+                    @php
+                        $gridItems = app(\App\Services\AdInjector::class)->injectIntoGrid($products->items(), 'catalog');
+                    @endphp
                     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-                        @foreach($products as $product)
-                            <x-ui.model-card :product="$product" />
+                        @foreach($gridItems as $item)
+                            @if($item instanceof \App\Models\Advertisement)
+                                <x-ui.ad-card :ad="$item" />
+                            @else
+                                <x-ui.model-card :product="$item" />
+                            @endif
                         @endforeach
                     </div>
                     <div class="mt-10">{{ $products->links() }}</div>

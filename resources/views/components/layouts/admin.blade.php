@@ -67,6 +67,9 @@
                 ['key' => 'promo-codes', 'label' => __('Промокоди'), 'href' => route('admin.promo-codes'), 'icon' => 'tag'],
                 ['key' => 'finance', 'label' => __('Тіпи'), 'href' => route('admin.tips'), 'icon' => 'card'],
                 ['key' => 'refunds', 'label' => __('Повернення'), 'href' => route('admin.refunds'), 'icon' => 'shield', 'badge' => $refundsBadge ?: null, 'badge_tone' => 'rose'],
+                ['key' => 'ads', 'label' => __('Реклама'), 'href' => route('admin.ads.index'), 'icon' => 'bell'],
+                ['key' => 'bundles', 'label' => __('Бандли'), 'href' => route('admin.bundles.index'), 'icon' => 'box'],
+                ['key' => 'challenges', 'label' => __('Челенджі'), 'href' => route('admin.challenges.index'), 'icon' => 'shield'],
             ],
         ],
         [
