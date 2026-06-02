@@ -87,6 +87,7 @@ return [
     ],
     'form' => [
         'task_details' => 'Task details',
+        'fix_errors' => 'Check the form fields',
         'order_title' => 'Order title',
         'description' => 'Description',
         'description_helper' => 'Describe the desired result, file format, references, dimensions, and constraints.',

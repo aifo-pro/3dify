@@ -45,7 +45,7 @@ class CustomOrderStoreRequest extends FormRequest
             'budget_amount' => ['nullable', 'numeric', 'min:0', 'max:999999'],
             'budget_is_negotiable' => ['nullable', 'boolean'],
             'deadline_at' => ['nullable', 'date', 'after_or_equal:today'],
-            'quantity' => ['nullable', 'required_if:type,'.CustomOrder::TYPE_PRINT_SERVICE, 'integer', 'min:1', 'max:10000'],
+            'quantity' => ['nullable', 'integer', 'min:1', 'max:10000'],
             'dimensions' => ['nullable', 'string', 'max:255'],
             'material' => ['nullable', 'string', 'max:120'],
             'color' => ['nullable', 'string', 'max:120'],

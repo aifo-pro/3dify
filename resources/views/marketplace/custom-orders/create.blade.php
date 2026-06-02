@@ -6,6 +6,24 @@
             <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">{{ __('custom_orders.create_hint') }}</p>
         </div>
 
+        @if ($errors->any())
+            <div class="mt-6 rounded-3xl border border-rose-300/25 bg-rose-300/[0.08] p-5 shadow-2xl shadow-black/20">
+                <div class="flex gap-3">
+                    <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-rose-300/25 bg-rose-300/[0.10] text-rose-100">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                    </span>
+                    <div>
+                        <p class="font-black text-rose-50">{{ __('custom_orders.form.fix_errors') }}</p>
+                        <ul class="mt-2 grid gap-1 text-sm leading-6 text-rose-100/90">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <form
             method="POST"
             action="{{ route('custom-orders.store') }}"
@@ -22,14 +40,14 @@
                 <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
                     <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.task_details') }}</h2>
                     <div class="mt-5 grid gap-4">
-                        <x-admin.field name="title" :label="__('custom_orders.form.order_title')" :value="old('title')" required />
-                        <x-admin.field name="description" as="textarea" rows="8" :label="__('custom_orders.form.description')" :value="old('description')" required :helper="__('custom_orders.form.description_helper')" />
+                        <x-admin.field name="title" :label="__('custom_orders.form.order_title')" :value="old('title')" :error="$errors->first('title')" required />
+                        <x-admin.field name="description" as="textarea" rows="8" :label="__('custom_orders.form.description')" :value="old('description')" :error="$errors->first('description')" required :helper="__('custom_orders.form.description_helper')" />
                         <div class="grid gap-4 md:grid-cols-2">
-                            <x-admin.field name="type" as="select" :label="__('custom_orders.form.type')" x-model="type" required>
+                            <x-admin.field name="type" as="select" :label="__('custom_orders.form.type')" :error="$errors->first('type')" x-model="type" required>
                                 <option value="model_creation" @selected(old('type') === 'model_creation')>{{ __('custom_orders.types.model_creation') }}</option>
                                 <option value="print_service" @selected(old('type') === 'print_service')>{{ __('custom_orders.types.print_service') }}</option>
                             </x-admin.field>
-                            <x-admin.field name="category_id" as="select" :label="__('custom_orders.form.category')">
+                            <x-admin.field name="category_id" as="select" :label="__('custom_orders.form.category')" :error="$errors->first('category_id')">
                                 <option value="">{{ __('custom_orders.form.not_selected') }}</option>
                                 @foreach($categories as $category)
                                     <option value="{{ $category->id }}" @selected((string) old('category_id') === (string) $category->id)>{{ $category->localized('name') ?: $category->slug }}</option>
@@ -42,8 +60,8 @@
                 <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
                     <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.budget_deadline') }}</h2>
                     <div class="mt-5 grid gap-4 md:grid-cols-2">
-                        <x-admin.field name="budget_amount" type="number" step="0.01" min="0" :label="__('custom_orders.form.budget_uah')" :value="old('budget_amount')" />
-                        <x-admin.field name="deadline_at" type="date" :label="__('custom_orders.form.deadline')" :value="old('deadline_at')" />
+                        <x-admin.field name="budget_amount" type="number" step="0.01" min="0" :label="__('custom_orders.form.budget_uah')" :value="old('budget_amount')" :error="$errors->first('budget_amount')" />
+                        <x-admin.field name="deadline_at" type="date" :label="__('custom_orders.form.deadline')" :value="old('deadline_at')" :error="$errors->first('deadline_at')" />
                     </div>
                     <label class="mt-4 flex items-start gap-3 rounded-2xl border border-white/10 bg-zinc-950/50 p-4">
                         <input type="hidden" name="budget_is_negotiable" value="0">
@@ -58,10 +76,10 @@
                 <div x-show="isPrint" x-cloak x-transition style="display: none;" class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
                     <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.print_settings') }}</h2>
                     <div class="mt-5 grid gap-4 md:grid-cols-2">
-                        <x-admin.field name="quantity" type="number" min="1" :label="__('custom_orders.form.quantity')" :value="old('quantity')" x-bind:required="isPrint" />
-                        <x-admin.field name="dimensions" :label="__('custom_orders.form.dimensions')" :value="old('dimensions')" :placeholder="__('custom_orders.form.dimensions_placeholder')" />
-                        <x-admin.field name="material" :label="__('custom_orders.form.material')" :value="old('material')" placeholder="PLA, PETG, resin..." />
-                        <x-admin.field name="color" :label="__('custom_orders.form.color')" :value="old('color')" />
+                        <x-admin.field name="quantity" type="number" min="1" :label="__('custom_orders.form.quantity')" :value="old('quantity')" :error="$errors->first('quantity')" />
+                        <x-admin.field name="dimensions" :label="__('custom_orders.form.dimensions')" :value="old('dimensions')" :error="$errors->first('dimensions')" :placeholder="__('custom_orders.form.dimensions_placeholder')" />
+                        <x-admin.field name="material" :label="__('custom_orders.form.material')" :value="old('material')" :error="$errors->first('material')" placeholder="PLA, PETG, resin..." />
+                        <x-admin.field name="color" :label="__('custom_orders.form.color')" :value="old('color')" :error="$errors->first('color')" />
                     </div>
                 </div>
 
@@ -69,6 +87,12 @@
                     <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.files_refs') }}</h2>
                     <p class="mt-2 text-sm text-zinc-400" x-text="isPrint ? @js(__('custom_orders.form.files_helper_print')) : @js(__('custom_orders.form.files_helper_model'))"></p>
                     <input type="file" name="files[]" multiple class="mt-5 block w-full rounded-2xl border border-white/10 bg-zinc-950/70 px-4 py-4 text-sm text-zinc-300 file:mr-4 file:rounded-xl file:border-0 file:bg-emerald-400 file:px-4 file:py-2 file:text-sm file:font-black file:text-zinc-950">
+                    @error('files')
+                        <p class="mt-2 text-xs text-rose-300">{{ $message }}</p>
+                    @enderror
+                    @error('files.*')
+                        <p class="mt-2 text-xs text-rose-300">{{ $message }}</p>
+                    @enderror
                 </div>
             </div>
 
