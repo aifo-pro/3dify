@@ -58,6 +58,16 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
+    public function customOrders()
+    {
+        return $this->hasMany(CustomOrder::class, 'buyer_id');
+    }
+
+    public function authoredCustomOrders()
+    {
+        return $this->hasMany(CustomOrder::class, 'author_id');
+    }
+
     /**
      * Users that follow this user (this user is the author).
      */

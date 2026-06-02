@@ -149,6 +149,19 @@
                     <div class="flex flex-wrap items-center gap-2 sm:self-end">
                         <x-ui.follow-button :author="$author" :is-following="$isFollowing" :is-self="$isSelf" size="lg" />
 
+                        @if(! $isSelf)
+                            @auth
+                                <a href="{{ route('custom-orders.create', ['author' => $authorKey]) }}" class="inline-flex h-11 items-center gap-1.5 rounded-xl bg-emerald-400 px-5 text-sm font-black text-zinc-950 shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-300">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                                    {{ __('custom_orders.new_order') }}
+                                </a>
+                            @else
+                                <a href="{{ route('login') }}" class="inline-flex h-11 items-center gap-1.5 rounded-xl bg-emerald-400 px-5 text-sm font-black text-zinc-950 shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-300">
+                                    {{ __('custom_orders.new_order') }}
+                                </a>
+                            @endauth
+                        @endif
+
                         @if(! $isSelf && $author->contact_enabled)
                             @auth
                                 <button type="button" onclick="window.dispatchEvent(new CustomEvent('open-contact-modal', { detail: { action: '{{ $contactAction }}', author: {{ json_encode($author->displayName()) }} } }))" class="inline-flex h-11 items-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.05] px-5 text-sm font-bold text-white transition hover:border-emerald-300/40 hover:bg-emerald-300/[0.10]">

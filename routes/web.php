@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\BlogTaxonomyController;
 use App\Http\Controllers\Admin\BulkActionController;
 use App\Http\Controllers\Admin\BundleAdminController;
 use App\Http\Controllers\Admin\ContentController;
+use App\Http\Controllers\Admin\CustomOrderAdminController;
 use App\Http\Controllers\Admin\PrintChallengeAdminController;
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\FeaturedProductsController;
@@ -38,6 +39,7 @@ use App\Http\Controllers\Marketplace\BulkDownloadController;
 use App\Http\Controllers\Marketplace\BundleController;
 use App\Http\Controllers\Marketplace\CheckoutController;
 use App\Http\Controllers\Marketplace\CompareController;
+use App\Http\Controllers\Marketplace\CustomOrderController;
 use App\Http\Controllers\Marketplace\LeaderboardController;
 use App\Http\Controllers\Marketplace\MakesGalleryController;
 use App\Http\Controllers\Marketplace\PrintChallengeController;
@@ -227,6 +229,19 @@ Route::middleware('auth')->group(function () {
     // Account balance from refunds and checkout credits.
     Route::get('/balance', BalanceController::class)->name('balance.index');
 
+    // Custom author services: model creation, print jobs, escrow workflow and protected chat.
+    Route::get('/custom-orders', [CustomOrderController::class, 'index'])->name('custom-orders.index');
+    Route::get('/custom-orders/create', [CustomOrderController::class, 'create'])->name('custom-orders.create');
+    Route::post('/custom-orders', [CustomOrderController::class, 'store'])->name('custom-orders.store');
+    Route::get('/custom-orders/{customOrder}', [CustomOrderController::class, 'show'])->name('custom-orders.show');
+    Route::post('/custom-orders/{customOrder}/messages', [CustomOrderController::class, 'message'])->name('custom-orders.messages.store');
+    Route::post('/custom-orders/{customOrder}/offer', [CustomOrderController::class, 'offer'])->name('custom-orders.offer');
+    Route::post('/custom-orders/{customOrder}/accept', [CustomOrderController::class, 'accept'])->name('custom-orders.accept');
+    Route::post('/custom-orders/{customOrder}/demo-pay', [CustomOrderController::class, 'demoPay'])->name('custom-orders.demo-pay');
+    Route::post('/custom-orders/{customOrder}/ship', [CustomOrderController::class, 'ship'])->name('custom-orders.ship');
+    Route::post('/custom-orders/{customOrder}/complete', [CustomOrderController::class, 'complete'])->name('custom-orders.complete');
+    Route::post('/custom-orders/{customOrder}/dispute', [CustomOrderController::class, 'dispute'])->name('custom-orders.dispute');
+
     // Author follow / unfollow / contact.
     Route::post('/authors/{user}/follow', [AuthorFollowController::class, 'store'])->name('authors.follow');
     Route::delete('/authors/{user}/follow', [AuthorFollowController::class, 'destroy'])->name('authors.unfollow');
@@ -255,6 +270,9 @@ Route::middleware(['auth', 'role:admin,moderator'])->prefix('admin')->name('admi
     Route::patch('/products/{product}/moderate', [AdminController::class, 'moderate'])->name('products.moderate');
     Route::get('/orders', [AdminController::class, 'orders'])->name('orders');
     Route::get('/payments', [AdminController::class, 'payments'])->name('payments');
+    Route::get('/custom-orders', [CustomOrderAdminController::class, 'index'])->name('custom-orders.index');
+    Route::get('/custom-orders/{customOrder}', [CustomOrderAdminController::class, 'show'])->name('custom-orders.show');
+    Route::patch('/custom-orders/{customOrder}', [CustomOrderAdminController::class, 'update'])->name('custom-orders.update');
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/blog', [AdminBlogPostController::class, 'index'])->name('blog.index');

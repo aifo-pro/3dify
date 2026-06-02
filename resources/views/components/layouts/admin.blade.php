@@ -62,6 +62,7 @@
             'label' => __('Комерція'),
             'items' => [
                 ['key' => 'orders', 'label' => __('Замовлення'), 'href' => route('admin.orders'), 'icon' => 'bag'],
+                ['key' => 'custom-orders', 'label' => __('Custom orders'), 'href' => route('admin.custom-orders.index'), 'icon' => 'bag'],
                 ['key' => 'payments', 'label' => __('Платежі'), 'href' => route('admin.payments'), 'icon' => 'card'],
                 ['key' => 'payouts', 'label' => __('Виплати'), 'href' => route('admin.payouts'), 'icon' => 'card'],
                 ['key' => 'promo-codes', 'label' => __('Промокоди'), 'href' => route('admin.promo-codes'), 'icon' => 'tag'],

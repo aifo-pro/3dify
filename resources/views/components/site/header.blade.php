@@ -140,6 +140,10 @@
                                 <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
                                 {{ __('Покупки') }}
                             </a>
+                            <a href="{{ route('custom-orders.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">
+                                <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                                {{ __('custom_orders.orders') }}
+                            </a>
                             <a href="{{ route('wishlist.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">
                                 <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                                 {{ __('Обране') }}
@@ -268,6 +272,7 @@
                     <p class="mb-1 px-4 text-[10px] font-black uppercase tracking-widest text-zinc-600">Мій акаунт</p>
                     <a href="{{ route('library') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">{{ __('Бібліотека') }}</a>
                     <a href="{{ route('dashboard') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">{{ __('Покупки') }}</a>
+                    <a href="{{ route('custom-orders.index') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">{{ __('custom_orders.orders') }}</a>
                     <a href="{{ route('author.products.index') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">{{ __('Мої моделі') }}</a>
                     <a href="{{ route('referral') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">{{ __('Реферальна програма') }}</a>
                     <a href="{{ route('balance.index') }}" class="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.06] hover:text-white">{{ __('Баланс') }}</a>
