@@ -3,7 +3,17 @@
     $isBuyer = $user->id === $order->buyer_id;
     $isAuthor = $user->id === $order->author_id;
     $isStaff = $user->canModerate();
-    $canOffer = $isAuthor || $isStaff;
+    $canOffer = ($isAuthor || $isStaff) && in_array($order->status, [
+        \App\Models\CustomOrder::STATUS_PENDING_REVIEW,
+        \App\Models\CustomOrder::STATUS_DISCUSSING,
+        \App\Models\CustomOrder::STATUS_WAITING_BUYER_ACCEPT,
+    ], true);
+    $canCancel = ($isBuyer || $isAuthor || $isStaff) && in_array($order->status, [
+        \App\Models\CustomOrder::STATUS_PENDING_REVIEW,
+        \App\Models\CustomOrder::STATUS_DISCUSSING,
+        \App\Models\CustomOrder::STATUS_WAITING_BUYER_ACCEPT,
+        \App\Models\CustomOrder::STATUS_WAITING_PAYMENT,
+    ], true);
     $isModelOrder = $order->isModelCreation();
     $isPrintOrder = $order->isPrintService();
     $canSelectDelivery = $isBuyer && $isPrintOrder && in_array($order->status, [\App\Models\CustomOrder::STATUS_WAITING_BUYER_ACCEPT, \App\Models\CustomOrder::STATUS_WAITING_PAYMENT], true);
@@ -266,7 +276,7 @@
                     </div>
                 </div>
 
-                @if($canOffer && ! in_array($order->status, [\App\Models\CustomOrder::STATUS_COMPLETED, \App\Models\CustomOrder::STATUS_CANCELLED, \App\Models\CustomOrder::STATUS_REFUNDED], true))
+                @if($canOffer)
                     <form method="POST" action="{{ route('custom-orders.offer', $order) }}" class="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
                         @csrf
                         <h3 class="font-black text-white">{{ __('custom_orders.offer') }}</h3>
@@ -297,10 +307,21 @@
                 @endif
 
                 @if($isBuyer && $order->canBePaid())
-                    <form method="POST" action="{{ route('custom-orders.demo-pay', $order) }}">
+                    <form method="POST" action="{{ route('custom-orders.pay', $order) }}">
                         @csrf
-                        <button class="h-12 w-full rounded-2xl bg-amber-300 text-sm font-black text-zinc-950">{{ __('custom_orders.mark_paid') }}</button>
+                        <button class="h-12 w-full rounded-2xl bg-amber-300 text-sm font-black text-zinc-950 shadow-lg shadow-amber-300/20">{{ __('custom_orders.go_to_payment') }}</button>
                     </form>
+                @endif
+
+                @if($canCancel)
+                    <details class="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+                        <summary class="cursor-pointer text-sm font-black text-zinc-200">{{ __('custom_orders.cancel_order') }}</summary>
+                        <form method="POST" action="{{ route('custom-orders.cancel', $order) }}" class="mt-4 grid gap-3">
+                            @csrf
+                            <x-admin.field name="reason" as="textarea" rows="3" :label="__('custom_orders.cancel_reason')" :placeholder="__('custom_orders.cancel_reason_placeholder')" />
+                            <button class="h-10 rounded-xl border border-rose-300/30 bg-rose-300/[0.10] text-sm font-black text-rose-100 transition hover:bg-rose-300/20">{{ __('custom_orders.cancel_order') }}</button>
+                        </form>
+                    </details>
                 @endif
 
                 @if($isAuthor && $isModelOrder && in_array($order->status, [\App\Models\CustomOrder::STATUS_IN_PROGRESS, \App\Models\CustomOrder::STATUS_PAID, \App\Models\CustomOrder::STATUS_DELIVERED], true))

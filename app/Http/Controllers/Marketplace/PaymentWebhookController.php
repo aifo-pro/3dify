@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Marketplace;
 use App\Http\Controllers\Controller;
 use App\Mail\PurchaseReceiptMail;
 use App\Mail\SaleNotificationMail;
+use App\Models\CustomOrder;
+use App\Models\CustomOrderPayment;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\TipPayment;
 use App\Notifications\NewTipNotification;
 use App\Services\AifoPaymentService;
 use App\Services\AuditLogger;
+use App\Services\CustomOrderService;
 use App\Services\ReferralService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,6 +33,11 @@ class PaymentWebhookController extends Controller
         $tipPayment = $this->resolveTipPayment($request);
         if ($tipPayment !== null) {
             return $this->handleTip($request, $payments, $tipPayment);
+        }
+
+        $customOrderPayment = $this->resolveCustomOrderPayment($request);
+        if ($customOrderPayment !== null) {
+            return $this->handleCustomOrder($request, $customOrderPayment);
         }
 
         $orderPayment = $this->resolveOrderPayment($request);
@@ -136,7 +144,7 @@ class PaymentWebhookController extends Controller
     private function resolveOrderPayment(Request $request): ?Payment
     {
         $externalId = $request->input('external_id');
-        if (is_string($externalId) && str_starts_with($externalId, 'TIP-')) {
+        if (is_string($externalId) && (str_starts_with($externalId, 'TIP-') || str_starts_with($externalId, 'CUS-'))) {
             return null;
         }
 
@@ -153,6 +161,29 @@ class PaymentWebhookController extends Controller
         }
 
         return Payment::where('provider_payment_id', $ref)->first();
+    }
+
+    private function resolveCustomOrderPayment(Request $request): ?CustomOrderPayment
+    {
+        $ref = $this->referenceFromRequest($request);
+        if ($ref === null) {
+            return null;
+        }
+
+        if (str_starts_with($ref, 'CUS-')) {
+            return CustomOrder::query()
+                ->where('number', $ref)
+                ->first()
+                ?->payments()
+                ->where('provider', 'aifo')
+                ->latest('id')
+                ->first();
+        }
+
+        return CustomOrderPayment::query()
+            ->where('provider', 'aifo')
+            ->where('provider_payment_id', $ref)
+            ->first();
     }
 
     private function handleTip(Request $request, AifoPaymentService $payments, TipPayment $payment): JsonResponse
@@ -187,6 +218,26 @@ class PaymentWebhookController extends Controller
 
             // Credit referral reward if applicable
             app(ReferralService::class)->creditReferrer($payment->order);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    private function handleCustomOrder(Request $request, CustomOrderPayment $payment): JsonResponse
+    {
+        $order = $payment->customOrder;
+
+        if ($payment->status !== 'paid' && $order && $order->canBePaid()) {
+            app(CustomOrderService::class)->markPaid($order, $order->buyer, $payment->provider_payment_id, [
+                'aifo_webhook' => $request->all(),
+                'marked_paid_from_webhook' => true,
+            ]);
+
+            app(AuditLogger::class)->record('custom_order.webhook_paid', $order, [
+                'custom_order_id' => $order->id,
+                'amount' => $payment->amount,
+                'currency' => $payment->currency,
+            ]);
         }
 
         return response()->json(['ok' => true]);

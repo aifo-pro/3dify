@@ -246,7 +246,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/custom-orders/{customOrder}/offer', [CustomOrderController::class, 'offer'])->name('custom-orders.offer');
     Route::post('/custom-orders/{customOrder}/delivery', [CustomOrderController::class, 'delivery'])->name('custom-orders.delivery');
     Route::post('/custom-orders/{customOrder}/accept', [CustomOrderController::class, 'accept'])->name('custom-orders.accept');
+    Route::post('/custom-orders/{customOrder}/pay', [CustomOrderController::class, 'pay'])->name('custom-orders.pay');
     Route::post('/custom-orders/{customOrder}/demo-pay', [CustomOrderController::class, 'demoPay'])->name('custom-orders.demo-pay');
+    Route::post('/custom-orders/{customOrder}/cancel', [CustomOrderController::class, 'cancel'])->name('custom-orders.cancel');
     Route::get('/custom-orders/{customOrder}/messages', [CustomOrderController::class, 'messages'])->name('custom-orders.messages.index');
     Route::post('/custom-orders/{customOrder}/result', [CustomOrderController::class, 'result'])->name('custom-orders.result');
     Route::get('/custom-orders/{customOrder}/files/{file}/download', [CustomOrderController::class, 'downloadFile'])->name('custom-orders.files.download');

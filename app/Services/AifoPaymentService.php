@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Setting;
+use App\Models\CustomOrder;
+use App\Models\CustomOrderPayment;
 use App\Models\Tip;
 use App\Models\TipPayment;
 use Illuminate\Http\Client\Response;
@@ -394,6 +396,96 @@ class AifoPaymentService
         }
 
         return $payment;
+    }
+
+    public function createCustomOrderPayment(CustomOrder $customOrder): ?CustomOrderPayment
+    {
+        if (! $customOrder->canBePaid()) {
+            return null;
+        }
+
+        $checkoutUrl = null;
+        $response = null;
+        $directPayId = $customOrder->number;
+
+        $endpoint = $this->apiEndpoint();
+        $shopId = $this->shopId();
+        $secret = $this->apiSigningSecret();
+        $apiKey = $this->apiToken();
+
+        $endpointIsV2 = $this->usesInvoiceCreateV2($endpoint);
+        $useV2 = $shopId !== null && $secret !== '' && $endpointIsV2;
+        $useLegacy = $apiKey !== '' && $endpoint !== '' && ! $endpointIsV2;
+
+        $successUrl = route('custom-orders.show', $customOrder);
+        $webhookUrl = route('payments.aifo.webhook');
+
+        if ($useV2) {
+            [$response, $checkoutUrl] = $this->createInvoiceCheckout($endpoint, [
+                'shop_id' => $shopId,
+                'external_id' => $directPayId,
+                'amount_minor' => (int) round(((float) $customOrder->price) * 100),
+                'description' => __('Custom order :number', ['number' => $customOrder->number]),
+            ]);
+        }
+
+        if ($checkoutUrl === null && $useLegacy) {
+            try {
+                $response = Http::withToken($apiKey)->acceptJson()
+                    ->timeout(30)
+                    ->connectTimeout(15)
+                    ->post($endpoint, [
+                        'order_id' => $directPayId,
+                        'amount' => (float) $customOrder->price,
+                        'currency' => $customOrder->currency ?: 'UAH',
+                        'success_url' => $successUrl,
+                        'webhook_url' => $webhookUrl,
+                    ]);
+            } catch (\Throwable $e) {
+                Log::error('AIFO legacy custom order checkout HTTP exception', [
+                    'custom_order_id' => $customOrder->id,
+                    'endpoint' => $endpoint,
+                    'message' => $e->getMessage(),
+                ]);
+
+                $response = null;
+            }
+
+            if ($response && $response->successful()) {
+                $checkoutUrl = $response->json('checkout_url');
+            } elseif ($response) {
+                Log::warning('AIFO custom order checkout request failed', [
+                    'custom_order_id' => $customOrder->id,
+                    'status' => $response->status(),
+                    'body_preview' => $this->truncateForLog($response->body()),
+                ]);
+            }
+        }
+
+        if ($checkoutUrl === null) {
+            $checkoutUrl = $this->directCheckoutUrl($directPayId, (float) $customOrder->price);
+        }
+
+        if ($checkoutUrl === null) {
+            return null;
+        }
+
+        $providerPaymentId = $this->extractInvoiceId($response) ?? $directPayId;
+
+        return $customOrder->payments()->create([
+            'provider' => 'aifo',
+            'provider_payment_id' => $providerPaymentId,
+            'status' => 'created',
+            'amount' => $customOrder->price,
+            'currency' => $customOrder->currency ?: 'UAH',
+            'payload' => [
+                'merchant_id' => $this->merchantId(),
+                'checkout_url' => $checkoutUrl,
+                'success_url' => $successUrl,
+                'webhook_url' => $webhookUrl,
+                'order_reference' => $directPayId,
+            ],
+        ]);
     }
 
     /**

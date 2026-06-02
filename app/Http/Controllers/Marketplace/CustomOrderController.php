@@ -14,6 +14,7 @@ use App\Models\Category;
 use App\Models\CustomOrder;
 use App\Models\CustomOrderFile;
 use App\Models\User;
+use App\Services\AifoPaymentService;
 use App\Services\CustomOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -136,6 +137,11 @@ class CustomOrderController extends Controller
     public function offer(CustomOrderOfferRequest $request, CustomOrder $customOrder, CustomOrderService $orders)
     {
         abort_unless($customOrder->author_id === $request->user()->id || $request->user()->canModerate(), 403);
+        abort_unless(in_array($customOrder->status, [
+            CustomOrder::STATUS_PENDING_REVIEW,
+            CustomOrder::STATUS_DISCUSSING,
+            CustomOrder::STATUS_WAITING_BUYER_ACCEPT,
+        ], true), 422);
 
         $orders->offer($customOrder, $request->user(), $request->validated());
 
@@ -164,14 +170,37 @@ class CustomOrderController extends Controller
         return back()->with('status', __('custom_orders.delivery.saved'));
     }
 
-    public function demoPay(Request $request, CustomOrder $customOrder, CustomOrderService $orders)
+    public function pay(Request $request, CustomOrder $customOrder, AifoPaymentService $payments)
     {
-        abort_unless($customOrder->buyer_id === $request->user()->id || $request->user()->canModerate(), 403);
+        abort_unless($customOrder->buyer_id === $request->user()->id, 403);
         abort_unless($customOrder->canBePaid(), 422);
 
-        $orders->markPaid($customOrder, $request->user(), 'manual-'.$customOrder->number, ['source' => 'manual_custom_order']);
+        $payment = $payments->createCustomOrderPayment($customOrder);
+        $checkoutUrl = $payment?->payload['checkout_url'] ?? null;
 
-        return back()->with('status', __('custom_orders.paid'));
+        if (! is_string($checkoutUrl) || trim($checkoutUrl) === '') {
+            return back()->withErrors(['payment' => __('custom_orders.errors.payment_checkout_unavailable')]);
+        }
+
+        return redirect()->away($checkoutUrl);
+    }
+
+    public function demoPay(Request $request, CustomOrder $customOrder, AifoPaymentService $payments)
+    {
+        return $this->pay($request, $customOrder, $payments);
+    }
+
+    public function cancel(Request $request, CustomOrder $customOrder, CustomOrderService $orders)
+    {
+        $this->ensureParticipant($customOrder, $request->user());
+
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $orders->cancel($customOrder, $request->user(), $validated['reason'] ?? null);
+
+        return back()->with('status', __('custom_orders.cancelled'));
     }
 
     public function ship(CustomOrderShipmentRequest $request, CustomOrder $customOrder, CustomOrderService $orders)

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\PurchaseReceiptMail;
 use App\Mail\SaleNotificationMail;
 use App\Models\Category;
+use App\Models\CustomOrder;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\TipPayment;
@@ -14,6 +15,7 @@ use App\Notifications\NewTipNotification;
 use App\Services\AccountBalanceService;
 use App\Services\AifoPaymentService;
 use App\Services\AuditLogger;
+use App\Services\CustomOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
@@ -23,6 +25,10 @@ class HomeController extends Controller
     public function __invoke(Request $request)
     {
         if ($redirect = $this->redirectAifoTipReturn($request)) {
+            return $redirect;
+        }
+
+        if ($redirect = $this->redirectAifoCustomOrderReturn($request)) {
             return $redirect;
         }
 
@@ -214,6 +220,90 @@ class HomeController extends Controller
         return redirect()
             ->route('checkout.failed', $order)
             ->with('error', __('Не вдалося підтвердити статус платежу. Якщо кошти списані, зачекайте webhook AIFO або зверніться до підтримки.'));
+    }
+
+    private function redirectAifoCustomOrderReturn(Request $request)
+    {
+        $reference = $request->query('orderReference')
+            ?? $request->query('external_id')
+            ?? $request->query('pay_id');
+
+        if (! is_string($reference) || ! str_starts_with($reference, 'CUS-') || ! Schema::hasTable('custom_orders')) {
+            return null;
+        }
+
+        $customOrder = CustomOrder::query()
+            ->with(['buyer', 'author', 'payments'])
+            ->where('number', $reference)
+            ->first();
+
+        if (! $customOrder) {
+            return null;
+        }
+
+        if (auth()->check() && ! $customOrder->isParticipant(auth()->user()) && ! auth()->user()->canModerate()) {
+            return redirect()
+                ->route('dashboard')
+                ->with('error', __('custom_orders.errors.wrong_account'));
+        }
+
+        $status = strtolower((string) $request->query('status'));
+        $isPaidReturn = in_array($status, ['paid', 'success', 'completed'], true);
+        $isFailedReturn = in_array($status, ['failed', 'fail', 'error', 'declined', 'canceled', 'cancelled'], true);
+
+        if ($isPaidReturn) {
+            $payment = $customOrder->payments()
+                ->where('provider', 'aifo')
+                ->latest('id')
+                ->first();
+
+            if ($payment && $payment->status !== 'paid' && $customOrder->canBePaid()) {
+                app(CustomOrderService::class)->markPaid($customOrder, $customOrder->buyer, $payment->provider_payment_id, [
+                    'aifo_return' => $request->query(),
+                    'marked_paid_from_return' => true,
+                ]);
+
+                app(AuditLogger::class)->record('custom_order.return_paid', $customOrder, [
+                    'custom_order_id' => $customOrder->id,
+                    'reference' => $reference,
+                ]);
+            }
+
+            return redirect()
+                ->route('custom-orders.show', $customOrder)
+                ->with('status', __('custom_orders.paid'));
+        }
+
+        if ($isFailedReturn) {
+            $this->markCustomOrderPaymentFailed($customOrder, $request);
+
+            return redirect()
+                ->route('custom-orders.show', $customOrder)
+                ->with('error', __('custom_orders.errors.payment_failed'));
+        }
+
+        return redirect()
+            ->route('custom-orders.show', $customOrder)
+            ->with('status', __('custom_orders.payment_return_pending'));
+    }
+
+    private function markCustomOrderPaymentFailed(CustomOrder $customOrder, Request $request): void
+    {
+        $payment = $customOrder->payments()
+            ->where('provider', 'aifo')
+            ->where('status', '!=', 'paid')
+            ->latest('id')
+            ->first();
+
+        if ($payment) {
+            $payment->update([
+                'status' => 'failed',
+                'payload' => array_merge($payment->payload ?? [], [
+                    'aifo_return' => $request->query(),
+                    'marked_failed_from_return' => true,
+                ]),
+            ]);
+        }
     }
 
     private function markOrderPaymentFailed(Order $order, Request $request): void

@@ -76,7 +76,9 @@ class CustomOrderService
 
             $this->storeFiles($order, $user, $files, 'attachment', $message);
 
-            if ($order->status === CustomOrder::STATUS_PENDING_REVIEW && $order->author_id) {
+            if ($order->status === CustomOrder::STATUS_PENDING_REVIEW
+                && $order->author_id
+                && ($user->id === $order->author_id || $user->canModerate())) {
                 $this->transition($order, CustomOrder::STATUS_DISCUSSING, $user, __('custom_orders.logs.discussion_started'));
             }
 
@@ -150,22 +152,62 @@ class CustomOrderService
         });
     }
 
-    public function markPaid(CustomOrder $order, User $actor, ?string $providerPaymentId = null, array $payload = []): CustomOrder
+    public function markPaid(CustomOrder $order, ?User $actor, ?string $providerPaymentId = null, array $payload = []): CustomOrder
     {
         return DB::transaction(function () use ($order, $actor, $providerPaymentId, $payload) {
-            $order->payments()->create([
+            $paymentQuery = $order->payments()->where('provider', 'aifo');
+            $payment = $providerPaymentId
+                ? (clone $paymentQuery)->where('provider_payment_id', $providerPaymentId)->latest('id')->first()
+                : null;
+
+            $payment ??= (clone $paymentQuery)->whereIn('status', ['created', 'pending'])->latest('id')->first();
+
+            $paymentData = [
                 'provider' => 'aifo',
-                'provider_payment_id' => $providerPaymentId,
+                'provider_payment_id' => $providerPaymentId ?: ($payment?->provider_payment_id),
                 'status' => 'paid',
                 'amount' => $order->price,
                 'currency' => 'UAH',
                 'paid_at' => now(),
-                'payload' => $payload,
-            ]);
+                'payload' => array_merge($payment?->payload ?? [], $payload),
+            ];
+
+            if ($payment) {
+                $payment->update($paymentData);
+            } else {
+                $order->payments()->create($paymentData);
+            }
 
             $order->forceFill(['paid_at' => now()])->save();
             $this->transition($order, CustomOrder::STATUS_PAID, $actor, __('custom_orders.logs.paid_escrow'));
             $this->transition($order, CustomOrder::STATUS_IN_PROGRESS, $actor, __('custom_orders.logs.started'));
+
+            return $order;
+        });
+    }
+
+    public function cancel(CustomOrder $order, User $actor, ?string $reason = null): CustomOrder
+    {
+        return DB::transaction(function () use ($order, $actor, $reason) {
+            throw_unless(in_array($order->status, [
+                CustomOrder::STATUS_PENDING_REVIEW,
+                CustomOrder::STATUS_DISCUSSING,
+                CustomOrder::STATUS_WAITING_BUYER_ACCEPT,
+                CustomOrder::STATUS_WAITING_PAYMENT,
+            ], true), \InvalidArgumentException::class, 'Custom order cannot be cancelled at this stage.');
+
+            $order->forceFill(['cancelled_at' => now()])->save();
+            $this->transition($order, CustomOrder::STATUS_CANCELLED, $actor, __('custom_orders.logs.cancelled'), [
+                'reason' => $reason,
+            ]);
+
+            if ($reason) {
+                $order->messages()->create([
+                    'user_id' => $actor->id,
+                    'role' => $this->roleFor($order, $actor),
+                    'body' => __('custom_orders.cancelled_with_reason', ['reason' => $reason]),
+                ]);
+            }
 
             return $order;
         });

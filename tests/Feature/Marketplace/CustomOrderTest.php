@@ -5,7 +5,9 @@ namespace Tests\Feature\Marketplace;
 use App\Models\AccountBalanceTransaction;
 use App\Models\Category;
 use App\Models\CustomOrder;
+use App\Models\Setting;
 use App\Models\User;
+use App\Services\CustomOrderService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -124,9 +126,7 @@ class CustomOrderTest extends TestCase
             'author_amount' => 900,
         ]);
 
-        $this->actingAs($buyer)
-            ->post(route('custom-orders.demo-pay', $order))
-            ->assertRedirect();
+        app(CustomOrderService::class)->markPaid($order, $buyer, $order->number, ['source' => 'test']);
 
         $this->actingAs($author)
             ->post(route('custom-orders.result', $order->refresh()), [
@@ -150,6 +150,43 @@ class CustomOrderTest extends TestCase
             'type' => AccountBalanceTransaction::TYPE_CREDIT,
             'status' => AccountBalanceTransaction::STATUS_SETTLED,
             'amount' => 900,
+            'currency' => 'UAH',
+        ]);
+    }
+
+    public function test_buyer_pays_custom_order_through_aifo_checkout_after_accepting_offer(): void
+    {
+        Setting::query()->create(['group' => 'payments', 'key' => 'payments.merchant_id', 'value' => '34']);
+        Setting::query()->create(['group' => 'payments', 'key' => 'payments.secret_key', 'value' => 'test-secret']);
+        Setting::query()->create(['group' => 'payments', 'key' => 'payments.aifo_endpoint', 'value' => 'https://legacy.example.test/checkout']);
+
+        $buyer = User::factory()->create();
+        $author = User::factory()->create(['role' => 'author']);
+        $order = CustomOrder::query()->create([
+            'buyer_id' => $buyer->id,
+            'author_id' => $author->id,
+            'type' => CustomOrder::TYPE_MODEL_CREATION,
+            'status' => CustomOrder::STATUS_WAITING_PAYMENT,
+            'title' => 'Desk organizer model',
+            'description' => 'Need a desk organizer for 3D printing.',
+            'price' => 1000,
+            'currency' => 'UAH',
+            'escrow_amount' => 1000,
+            'platform_fee_amount' => 100,
+            'author_amount' => 900,
+            'accepted_at' => now(),
+        ]);
+
+        $this->actingAs($buyer)
+            ->post(route('custom-orders.pay', $order))
+            ->assertRedirectContains('https://aifo.pro/pay/');
+
+        $this->assertDatabaseHas('custom_order_payments', [
+            'custom_order_id' => $order->id,
+            'provider' => 'aifo',
+            'provider_payment_id' => $order->number,
+            'status' => 'created',
+            'amount' => 1000,
             'currency' => 'UAH',
         ]);
     }
