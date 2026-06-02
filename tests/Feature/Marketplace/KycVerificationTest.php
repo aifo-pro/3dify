@@ -155,6 +155,40 @@ class KycVerificationTest extends TestCase
         $this->assertTrue($user->refresh()->hasApprovedKyc());
     }
 
+    public function test_didit_dashboard_test_webhook_returns_ok_without_matching_session(): void
+    {
+        config(['services.didit.webhook_secret' => 'webhook-secret']);
+
+        $timestamp = (string) now()->timestamp;
+        $payload = [
+            'status' => 'Approved',
+            'vendor_data' => 'test-vendor-data-123',
+            'webhook_type' => 'user.status.updated',
+            'timestamp' => (int) $timestamp,
+            'created_at' => (int) $timestamp,
+            'workflow_id' => '296356f4-13ec-46fc-8147-dc9e0caee1dc',
+            'metadata' => ['test_webhook' => true],
+            'vendor_user_id' => 'c52f1f03-1809-4738-958f-6e0e7e38ea3',
+            'previous_status' => 'In Review',
+        ];
+
+        $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $signature = hash_hmac('sha256', $timestamp.'.'.$body, 'webhook-secret');
+
+        $this->call('POST', route('webhooks.didit'), [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_TIMESTAMP' => $timestamp,
+            'HTTP_X_SIGNATURE_V2' => $signature,
+            'HTTP_X_DIDIT_TEST_WEBHOOK' => 'true',
+        ], $body)
+            ->assertOk()
+            ->assertJson([
+                'ok' => true,
+                'test' => true,
+                'applied' => false,
+            ]);
+    }
+
     private function seedAuthorBalance(User $author): void
     {
         $product = Product::query()->create([

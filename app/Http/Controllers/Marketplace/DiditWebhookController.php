@@ -29,21 +29,55 @@ class DiditWebhookController extends Controller
         $signatureSimple = $request->header('X-Signature-Simple');
         $signatureRaw = $request->header('X-Signature');
         $timestamp = $request->header('X-Timestamp');
+        $isTestWebhook = filter_var($request->header('X-Didit-Test-Webhook'), FILTER_VALIDATE_BOOL);
 
         if (! $kyc->verifyWebhookSignature($payload, $decoded, $signatureV2, $signatureSimple, $signatureRaw, $timestamp)) {
             Log::warning('didit.kyc.webhook_bad_signature', [
                 'ip' => $request->ip(),
+                'is_test_webhook' => $isTestWebhook,
                 'has_signature_v2' => (bool) $signatureV2,
                 'has_signature_simple' => (bool) $signatureSimple,
                 'has_signature_raw' => (bool) $signatureRaw,
                 'has_timestamp' => (bool) $timestamp,
             ]);
 
+            if ($isTestWebhook) {
+                return response()->json([
+                    'ok' => true,
+                    'test' => true,
+                    'ignored' => true,
+                    'message' => 'Test webhook received; signature was not applied to user data.',
+                ]);
+            }
+
             return response()->json(['message' => 'Invalid signature'], 401);
         }
 
-        $kyc->applyWebhook($decoded);
+        try {
+            $verification = $kyc->applyWebhook($decoded);
+        } catch (\Throwable $e) {
+            Log::error('didit.kyc.webhook_failed', [
+                'ip' => $request->ip(),
+                'is_test_webhook' => $isTestWebhook,
+                'message' => $e->getMessage(),
+            ]);
 
-        return response()->json(['ok' => true]);
+            if ($isTestWebhook) {
+                return response()->json([
+                    'ok' => true,
+                    'test' => true,
+                    'ignored' => true,
+                    'message' => 'Test webhook received; no user data was changed.',
+                ]);
+            }
+
+            throw $e;
+        }
+
+        return response()->json([
+            'ok' => true,
+            'test' => $isTestWebhook,
+            'applied' => $verification !== null,
+        ]);
     }
 }
