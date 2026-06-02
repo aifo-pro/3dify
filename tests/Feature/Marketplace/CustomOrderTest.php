@@ -228,4 +228,40 @@ class CustomOrderTest extends TestCase
 
         $this->assertTrue($order->refresh()->canBePaid());
     }
+
+    public function test_custom_order_chat_can_send_and_fetch_messages_as_json(): void
+    {
+        $buyer = User::factory()->create();
+        $author = User::factory()->create(['role' => 'author']);
+        $order = CustomOrder::query()->create([
+            'buyer_id' => $buyer->id,
+            'author_id' => $author->id,
+            'type' => CustomOrder::TYPE_MODEL_CREATION,
+            'status' => CustomOrder::STATUS_DISCUSSING,
+            'title' => 'Custom model',
+            'description' => 'Create a custom printable model.',
+        ]);
+
+        $response = $this->actingAs($buyer)
+            ->postJson(route('custom-orders.messages.store', $order), [
+                'body' => 'Hello author',
+            ]);
+
+        $response
+            ->assertCreated()
+            ->assertJsonPath('message.body', 'Hello author')
+            ->assertJsonPath('message.own', true);
+
+        $messageId = $response->json('message.id');
+
+        $this->actingAs($author)
+            ->getJson(route('custom-orders.messages.index', $order).'?after=0')
+            ->assertOk()
+            ->assertJsonFragment(['body' => 'Hello author']);
+
+        $this->actingAs($author)
+            ->getJson(route('custom-orders.messages.index', $order).'?after='.$messageId)
+            ->assertOk()
+            ->assertJsonCount(0, 'messages');
+    }
 }

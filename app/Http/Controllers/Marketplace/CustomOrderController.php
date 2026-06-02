@@ -103,9 +103,34 @@ class CustomOrderController extends Controller
         $this->ensureParticipant($customOrder, $request->user());
 
         $files = $request->file('files', []);
-        $orders->message($customOrder, $request->user(), $request->validated('body'), is_array($files) ? $files : [$files]);
+        $message = $orders->message($customOrder, $request->user(), $request->validated('body'), is_array($files) ? $files : [$files]);
+
+        if ($request->expectsJson()) {
+            $message->load(['user', 'files']);
+
+            return response()->json([
+                'message' => $this->serializeMessage($customOrder, $message, $request->user()),
+            ], 201);
+        }
 
         return back()->with('status', __('custom_orders.message_sent'));
+    }
+
+    public function messages(Request $request, CustomOrder $customOrder)
+    {
+        $this->ensureParticipant($customOrder, $request->user());
+
+        $after = max(0, (int) $request->query('after', 0));
+
+        $messages = $customOrder->messages()
+            ->with(['user', 'files'])
+            ->when($after > 0, fn ($query) => $query->where('id', '>', $after))
+            ->oldest()
+            ->get()
+            ->map(fn ($message) => $this->serializeMessage($customOrder, $message, $request->user()))
+            ->values();
+
+        return response()->json(['messages' => $messages]);
     }
 
     public function offer(CustomOrderOfferRequest $request, CustomOrder $customOrder, CustomOrderService $orders)
@@ -201,5 +226,21 @@ class CustomOrderController extends Controller
     private function ensureParticipant(CustomOrder $order, User $user): void
     {
         abort_unless($order->isParticipant($user) || $user->canModerate(), 403);
+    }
+
+    private function serializeMessage(CustomOrder $order, $message, User $viewer): array
+    {
+        return [
+            'id' => $message->id,
+            'own' => $message->user_id === $viewer->id,
+            'author' => $message->user?->displayName() ?: __('custom_orders.system'),
+            'body' => $message->body,
+            'created_at' => $message->created_at?->translatedFormat('d M H:i'),
+            'files' => $message->files->map(fn ($file) => [
+                'id' => $file->id,
+                'name' => $file->original_name,
+                'url' => route('custom-orders.files.download', [$order, $file]),
+            ])->values()->all(),
+        ];
     }
 }

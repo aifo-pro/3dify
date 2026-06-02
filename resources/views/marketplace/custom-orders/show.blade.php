@@ -13,6 +13,18 @@
     ];
     $briefFiles = $order->files->where('purpose', 'brief');
     $resultFiles = $order->files->where('purpose', 'result');
+    $chatMessages = $order->messages->map(fn ($message) => [
+        'id' => $message->id,
+        'own' => $message->user_id === $user->id,
+        'author' => $message->user?->displayName() ?: __('custom_orders.system'),
+        'body' => $message->body,
+        'created_at' => $message->created_at?->translatedFormat('d M H:i'),
+        'files' => $message->files->map(fn ($file) => [
+            'id' => $file->id,
+            'name' => $file->original_name,
+            'url' => route('custom-orders.files.download', [$order, $file]),
+        ])->values()->all(),
+    ])->values();
 @endphp
 
 <x-layouts.marketplace>
@@ -196,38 +208,49 @@
                     </div>
                 @endif
 
-                <div class="mt-6 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+                <div
+                    class="mt-6 rounded-3xl border border-white/10 bg-white/[0.04] p-6"
+                    x-data="customOrderChat({
+                        messages: @js($chatMessages),
+                        fetchUrl: @js(route('custom-orders.messages.index', $order)),
+                        sendUrl: @js(route('custom-orders.messages.store', $order)),
+                        csrf: @js(csrf_token()),
+                        placeholder: @js(__('custom_orders.chat_empty_message'))
+                    })"
+                    x-init="start()"
+                >
                     <h2 class="text-xl font-black text-white">{{ __('custom_orders.chat') }}</h2>
-                    <div class="mt-5 grid max-h-[520px] gap-4 overflow-y-auto pr-1">
-                        @foreach($order->messages as $message)
-                            @php $own = $message->user_id === $user->id; @endphp
-                            <div class="flex {{ $own ? 'justify-end' : 'justify-start' }}">
-                                <div class="max-w-[82%] rounded-2xl border px-4 py-3 {{ $own ? 'border-emerald-300/25 bg-emerald-300/[0.10]' : 'border-white/10 bg-zinc-950/70' }}">
+
+                    <div x-ref="messages" class="mt-5 grid max-h-[520px] min-h-[260px] gap-4 overflow-y-auto pr-1">
+                        <template x-for="message in messages" :key="message.id">
+                            <div class="flex" :class="message.own ? 'justify-end' : 'justify-start'">
+                                <div class="max-w-[82%] rounded-2xl border px-4 py-3" :class="message.own ? 'border-emerald-300/25 bg-emerald-300/[0.10]' : 'border-white/10 bg-zinc-950/70'">
                                     <div class="mb-1 flex items-center gap-2 text-xs text-zinc-500">
-                                        <span class="font-bold text-zinc-300">{{ $message->user?->displayName() ?: __('custom_orders.system') }}</span>
-                                        <span>{{ $message->created_at->translatedFormat('d M H:i') }}</span>
+                                        <span class="font-bold text-zinc-300" x-text="message.author"></span>
+                                        <span x-text="message.created_at"></span>
                                     </div>
-                                    @if($message->body)
-                                        <p class="whitespace-pre-line text-sm leading-6 text-zinc-200">{{ $message->body }}</p>
-                                    @endif
-                                    @if($message->files->isNotEmpty())
-                                        <div class="mt-3 grid gap-2">
-                                            @foreach($message->files as $file)
-                                                <a href="{{ route('custom-orders.files.download', [$order, $file]) }}" class="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-semibold text-emerald-200">{{ $file->original_name }}</a>
-                                            @endforeach
-                                        </div>
-                                    @endif
+                                    <p x-show="message.body" class="whitespace-pre-line text-sm leading-6 text-zinc-200" x-text="message.body"></p>
+                                    <div x-show="message.files && message.files.length" class="mt-3 grid gap-2">
+                                        <template x-for="file in message.files" :key="file.id">
+                                            <a :href="file.url" class="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-semibold text-emerald-200" x-text="file.name"></a>
+                                        </template>
+                                    </div>
                                 </div>
                             </div>
-                        @endforeach
+                        </template>
                     </div>
 
-                    <form method="POST" action="{{ route('custom-orders.messages.store', $order) }}" enctype="multipart/form-data" class="mt-5 rounded-2xl border border-white/10 bg-zinc-950/60 p-4">
+                    <p x-show="error" x-cloak class="mt-3 rounded-2xl border border-rose-300/25 bg-rose-300/[0.08] px-4 py-3 text-sm font-semibold text-rose-100" x-text="error"></p>
+
+                    <form method="POST" action="{{ route('custom-orders.messages.store', $order) }}" enctype="multipart/form-data" x-on:submit.prevent="send($event)" class="mt-5 rounded-2xl border border-white/10 bg-zinc-950/60 p-4">
                         @csrf
-                        <textarea name="body" rows="4" class="w-full rounded-2xl border border-white/10 bg-zinc-950/80 px-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40" placeholder="{{ __('custom_orders.write_message') }}"></textarea>
+                        <textarea name="body" rows="4" x-model="body" class="w-full rounded-2xl border border-white/10 bg-zinc-950/80 px-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40" placeholder="{{ __('custom_orders.write_message') }}"></textarea>
                         <div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <input type="file" name="files[]" multiple class="text-xs text-zinc-400 file:mr-3 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-xs file:font-bold file:text-white">
-                            <button class="h-10 rounded-xl bg-emerald-400 px-5 text-sm font-black text-zinc-950">{{ __('custom_orders.send') }}</button>
+                            <button class="h-10 rounded-xl bg-emerald-400 px-5 text-sm font-black text-zinc-950 disabled:cursor-wait disabled:opacity-60" :disabled="sending">
+                                <span x-show="!sending">{{ __('custom_orders.send') }}</span>
+                                <span x-show="sending" x-cloak>{{ __('custom_orders.sending') }}</span>
+                            </button>
                         </div>
                     </form>
                 </div>

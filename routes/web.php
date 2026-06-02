@@ -240,6 +240,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/custom-orders/{customOrder}/delivery', [CustomOrderController::class, 'delivery'])->name('custom-orders.delivery');
     Route::post('/custom-orders/{customOrder}/accept', [CustomOrderController::class, 'accept'])->name('custom-orders.accept');
     Route::post('/custom-orders/{customOrder}/demo-pay', [CustomOrderController::class, 'demoPay'])->name('custom-orders.demo-pay');
+    Route::get('/custom-orders/{customOrder}/messages', [CustomOrderController::class, 'messages'])->name('custom-orders.messages.index');
     Route::post('/custom-orders/{customOrder}/result', [CustomOrderController::class, 'result'])->name('custom-orders.result');
     Route::get('/custom-orders/{customOrder}/files/{file}/download', [CustomOrderController::class, 'downloadFile'])->name('custom-orders.files.download');
     Route::post('/custom-orders/{customOrder}/ship', [CustomOrderController::class, 'ship'])->name('custom-orders.ship');

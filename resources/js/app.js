@@ -91,6 +91,100 @@ Alpine.data('customOrderDelivery', (initial) => ({
     },
 }));
 
+Alpine.data('customOrderChat', (initial) => ({
+    messages: initial.messages || [],
+    fetchUrl: initial.fetchUrl,
+    sendUrl: initial.sendUrl,
+    csrf: initial.csrf,
+    placeholder: initial.placeholder || '',
+    sending: false,
+    polling: null,
+    body: '',
+    error: '',
+    get lastId() {
+        return this.messages.length ? Math.max(...this.messages.map((message) => Number(message.id || 0))) : 0;
+    },
+    start() {
+        this.scrollToBottom();
+        this.polling = window.setInterval(() => this.fetchNewMessages(), 3500);
+        window.addEventListener('beforeunload', () => {
+            if (this.polling) window.clearInterval(this.polling);
+        });
+    },
+    async fetchNewMessages() {
+        const url = new URL(this.fetchUrl, window.location.origin);
+        url.searchParams.set('after', this.lastId);
+
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    Accept: 'application/json',
+                },
+            });
+
+            if (!response.ok) return;
+
+            const payload = await response.json();
+            this.addMessages(payload.messages || []);
+        } catch {
+            // Keep polling quiet; the user can still send via the normal form fallback.
+        }
+    },
+    addMessages(items) {
+        const known = new Set(this.messages.map((message) => Number(message.id)));
+        const fresh = items.filter((message) => !known.has(Number(message.id)));
+
+        if (!fresh.length) return;
+
+        this.messages.push(...fresh);
+        this.scrollToBottom();
+    },
+    async send(event) {
+        this.error = '';
+        const form = event.target;
+        const formData = new FormData(form);
+        const hasFiles = form.querySelector('input[type="file"]')?.files?.length > 0;
+
+        if (!String(formData.get('body') || '').trim() && !hasFiles) {
+            this.error = this.placeholder;
+            return;
+        }
+
+        this.sending = true;
+
+        try {
+            const response = await fetch(this.sendUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': this.csrf,
+                },
+            });
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                this.error = payload.message || this.placeholder;
+                return;
+            }
+
+            const payload = await response.json();
+            this.addMessages([payload.message]);
+            form.reset();
+            this.body = '';
+        } finally {
+            this.sending = false;
+        }
+    },
+    scrollToBottom() {
+        this.$nextTick(() => {
+            if (this.$refs.messages) {
+                this.$refs.messages.scrollTop = this.$refs.messages.scrollHeight;
+            }
+        });
+    },
+}));
+
 Alpine.data('productPricing', () => ({
     licenseType: 'personal',
     personalPrice: 0,
