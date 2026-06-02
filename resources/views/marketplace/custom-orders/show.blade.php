@@ -6,12 +6,28 @@
     $canOffer = $isAuthor || $isStaff;
     $isModelOrder = $order->isModelCreation();
     $isPrintOrder = $order->isPrintService();
+    $canSelectDelivery = $isBuyer && $isPrintOrder && in_array($order->status, [\App\Models\CustomOrder::STATUS_WAITING_BUYER_ACCEPT, \App\Models\CustomOrder::STATUS_WAITING_PAYMENT], true);
+    $deliveryLabels = [
+        'nova_poshta' => __('custom_orders.delivery.nova_poshta'),
+        'ukrposhta' => __('custom_orders.delivery.ukrposhta'),
+    ];
     $briefFiles = $order->files->where('purpose', 'brief');
     $resultFiles = $order->files->where('purpose', 'result');
 @endphp
 
 <x-layouts.marketplace>
-    <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <section
+        class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8"
+        x-data="customOrderDelivery({
+            carrier: @js(old('delivery_service', $order->delivery_service ?: 'nova_poshta')),
+            cityName: @js(old('delivery_city', $order->delivery_city)),
+            cityRef: @js(old('delivery_city_ref', $order->delivery_city_ref)),
+            warehouseName: @js(old('delivery_address', $order->delivery_address)),
+            warehouseRef: @js(old('delivery_warehouse_ref', $order->delivery_warehouse_ref)),
+            citiesUrl: @js(route('delivery.cities')),
+            warehousesUrl: @js(route('delivery.warehouses'))
+        })"
+    >
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
             <div class="min-w-0">
                 <div class="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/30">
@@ -30,11 +46,90 @@
                             <div class="flex justify-between gap-4"><span class="text-zinc-500">{{ __('custom_orders.form.dimensions') }}</span><span class="font-bold text-white">{{ $order->dimensions ?: '—' }}</span></div>
                             <div class="flex justify-between gap-4"><span class="text-zinc-500">{{ __('custom_orders.form.material') }}</span><span class="font-bold text-white">{{ $order->material ?: '—' }}</span></div>
                             <div class="flex justify-between gap-4"><span class="text-zinc-500">{{ __('custom_orders.form.color') }}</span><span class="font-bold text-white">{{ $order->color ?: '—' }}</span></div>
-                            <div class="flex justify-between gap-4 md:col-span-2"><span class="text-zinc-500">{{ __('custom_orders.form.delivery_service') }}</span><span class="font-bold text-white">{{ $order->delivery_service ?: '—' }}</span></div>
+                            <div class="flex justify-between gap-4 md:col-span-2"><span class="text-zinc-500">{{ __('custom_orders.form.delivery_service') }}</span><span class="font-bold text-white">{{ $deliveryLabels[$order->delivery_service] ?? ($order->delivery_service ?: '—') }}</span></div>
+                            <div class="flex justify-between gap-4 md:col-span-2"><span class="text-zinc-500">{{ __('custom_orders.delivery.city') }}</span><span class="font-bold text-white">{{ $order->delivery_city ?: '—' }}</span></div>
                             <div class="flex justify-between gap-4 md:col-span-2"><span class="text-zinc-500">{{ __('custom_orders.form.delivery_address') }}</span><span class="font-bold text-white">{{ $order->delivery_address ?: '—' }}</span></div>
                         </div>
                     @endif
                 </div>
+
+                @if($canSelectDelivery)
+                    <form method="POST" action="{{ route('custom-orders.delivery', $order) }}" class="mt-6 rounded-3xl border border-emerald-300/25 bg-emerald-300/[0.06] p-6 shadow-2xl shadow-black/20">
+                        @csrf
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-200">{{ __('custom_orders.delivery.step') }}</p>
+                                <h2 class="mt-2 text-2xl font-black text-white">{{ __('custom_orders.delivery.title') }}</h2>
+                                <p class="mt-1 text-sm leading-6 text-zinc-400">{{ __('custom_orders.delivery.hint') }}</p>
+                            </div>
+                            @if($order->hasDeliverySelection())
+                                <span class="rounded-full border border-emerald-300/30 bg-zinc-950/50 px-3 py-1 text-xs font-black text-emerald-200">{{ __('custom_orders.delivery.selected') }}</span>
+                            @endif
+                        </div>
+
+                        @error('delivery_address')
+                            <div class="mt-4 rounded-2xl border border-rose-300/25 bg-rose-300/[0.08] px-4 py-3 text-sm font-semibold text-rose-100">{{ $message }}</div>
+                        @enderror
+
+                        <div class="mt-5 grid gap-4 md:grid-cols-2">
+                            <x-admin.field name="delivery_service" as="select" :label="__('custom_orders.form.delivery_service')" x-model="carrier" x-on:change="resetDelivery()" required>
+                                <option value="nova_poshta">{{ __('custom_orders.delivery.nova_poshta') }}</option>
+                                <option value="ukrposhta">{{ __('custom_orders.delivery.ukrposhta') }}</option>
+                            </x-admin.field>
+
+                            <label class="grid gap-1.5">
+                                <span class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-400">{{ __('custom_orders.delivery.city') }} <span class="text-rose-300">*</span></span>
+                                <input type="hidden" name="delivery_city" x-model="cityName">
+                                <input type="hidden" name="delivery_city_ref" x-model="cityRef">
+                                <input
+                                    type="text"
+                                    x-model="cityQuery"
+                                    x-on:input.debounce.350ms="searchCities()"
+                                    x-on:focus="cityQuery.length > 1 && searchCities()"
+                                    placeholder="{{ __('custom_orders.delivery.city_placeholder') }}"
+                                    class="h-10 w-full rounded-xl border border-white/10 bg-zinc-950/70 px-3 text-sm text-white placeholder:text-zinc-500 transition focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40"
+                                >
+                                <div x-show="cities.length" x-cloak class="max-h-56 overflow-y-auto rounded-2xl border border-white/10 bg-zinc-950/95 p-1 shadow-2xl shadow-black/30">
+                                    <template x-for="city in cities" :key="city.ref">
+                                        <button type="button" x-on:click="selectCity(city)" class="block w-full rounded-xl px-3 py-2 text-left text-sm text-zinc-200 transition hover:bg-emerald-300/10 hover:text-white">
+                                            <span class="font-bold" x-text="city.name"></span>
+                                            <span class="ml-1 text-xs text-zinc-500" x-text="city.region"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </label>
+
+                            <label class="grid gap-1.5 md:col-span-2">
+                                <span class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-400">{{ __('custom_orders.form.delivery_address') }} <span class="text-rose-300">*</span></span>
+                                <input type="hidden" name="delivery_address" x-model="warehouseName">
+                                <input type="hidden" name="delivery_warehouse_ref" x-model="warehouseRef">
+                                <input
+                                    type="text"
+                                    x-model="warehouseQuery"
+                                    x-bind:disabled="!cityRef"
+                                    x-on:input.debounce.350ms="searchWarehouses()"
+                                    x-on:focus="cityRef && searchWarehouses()"
+                                    placeholder="{{ __('custom_orders.delivery.warehouse_placeholder') }}"
+                                    class="h-10 w-full rounded-xl border border-white/10 bg-zinc-950/70 px-3 text-sm text-white placeholder:text-zinc-500 transition focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40 disabled:opacity-50"
+                                >
+                                <div x-show="warehouses.length" x-cloak class="max-h-64 overflow-y-auto rounded-2xl border border-white/10 bg-zinc-950/95 p-1 shadow-2xl shadow-black/30">
+                                    <template x-for="warehouse in warehouses" :key="warehouse.ref">
+                                        <button type="button" x-on:click="selectWarehouse(warehouse)" class="block w-full rounded-xl px-3 py-2 text-left text-sm text-zinc-200 transition hover:bg-emerald-300/10 hover:text-white">
+                                            <span class="font-bold" x-text="warehouse.name"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                                <span x-show="loading" class="text-xs text-zinc-500">{{ __('custom_orders.delivery.loading') }}</span>
+                            </label>
+
+                            <x-admin.field name="extra_comment" as="textarea" rows="3" :label="__('custom_orders.form.extra_comment')" :value="old('extra_comment', $order->extra_comment)" class="md:col-span-2" />
+                        </div>
+
+                        <button class="mt-5 h-12 w-full rounded-2xl bg-emerald-400 text-sm font-black text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-300">
+                            {{ __('custom_orders.delivery.save') }}
+                        </button>
+                    </form>
+                @endif
 
                 <div class="mt-6 grid gap-6 md:grid-cols-2">
                     <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
@@ -168,7 +263,13 @@
                 @if($isBuyer && $order->status === \App\Models\CustomOrder::STATUS_WAITING_BUYER_ACCEPT)
                     <form method="POST" action="{{ route('custom-orders.accept', $order) }}">
                         @csrf
-                        <button class="h-12 w-full rounded-2xl bg-emerald-400 text-sm font-black text-zinc-950">{{ __('custom_orders.accept_offer') }}</button>
+                        <button
+                            class="h-12 w-full rounded-2xl bg-emerald-400 text-sm font-black text-zinc-950 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+                            @if($isPrintOrder && ! $order->hasDeliverySelection()) disabled @endif
+                        >{{ __('custom_orders.accept_offer') }}</button>
+                        @if($isPrintOrder && ! $order->hasDeliverySelection())
+                            <p class="mt-2 text-xs leading-5 text-amber-200">{{ __('custom_orders.delivery.required_before_accept') }}</p>
+                        @endif
                     </form>
                 @endif
 
@@ -238,4 +339,90 @@
             </aside>
         </div>
     </section>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('customOrderDelivery', (initial) => ({
+                carrier: initial.carrier || 'nova_poshta',
+                cityName: initial.cityName || '',
+                cityRef: initial.cityRef || '',
+                cityQuery: initial.cityName || '',
+                warehouseName: initial.warehouseName || '',
+                warehouseRef: initial.warehouseRef || '',
+                warehouseQuery: initial.warehouseName || '',
+                citiesUrl: initial.citiesUrl,
+                warehousesUrl: initial.warehousesUrl,
+                cities: [],
+                warehouses: [],
+                loading: false,
+                resetDelivery() {
+                    this.cityName = '';
+                    this.cityRef = '';
+                    this.cityQuery = '';
+                    this.warehouseName = '';
+                    this.warehouseRef = '';
+                    this.warehouseQuery = '';
+                    this.cities = [];
+                    this.warehouses = [];
+                },
+                async searchCities() {
+                    if (this.cityQuery.length < 2) {
+                        this.cities = [];
+                        return;
+                    }
+
+                    this.loading = true;
+                    const url = new URL(this.citiesUrl, window.location.origin);
+                    url.searchParams.set('carrier', this.carrier);
+                    url.searchParams.set('q', this.cityQuery);
+
+                    try {
+                        const response = await fetch(url);
+                        const payload = await response.json();
+                        this.cities = payload.items || [];
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                selectCity(city) {
+                    this.cityName = city.name;
+                    this.cityRef = city.ref;
+                    this.cityQuery = city.region ? `${city.name}, ${city.region}` : city.name;
+                    this.warehouseName = '';
+                    this.warehouseRef = '';
+                    this.warehouseQuery = '';
+                    this.cities = [];
+                    this.searchWarehouses();
+                },
+                async searchWarehouses() {
+                    if (!this.cityRef) {
+                        this.warehouses = [];
+                        return;
+                    }
+
+                    this.loading = true;
+                    const url = new URL(this.warehousesUrl, window.location.origin);
+                    url.searchParams.set('carrier', this.carrier);
+                    url.searchParams.set('city_ref', this.cityRef);
+                    if (this.warehouseQuery.length > 1) {
+                        url.searchParams.set('q', this.warehouseQuery);
+                    }
+
+                    try {
+                        const response = await fetch(url);
+                        const payload = await response.json();
+                        this.warehouses = payload.items || [];
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                selectWarehouse(warehouse) {
+                    this.warehouseName = warehouse.name;
+                    this.warehouseRef = warehouse.ref;
+                    this.warehouseQuery = warehouse.name;
+                    this.warehouses = [];
+                },
+            }));
+        });
+    </script>
 </x-layouts.marketplace>

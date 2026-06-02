@@ -40,6 +40,7 @@ use App\Http\Controllers\Marketplace\BundleController;
 use App\Http\Controllers\Marketplace\CheckoutController;
 use App\Http\Controllers\Marketplace\CompareController;
 use App\Http\Controllers\Marketplace\CustomOrderController;
+use App\Http\Controllers\Marketplace\DeliveryLookupController;
 use App\Http\Controllers\Marketplace\LeaderboardController;
 use App\Http\Controllers\Marketplace\MakesGalleryController;
 use App\Http\Controllers\Marketplace\PrintChallengeController;
@@ -236,6 +237,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/custom-orders/{customOrder}', [CustomOrderController::class, 'show'])->name('custom-orders.show');
     Route::post('/custom-orders/{customOrder}/messages', [CustomOrderController::class, 'message'])->name('custom-orders.messages.store');
     Route::post('/custom-orders/{customOrder}/offer', [CustomOrderController::class, 'offer'])->name('custom-orders.offer');
+    Route::post('/custom-orders/{customOrder}/delivery', [CustomOrderController::class, 'delivery'])->name('custom-orders.delivery');
     Route::post('/custom-orders/{customOrder}/accept', [CustomOrderController::class, 'accept'])->name('custom-orders.accept');
     Route::post('/custom-orders/{customOrder}/demo-pay', [CustomOrderController::class, 'demoPay'])->name('custom-orders.demo-pay');
     Route::post('/custom-orders/{customOrder}/result', [CustomOrderController::class, 'result'])->name('custom-orders.result');
@@ -243,6 +245,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/custom-orders/{customOrder}/ship', [CustomOrderController::class, 'ship'])->name('custom-orders.ship');
     Route::post('/custom-orders/{customOrder}/complete', [CustomOrderController::class, 'complete'])->name('custom-orders.complete');
     Route::post('/custom-orders/{customOrder}/dispute', [CustomOrderController::class, 'dispute'])->name('custom-orders.dispute');
+    Route::get('/delivery/cities', [DeliveryLookupController::class, 'cities'])->name('delivery.cities');
+    Route::get('/delivery/warehouses', [DeliveryLookupController::class, 'warehouses'])->name('delivery.warehouses');
 
     // Author follow / unfollow / contact.
     Route::post('/authors/{user}/follow', [AuthorFollowController::class, 'store'])->name('authors.follow');

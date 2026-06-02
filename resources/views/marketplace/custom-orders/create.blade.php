@@ -65,17 +65,6 @@
                     </div>
                 </div>
 
-                <div x-show="isPrint" x-transition class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-                    <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.delivery') }}</h2>
-                    <div class="mt-5 grid gap-4 md:grid-cols-2">
-                        <x-admin.field name="delivery_service" :label="__('custom_orders.form.delivery_service')" :value="old('delivery_service')" :placeholder="__('custom_orders.form.delivery_service_placeholder')" />
-                        <x-admin.field name="delivery_address" :label="__('custom_orders.form.delivery_address')" :value="old('delivery_address')" />
-                    </div>
-                    <div class="mt-4">
-                        <x-admin.field name="extra_comment" as="textarea" rows="4" :label="__('custom_orders.form.extra_comment')" :value="old('extra_comment')" />
-                    </div>
-                </div>
-
                 <div class="rounded-3xl border border-dashed border-emerald-300/25 bg-emerald-300/[0.05] p-6">
                     <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.files_refs') }}</h2>
                     <p class="mt-2 text-sm text-zinc-400" x-text="isPrint ? @js(__('custom_orders.form.files_helper_print')) : @js(__('custom_orders.form.files_helper_model'))"></p>

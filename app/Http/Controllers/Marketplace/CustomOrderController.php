@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Marketplace;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CustomOrderDeliveryRequest;
 use App\Http\Requests\CustomOrderDisputeRequest;
 use App\Http\Requests\CustomOrderMessageRequest;
 use App\Http\Requests\CustomOrderOfferRequest;
@@ -120,9 +121,22 @@ class CustomOrderController extends Controller
     {
         abort_unless($customOrder->buyer_id === $request->user()->id, 403);
 
+        if ($customOrder->isPrintService() && ! $customOrder->hasDeliverySelection()) {
+            return back()->withErrors(['delivery_address' => __('custom_orders.errors.delivery_required_before_accept')]);
+        }
+
         $orders->acceptOffer($customOrder, $request->user());
 
         return back()->with('status', __('custom_orders.offer_accepted'));
+    }
+
+    public function delivery(CustomOrderDeliveryRequest $request, CustomOrder $customOrder, CustomOrderService $orders)
+    {
+        abort_unless($customOrder->buyer_id === $request->user()->id, 403);
+
+        $orders->selectDelivery($customOrder, $request->user(), $request->validated());
+
+        return back()->with('status', __('custom_orders.delivery.saved'));
     }
 
     public function demoPay(Request $request, CustomOrder $customOrder, CustomOrderService $orders)

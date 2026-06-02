@@ -21,6 +21,16 @@ class CustomOrderService
     public function create(User $buyer, array $data, array $files = []): CustomOrder
     {
         return DB::transaction(function () use ($buyer, $data, $files) {
+            $data = [
+                ...$data,
+                'delivery_service' => null,
+                'delivery_city' => null,
+                'delivery_city_ref' => null,
+                'delivery_warehouse_ref' => null,
+                'delivery_address' => null,
+                'delivery_selected_at' => null,
+            ];
+
             if (($data['type'] ?? CustomOrder::TYPE_MODEL_CREATION) === CustomOrder::TYPE_MODEL_CREATION) {
                 $data = [
                     ...$data,
@@ -28,8 +38,6 @@ class CustomOrderService
                     'dimensions' => null,
                     'material' => null,
                     'color' => null,
-                    'delivery_service' => null,
-                    'delivery_address' => null,
                     'extra_comment' => null,
                 ];
             }
@@ -104,10 +112,41 @@ class CustomOrderService
     public function acceptOffer(CustomOrder $order, User $buyer): CustomOrder
     {
         return DB::transaction(function () use ($order, $buyer) {
+            if ($order->isPrintService()) {
+                throw_unless($order->hasDeliverySelection(), \InvalidArgumentException::class, 'Delivery branch is required before accepting a print order offer.');
+            }
+
             $order->forceFill(['accepted_at' => now()])->save();
             $this->transition($order, CustomOrder::STATUS_WAITING_PAYMENT, $buyer, __('custom_orders.logs.offer_accepted'));
 
             return $order;
+        });
+    }
+
+    public function selectDelivery(CustomOrder $order, User $buyer, array $data): CustomOrder
+    {
+        return DB::transaction(function () use ($order, $buyer, $data) {
+            throw_unless($order->isPrintService(), \InvalidArgumentException::class, 'Delivery selection is available only for print orders.');
+            throw_unless($buyer->id === $order->buyer_id, \InvalidArgumentException::class, 'Only the buyer can select delivery.');
+            throw_unless(in_array($order->status, [CustomOrder::STATUS_WAITING_BUYER_ACCEPT, CustomOrder::STATUS_WAITING_PAYMENT], true), \InvalidArgumentException::class, 'Delivery cannot be changed at this stage.');
+
+            $order->forceFill([
+                'delivery_service' => $data['delivery_service'],
+                'delivery_city' => $data['delivery_city'],
+                'delivery_city_ref' => $data['delivery_city_ref'] ?? null,
+                'delivery_warehouse_ref' => $data['delivery_warehouse_ref'] ?? null,
+                'delivery_address' => $data['delivery_address'],
+                'extra_comment' => $data['extra_comment'] ?? null,
+                'delivery_selected_at' => now(),
+            ])->save();
+
+            $this->log($order, $buyer, $order->status, $order->status, __('custom_orders.logs.delivery_selected'), [
+                'carrier' => $data['delivery_service'],
+                'city' => $data['delivery_city'],
+                'warehouse' => $data['delivery_address'],
+            ]);
+
+            return $order->fresh();
         });
     }
 

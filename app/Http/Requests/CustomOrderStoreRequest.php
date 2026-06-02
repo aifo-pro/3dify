@@ -10,14 +10,20 @@ class CustomOrderStoreRequest extends FormRequest
 {
     protected function prepareForValidation(): void
     {
+        $this->merge([
+            'delivery_service' => null,
+            'delivery_city' => null,
+            'delivery_city_ref' => null,
+            'delivery_warehouse_ref' => null,
+            'delivery_address' => null,
+        ]);
+
         if ($this->input('type') === CustomOrder::TYPE_MODEL_CREATION) {
             $this->merge([
                 'quantity' => null,
                 'dimensions' => null,
                 'material' => null,
                 'color' => null,
-                'delivery_service' => null,
-                'delivery_address' => null,
                 'extra_comment' => null,
             ]);
         }
@@ -44,6 +50,9 @@ class CustomOrderStoreRequest extends FormRequest
             'material' => ['nullable', 'string', 'max:120'],
             'color' => ['nullable', 'string', 'max:120'],
             'delivery_service' => ['nullable', 'string', 'max:120'],
+            'delivery_city' => ['nullable', 'string', 'max:160'],
+            'delivery_city_ref' => ['nullable', 'string', 'max:255'],
+            'delivery_warehouse_ref' => ['nullable', 'string', 'max:255'],
             'delivery_address' => ['nullable', 'string', 'max:2000'],
             'extra_comment' => ['nullable', 'string', 'max:4000'],
             'files' => ['nullable', 'array', 'max:10'],

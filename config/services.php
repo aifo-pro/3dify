@@ -46,4 +46,14 @@ return [
         'bot_username' => env('TELEGRAM_BOT_USERNAME'),
     ],
 
+    'nova_poshta' => [
+        'key' => env('NOVA_POSHTA_API_KEY'),
+        'endpoint' => env('NOVA_POSHTA_API_ENDPOINT', 'https://api.novaposhta.ua/v2.0/json/'),
+    ],
+
+    'ukrposhta' => [
+        'token' => env('UKRPOSHTA_API_TOKEN'),
+        'endpoint' => env('UKRPOSHTA_API_ENDPOINT', 'https://www.ukrposhta.ua/ecom/0.0.1'),
+    ],
+
 ];

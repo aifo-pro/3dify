@@ -177,4 +177,55 @@ class CustomOrderTest extends TestCase
             ->post(route('custom-orders.complete', $order))
             ->assertStatus(422);
     }
+
+    public function test_print_order_delivery_is_selected_after_author_offer_before_payment(): void
+    {
+        $buyer = User::factory()->create();
+        $author = User::factory()->create(['role' => 'author']);
+        $order = CustomOrder::query()->create([
+            'buyer_id' => $buyer->id,
+            'author_id' => $author->id,
+            'type' => CustomOrder::TYPE_PRINT_SERVICE,
+            'status' => CustomOrder::STATUS_WAITING_BUYER_ACCEPT,
+            'title' => 'Print phone stand',
+            'description' => 'Print an existing phone stand model.',
+            'price' => 500,
+            'currency' => 'UAH',
+            'escrow_amount' => 500,
+            'platform_fee_amount' => 50,
+            'author_amount' => 450,
+            'quantity' => 1,
+        ]);
+
+        $this->actingAs($buyer)
+            ->post(route('custom-orders.accept', $order))
+            ->assertSessionHasErrors('delivery_address');
+
+        $this->assertFalse($order->refresh()->canBePaid());
+
+        $this->actingAs($buyer)
+            ->post(route('custom-orders.delivery', $order), [
+                'delivery_service' => 'nova_poshta',
+                'delivery_city' => 'Київ',
+                'delivery_city_ref' => 'city-ref',
+                'delivery_warehouse_ref' => 'warehouse-ref',
+                'delivery_address' => 'Відділення №1',
+                'extra_comment' => 'Call before delivery',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $order->refresh();
+        $this->assertSame('nova_poshta', $order->delivery_service);
+        $this->assertSame('Київ', $order->delivery_city);
+        $this->assertSame('Відділення №1', $order->delivery_address);
+        $this->assertNotNull($order->delivery_selected_at);
+
+        $this->actingAs($buyer)
+            ->post(route('custom-orders.accept', $order))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertTrue($order->refresh()->canBePaid());
+    }
 }

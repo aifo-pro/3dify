@@ -58,7 +58,11 @@ class CustomOrder extends Model
         'material',
         'color',
         'delivery_service',
+        'delivery_city',
+        'delivery_city_ref',
+        'delivery_warehouse_ref',
         'delivery_address',
+        'delivery_selected_at',
         'extra_comment',
         'price',
         'currency',
@@ -89,6 +93,7 @@ class CustomOrder extends Model
         'platform_fee_amount' => 'decimal:2',
         'author_amount' => 'decimal:2',
         'accepted_at' => 'datetime',
+        'delivery_selected_at' => 'datetime',
         'paid_at' => 'datetime',
         'started_at' => 'datetime',
         'shipped_at' => 'datetime',
@@ -166,7 +171,11 @@ class CustomOrder extends Model
 
     public function canBePaid(): bool
     {
-        return $this->status === self::STATUS_WAITING_PAYMENT && (float) $this->price > 0;
+        if ($this->status !== self::STATUS_WAITING_PAYMENT || (float) $this->price <= 0) {
+            return false;
+        }
+
+        return $this->isModelCreation() || $this->hasDeliverySelection();
     }
 
     public function isDownloadOrWorkLocked(): bool
@@ -182,6 +191,14 @@ class CustomOrder extends Model
     public function isPrintService(): bool
     {
         return $this->type === self::TYPE_PRINT_SERVICE;
+    }
+
+    public function hasDeliverySelection(): bool
+    {
+        return $this->isPrintService()
+            && filled($this->delivery_service)
+            && filled($this->delivery_city)
+            && filled($this->delivery_address);
     }
 
     public function resultFiles()
