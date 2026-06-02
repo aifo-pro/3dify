@@ -68,6 +68,8 @@ return [
         'delivery_not_available' => 'Delivery can be selected only after the author sends an offer and before payment.',
         'delivery_required_before_accept' => 'Select a delivery city and branch before accepting this print order offer.',
         'payment_checkout_unavailable' => 'Could not create a secure AIFO checkout. Check payment settings or try again.',
+        'payment_not_available' => 'Payment is not available yet. The buyer must accept the author terms first.',
+        'payment_post_required' => 'Use the payment button inside the order page to start secure checkout.',
         'payment_failed' => 'Payment was not completed. You can return to the order and try again.',
         'wrong_account' => 'This custom order belongs to another account.',
     ],

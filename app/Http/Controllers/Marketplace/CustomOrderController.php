@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Services\AifoPaymentService;
 use App\Services\CustomOrderService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
@@ -173,13 +174,39 @@ class CustomOrderController extends Controller
     public function pay(Request $request, CustomOrder $customOrder, AifoPaymentService $payments)
     {
         abort_unless($customOrder->buyer_id === $request->user()->id, 403);
-        abort_unless($customOrder->canBePaid(), 422);
 
-        $payment = $payments->createCustomOrderPayment($customOrder);
+        if (! $request->isMethod('post')) {
+            return redirect()
+                ->route('custom-orders.show', $customOrder)
+                ->with('error', __('custom_orders.errors.payment_post_required'));
+        }
+
+        if (! $customOrder->canBePaid()) {
+            return redirect()
+                ->route('custom-orders.show', $customOrder)
+                ->withErrors(['payment' => __('custom_orders.errors.payment_not_available')]);
+        }
+
+        try {
+            $payment = $payments->createCustomOrderPayment($customOrder);
+        } catch (\Throwable $e) {
+            Log::error('custom_order.aifo_checkout_failed', [
+                'custom_order_id' => $customOrder->id,
+                'buyer_id' => $request->user()->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return redirect()
+                ->route('custom-orders.show', $customOrder)
+                ->withErrors(['payment' => __('custom_orders.errors.payment_checkout_unavailable')]);
+        }
+
         $checkoutUrl = $payment?->payload['checkout_url'] ?? null;
 
         if (! is_string($checkoutUrl) || trim($checkoutUrl) === '') {
-            return back()->withErrors(['payment' => __('custom_orders.errors.payment_checkout_unavailable')]);
+            return redirect()
+                ->route('custom-orders.show', $customOrder)
+                ->withErrors(['payment' => __('custom_orders.errors.payment_checkout_unavailable')]);
         }
 
         return redirect()->away($checkoutUrl);

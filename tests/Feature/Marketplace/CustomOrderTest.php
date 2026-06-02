@@ -191,6 +191,31 @@ class CustomOrderTest extends TestCase
         ]);
     }
 
+    public function test_custom_order_pay_url_get_redirects_back_to_order(): void
+    {
+        $buyer = User::factory()->create();
+        $author = User::factory()->create(['role' => 'author']);
+        $order = CustomOrder::query()->create([
+            'buyer_id' => $buyer->id,
+            'author_id' => $author->id,
+            'type' => CustomOrder::TYPE_MODEL_CREATION,
+            'status' => CustomOrder::STATUS_WAITING_PAYMENT,
+            'title' => 'Desk organizer model',
+            'description' => 'Need a desk organizer for 3D printing.',
+            'price' => 1000,
+            'currency' => 'UAH',
+            'escrow_amount' => 1000,
+            'platform_fee_amount' => 100,
+            'author_amount' => 900,
+            'accepted_at' => now(),
+        ]);
+
+        $this->actingAs($buyer)
+            ->get(route('custom-orders.pay', $order))
+            ->assertRedirect(route('custom-orders.show', $order))
+            ->assertSessionHas('error');
+    }
+
     public function test_print_order_requires_delivery_before_completion(): void
     {
         $buyer = User::factory()->create();
