@@ -124,7 +124,7 @@ Route::get('/page/{slug}', [PageController::class, 'show'])
 
 Route::match(['get', 'post'], '/payments/aifo/webhook', PaymentWebhookController::class)->name('payments.aifo.webhook');
 Route::match(['get', 'post'], '/payments/aifo/tips/webhook', TipPaymentWebhookController::class)->name('payments.aifo.tips.webhook');
-Route::post('/webhooks/didit', DiditWebhookController::class)->name('webhooks.didit');
+Route::match(['get', 'post'], '/webhooks/didit', DiditWebhookController::class)->name('webhooks.didit');
 
 // Signed download for slicer custom-protocol opens. Auth is via short-lived URL signature
 // (5 min) that is generated server-side only after MarketplaceAccess passes.

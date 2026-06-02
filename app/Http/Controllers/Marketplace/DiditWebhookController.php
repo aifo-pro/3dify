@@ -11,6 +11,14 @@ class DiditWebhookController extends Controller
 {
     public function __invoke(Request $request, DiditKycService $kyc)
     {
+        if (! $request->isMethod('post')) {
+            return response()->json([
+                'ok' => true,
+                'endpoint' => 'didit.webhook',
+                'method' => 'POST',
+            ]);
+        }
+
         $payload = $request->getContent();
         $decoded = json_decode($payload, true);
         if (! is_array($decoded)) {
