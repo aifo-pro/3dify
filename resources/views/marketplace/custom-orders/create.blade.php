@@ -55,7 +55,7 @@
                     </label>
                 </div>
 
-                <div x-show="isPrint" x-transition class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+                <div x-show="isPrint" x-cloak x-transition style="display: none;" class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
                     <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.print_settings') }}</h2>
                     <div class="mt-5 grid gap-4 md:grid-cols-2">
                         <x-admin.field name="quantity" type="number" min="1" :label="__('custom_orders.form.quantity')" :value="old('quantity')" x-bind:required="isPrint" />
