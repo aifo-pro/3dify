@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Advertisement;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class AdInjector
 {
@@ -13,12 +15,22 @@ class AdInjector
      */
     public function gridAds(string $page): Collection
     {
-        return Cache::remember("ads.grid.{$page}", 300, fn () =>
-            Advertisement::forPage($page)
-                ->where('ad_type', 'grid')
-                ->orderBy('id')
-                ->get()
-        );
+        try {
+            return Cache::remember("ads.grid.{$page}", 300, fn () =>
+                Advertisement::forPage($page)
+                    ->where('ad_type', 'grid')
+                    ->where('grid_every', '>', 0)
+                    ->orderBy('id')
+                    ->get()
+            );
+        } catch (Throwable $exception) {
+            Log::warning('ads.grid_load_failed', [
+                'page' => $page,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return collect();
+        }
     }
 
     /**
@@ -45,7 +57,8 @@ class AdInjector
 
             // After every N products insert the next ad (cycling through all active ads)
             $ad = $ads[$adIndex % $ads->count()];
-            if (($i + 1) % $ad->grid_every === 0 && $adIndex < $ads->count() * 3) {
+            $gridEvery = max(1, (int) $ad->grid_every);
+            if (($i + 1) % $gridEvery === 0 && $adIndex < $ads->count() * 3) {
                 $result[] = $ad;
                 $adIndex++;
             }
@@ -59,21 +72,39 @@ class AdInjector
      */
     public function bannerAd(string $page): ?Advertisement
     {
-        return Cache::remember("ads.banner.{$page}", 300, fn () =>
-            Advertisement::forPage($page)
-                ->where('ad_type', 'banner')
-                ->inRandomOrder()
-                ->first()
-        );
+        try {
+            return Cache::remember("ads.banner.{$page}", 300, fn () =>
+                Advertisement::forPage($page)
+                    ->where('ad_type', 'banner')
+                    ->inRandomOrder()
+                    ->first()
+            );
+        } catch (Throwable $exception) {
+            Log::warning('ads.banner_load_failed', [
+                'page' => $page,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 
     public function sidebarAd(string $page): ?Advertisement
     {
-        return Cache::remember("ads.sidebar.{$page}", 300, fn () =>
-            Advertisement::forPage($page)
-                ->where('ad_type', 'sidebar')
-                ->inRandomOrder()
-                ->first()
-        );
+        try {
+            return Cache::remember("ads.sidebar.{$page}", 300, fn () =>
+                Advertisement::forPage($page)
+                    ->where('ad_type', 'sidebar')
+                    ->inRandomOrder()
+                    ->first()
+            );
+        } catch (Throwable $exception) {
+            Log::warning('ads.sidebar_load_failed', [
+                'page' => $page,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 }
