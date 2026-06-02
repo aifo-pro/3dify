@@ -21,6 +21,19 @@ class CustomOrderService
     public function create(User $buyer, array $data, array $files = []): CustomOrder
     {
         return DB::transaction(function () use ($buyer, $data, $files) {
+            if (($data['type'] ?? CustomOrder::TYPE_MODEL_CREATION) === CustomOrder::TYPE_MODEL_CREATION) {
+                $data = [
+                    ...$data,
+                    'quantity' => null,
+                    'dimensions' => null,
+                    'material' => null,
+                    'color' => null,
+                    'delivery_service' => null,
+                    'delivery_address' => null,
+                    'extra_comment' => null,
+                ];
+            }
+
             $order = CustomOrder::create([
                 ...$data,
                 'buyer_id' => $buyer->id,
@@ -122,6 +135,8 @@ class CustomOrderService
     public function ship(CustomOrder $order, User $author, array $data): CustomOrderShipment
     {
         return DB::transaction(function () use ($order, $author, $data) {
+            throw_unless($order->isPrintService(), \InvalidArgumentException::class, 'Only print orders can be shipped.');
+
             $shipment = $order->shipments()->create([
                 'carrier' => $data['carrier'] ?? null,
                 'tracking_number' => $data['tracking_number'] ?? null,
@@ -132,6 +147,30 @@ class CustomOrderService
             $this->transition($order, CustomOrder::STATUS_SHIPPED, $author, __('custom_orders.logs.shipped'));
 
             return $shipment;
+        });
+    }
+
+    public function sendModelResult(CustomOrder $order, User $author, ?string $comment, array $files = []): CustomOrder
+    {
+        return DB::transaction(function () use ($order, $author, $comment, $files) {
+            throw_unless($order->isModelCreation(), \InvalidArgumentException::class, 'Only model creation orders can receive digital result files.');
+
+            $message = $order->messages()->create([
+                'user_id' => $author->id,
+                'role' => $this->roleFor($order, $author),
+                'body' => $comment ?: __('custom_orders.result.default_message'),
+            ]);
+
+            $this->storeFiles($order, $author, $files, 'result', $message);
+
+            $order->forceFill([
+                'delivered_at' => now(),
+                'auto_complete_at' => now()->addDays((int) config('custom_orders.auto_complete_days', 7)),
+            ])->save();
+
+            $this->transition($order, CustomOrder::STATUS_DELIVERED, $author, __('custom_orders.logs.result_sent'));
+
+            return $order->fresh(['files', 'messages.files']);
         });
     }
 
@@ -152,6 +191,15 @@ class CustomOrderService
     public function complete(CustomOrder $order, User $buyer): CustomOrder
     {
         return DB::transaction(function () use ($order, $buyer) {
+            if ($order->isModelCreation()) {
+                throw_unless($order->resultFiles()->exists(), \InvalidArgumentException::class, 'Model result files are required before completion.');
+                throw_unless($order->status === CustomOrder::STATUS_DELIVERED, \InvalidArgumentException::class, 'Model result must be delivered before completion.');
+            }
+
+            if ($order->isPrintService()) {
+                throw_unless($order->status === CustomOrder::STATUS_DELIVERED, \InvalidArgumentException::class, 'Print order must be delivered before completion.');
+            }
+
             $order->forceFill(['completed_at' => now()])->save();
             $this->transition($order, CustomOrder::STATUS_COMPLETED, $buyer, __('custom_orders.logs.completed'));
             $this->releaseEscrow($order);

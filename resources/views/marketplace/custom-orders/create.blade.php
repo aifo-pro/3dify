@@ -6,7 +6,13 @@
             <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">{{ __('custom_orders.create_hint') }}</p>
         </div>
 
-        <form method="POST" action="{{ route('custom-orders.store') }}" enctype="multipart/form-data" class="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <form
+            method="POST"
+            action="{{ route('custom-orders.store') }}"
+            enctype="multipart/form-data"
+            x-data="{ type: @js(old('type', \App\Models\CustomOrder::TYPE_MODEL_CREATION)), get isPrint() { return this.type === @js(\App\Models\CustomOrder::TYPE_PRINT_SERVICE) } }"
+            class="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
+        >
             @csrf
             @if($author)
                 <input type="hidden" name="author_id" value="{{ $author->id }}">
@@ -19,7 +25,7 @@
                         <x-admin.field name="title" :label="__('custom_orders.form.order_title')" :value="old('title')" required />
                         <x-admin.field name="description" as="textarea" rows="8" :label="__('custom_orders.form.description')" :value="old('description')" required :helper="__('custom_orders.form.description_helper')" />
                         <div class="grid gap-4 md:grid-cols-2">
-                            <x-admin.field name="type" as="select" :label="__('custom_orders.form.type')" required>
+                            <x-admin.field name="type" as="select" :label="__('custom_orders.form.type')" x-model="type" required>
                                 <option value="model_creation" @selected(old('type') === 'model_creation')>{{ __('custom_orders.types.model_creation') }}</option>
                                 <option value="print_service" @selected(old('type') === 'print_service')>{{ __('custom_orders.types.print_service') }}</option>
                             </x-admin.field>
@@ -49,13 +55,19 @@
                     </label>
                 </div>
 
-                <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-                    <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.print_delivery') }}</h2>
+                <div x-show="isPrint" x-transition class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+                    <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.print_settings') }}</h2>
                     <div class="mt-5 grid gap-4 md:grid-cols-2">
-                        <x-admin.field name="quantity" type="number" min="1" :label="__('custom_orders.form.quantity')" :value="old('quantity')" />
+                        <x-admin.field name="quantity" type="number" min="1" :label="__('custom_orders.form.quantity')" :value="old('quantity')" x-bind:required="isPrint" />
                         <x-admin.field name="dimensions" :label="__('custom_orders.form.dimensions')" :value="old('dimensions')" :placeholder="__('custom_orders.form.dimensions_placeholder')" />
                         <x-admin.field name="material" :label="__('custom_orders.form.material')" :value="old('material')" placeholder="PLA, PETG, resin..." />
                         <x-admin.field name="color" :label="__('custom_orders.form.color')" :value="old('color')" />
+                    </div>
+                </div>
+
+                <div x-show="isPrint" x-transition class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
+                    <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.delivery') }}</h2>
+                    <div class="mt-5 grid gap-4 md:grid-cols-2">
                         <x-admin.field name="delivery_service" :label="__('custom_orders.form.delivery_service')" :value="old('delivery_service')" :placeholder="__('custom_orders.form.delivery_service_placeholder')" />
                         <x-admin.field name="delivery_address" :label="__('custom_orders.form.delivery_address')" :value="old('delivery_address')" />
                     </div>
@@ -66,7 +78,7 @@
 
                 <div class="rounded-3xl border border-dashed border-emerald-300/25 bg-emerald-300/[0.05] p-6">
                     <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.files_refs') }}</h2>
-                    <p class="mt-2 text-sm text-zinc-400">{{ __('custom_orders.form.files_helper') }}</p>
+                    <p class="mt-2 text-sm text-zinc-400" x-text="isPrint ? @js(__('custom_orders.form.files_helper_print')) : @js(__('custom_orders.form.files_helper_model'))"></p>
                     <input type="file" name="files[]" multiple class="mt-5 block w-full rounded-2xl border border-white/10 bg-zinc-950/70 px-4 py-4 text-sm text-zinc-300 file:mr-4 file:rounded-xl file:border-0 file:bg-emerald-400 file:px-4 file:py-2 file:text-sm file:font-black file:text-zinc-950">
                 </div>
             </div>

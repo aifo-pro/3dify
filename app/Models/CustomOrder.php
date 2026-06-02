@@ -174,6 +174,21 @@ class CustomOrder extends Model
         return in_array($this->status, [self::STATUS_CANCELLED, self::STATUS_REFUNDED, self::STATUS_DISPUTED], true);
     }
 
+    public function isModelCreation(): bool
+    {
+        return $this->type === self::TYPE_MODEL_CREATION;
+    }
+
+    public function isPrintService(): bool
+    {
+        return $this->type === self::TYPE_PRINT_SERVICE;
+    }
+
+    public function resultFiles()
+    {
+        return $this->files()->where('purpose', 'result');
+    }
+
     public function statusLabel(): string
     {
         return __('custom_orders.statuses.'.$this->status);

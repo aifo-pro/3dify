@@ -6,14 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CustomOrderDisputeRequest;
 use App\Http\Requests\CustomOrderMessageRequest;
 use App\Http\Requests\CustomOrderOfferRequest;
+use App\Http\Requests\CustomOrderResultRequest;
 use App\Http\Requests\CustomOrderShipmentRequest;
 use App\Http\Requests\CustomOrderStoreRequest;
 use App\Models\Category;
 use App\Models\CustomOrder;
+use App\Models\CustomOrderFile;
 use App\Models\User;
 use App\Services\CustomOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 class CustomOrderController extends Controller
 {
@@ -141,9 +144,31 @@ class CustomOrderController extends Controller
         return back()->with('status', __('custom_orders.shipment_saved'));
     }
 
+    public function result(CustomOrderResultRequest $request, CustomOrder $customOrder, CustomOrderService $orders)
+    {
+        abort_unless($customOrder->author_id === $request->user()->id || $request->user()->canModerate(), 403);
+        abort_unless($customOrder->isModelCreation(), 404);
+        abort_unless(in_array($customOrder->status, [CustomOrder::STATUS_PAID, CustomOrder::STATUS_IN_PROGRESS, CustomOrder::STATUS_DELIVERED], true), 422);
+
+        $files = $request->file('result_files', []);
+        $orders->sendModelResult($customOrder, $request->user(), $request->validated('result_comment'), is_array($files) ? $files : [$files]);
+
+        return back()->with('status', __('custom_orders.result.sent'));
+    }
+
+    public function downloadFile(Request $request, CustomOrder $customOrder, CustomOrderFile $file)
+    {
+        $this->ensureParticipant($customOrder, $request->user());
+        abort_unless($file->custom_order_id === $customOrder->id, 404);
+        abort_if($customOrder->isDownloadOrWorkLocked(), 403);
+
+        return Storage::disk($file->disk ?: 'public')->download($file->path, $file->original_name);
+    }
+
     public function complete(Request $request, CustomOrder $customOrder, CustomOrderService $orders)
     {
         abort_unless($customOrder->buyer_id === $request->user()->id, 403);
+        abort_unless($customOrder->status === CustomOrder::STATUS_DELIVERED, 422);
 
         $orders->complete($customOrder, $request->user());
 
