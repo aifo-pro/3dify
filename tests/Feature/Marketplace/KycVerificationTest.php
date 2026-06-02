@@ -116,6 +116,45 @@ class KycVerificationTest extends TestCase
         $this->assertTrue($user->refresh()->hasApprovedKyc());
     }
 
+    public function test_didit_simple_signature_webhook_approves_user(): void
+    {
+        config(['services.didit.webhook_secret' => 'webhook-secret']);
+
+        $user = User::factory()->create(['kyc_status' => KycVerification::STATUS_PENDING]);
+        $verification = KycVerification::create([
+            'user_id' => $user->id,
+            'provider' => KycVerification::PROVIDER_DIDIT,
+            'provider_session_id' => 'didit-session-3',
+            'status' => KycVerification::STATUS_PENDING,
+        ]);
+
+        $timestamp = (string) now()->timestamp;
+        $payload = [
+            'vendor_data' => (string) $verification->id,
+            'session_id' => 'didit-session-3',
+            'status' => 'Approved',
+            'webhook_type' => 'status.updated',
+            'timestamp' => (int) $timestamp,
+        ];
+        $signature = hash_hmac('sha256', implode(':', [
+            $timestamp,
+            'didit-session-3',
+            'Approved',
+            'status.updated',
+        ]), 'webhook-secret');
+
+        $this->postJson(route('webhooks.didit'), $payload, [
+            'X-Timestamp' => $timestamp,
+            'X-Signature-Simple' => $signature,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('kyc_verifications', [
+            'id' => $verification->id,
+            'status' => KycVerification::STATUS_APPROVED,
+        ]);
+        $this->assertTrue($user->refresh()->hasApprovedKyc());
+    }
+
     private function seedAuthorBalance(User $author): void
     {
         $product = Product::query()->create([

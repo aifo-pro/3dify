@@ -12,22 +12,26 @@ class DiditWebhookController extends Controller
     public function __invoke(Request $request, DiditKycService $kyc)
     {
         $payload = $request->getContent();
-        $signature = $request->header('X-Signature-V2') ?: $request->header('X-Signature');
+        $decoded = json_decode($payload, true);
+        if (! is_array($decoded)) {
+            return response()->json(['message' => 'Invalid JSON'], 422);
+        }
+
+        $signatureV2 = $request->header('X-Signature-V2');
+        $signatureSimple = $request->header('X-Signature-Simple');
+        $signatureRaw = $request->header('X-Signature');
         $timestamp = $request->header('X-Timestamp');
 
-        if (! $kyc->verifyWebhookSignature($payload, $signature, $timestamp)) {
+        if (! $kyc->verifyWebhookSignature($payload, $decoded, $signatureV2, $signatureSimple, $signatureRaw, $timestamp)) {
             Log::warning('didit.kyc.webhook_bad_signature', [
                 'ip' => $request->ip(),
-                'has_signature' => (bool) $signature,
+                'has_signature_v2' => (bool) $signatureV2,
+                'has_signature_simple' => (bool) $signatureSimple,
+                'has_signature_raw' => (bool) $signatureRaw,
                 'has_timestamp' => (bool) $timestamp,
             ]);
 
             return response()->json(['message' => 'Invalid signature'], 401);
-        }
-
-        $decoded = json_decode($payload, true);
-        if (! is_array($decoded)) {
-            return response()->json(['message' => 'Invalid JSON'], 422);
         }
 
         $kyc->applyWebhook($decoded);

@@ -92,20 +92,150 @@ class DiditKycService
         return $verification;
     }
 
-    public function verifyWebhookSignature(string $payload, ?string $signature, ?string $timestamp): bool
+    public function verifyWebhookSignature(
+        string $payload,
+        array $jsonBody,
+        ?string $signatureV2,
+        ?string $signatureSimple,
+        ?string $signatureRaw,
+        ?string $timestamp
+    ): bool
     {
         $secret = (string) config('services.didit.webhook_secret');
 
-        if ($secret === '' || ! $signature || ! $timestamp) {
+        if ($secret === '' || ! $timestamp) {
             return false;
         }
 
-        $message = $timestamp.'.'.$payload;
-        $hex = hash_hmac('sha256', $message, $secret);
-        $base64 = base64_encode(hash_hmac('sha256', $message, $secret, true));
-        $plain = preg_replace('/^sha256=/i', '', trim($signature));
+        $incomingTime = (int) $timestamp;
+        if ($incomingTime <= 0 || abs(now()->timestamp - $incomingTime) > 600) {
+            return false;
+        }
 
-        return hash_equals($hex, $plain) || hash_equals($base64, $plain) || hash_equals($hex, trim($signature));
+        if ($signatureV2 && $this->signatureMatches($signatureV2, $this->v2SigningCandidates($payload, $jsonBody, $timestamp), $secret)) {
+            return true;
+        }
+
+        if ($signatureSimple && $this->signatureMatches($signatureSimple, $this->simpleSigningCandidates($jsonBody, $timestamp), $secret)) {
+            return true;
+        }
+
+        if ($signatureRaw && $this->signatureMatches($signatureRaw, [$payload, $timestamp.'.'.$payload], $secret)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Didit has used a few HMAC payload formats across webhook versions.
+     * Keep the accepted set explicit so valid v3 webhooks pass without weakening
+     * the shared-secret check.
+     *
+     * @return array<int, string>
+     */
+    private function v2SigningCandidates(string $payload, array $jsonBody, string $timestamp): array
+    {
+        $compactBody = json_encode($jsonBody, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $canonicalBody = json_encode($this->sortKeysRecursively($jsonBody), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $bodyTimestamp = $this->firstString($jsonBody, ['timestamp', 'created_at']) ?: $timestamp;
+
+        $candidates = [
+            $payload,
+            $timestamp.'.'.$payload,
+        ];
+
+        foreach ([$compactBody, $canonicalBody] as $body) {
+            if (! is_string($body) || $body === '') {
+                continue;
+            }
+
+            $candidates[] = $body;
+            $candidates[] = $timestamp.'.'.$body;
+            $candidates[] = $bodyTimestamp.'.'.$body;
+        }
+
+        return array_values(array_unique($candidates));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function simpleSigningCandidates(array $jsonBody, string $timestamp): array
+    {
+        $sessionId = $this->firstString($jsonBody, ['session_id', 'decision.session_id', 'session.id', 'id']);
+        $status = $this->firstString($jsonBody, ['status', 'decision.status', 'session.status']);
+        $webhookType = $this->firstString($jsonBody, ['webhook_type', 'type', 'event']);
+        $bodyTimestamp = $this->firstString($jsonBody, ['timestamp', 'created_at']) ?: $timestamp;
+
+        $statuses = array_values(array_unique(array_filter([
+            $status,
+            $status ? strtolower($status) : null,
+            $status ? ucfirst(strtolower($status)) : null,
+        ], fn ($value) => is_string($value) && $value !== '')));
+
+        $parts = [];
+        foreach ($statuses as $candidateStatus) {
+            $parts[] = [$bodyTimestamp, $sessionId, $candidateStatus, $webhookType];
+            $parts[] = [$timestamp, $sessionId, $candidateStatus, $webhookType];
+            $parts[] = [$sessionId, $candidateStatus, $webhookType, $bodyTimestamp];
+            $parts[] = [$sessionId, $candidateStatus, $bodyTimestamp];
+            $parts[] = [$bodyTimestamp, $sessionId, $candidateStatus];
+        }
+
+        $candidates = [];
+        foreach ($parts as $partSet) {
+            $partSet = array_values(array_filter($partSet, fn ($value) => is_string($value) && $value !== ''));
+            if (count($partSet) < 2) {
+                continue;
+            }
+
+            foreach ([':', '.', '|', ''] as $separator) {
+                $candidates[] = implode($separator, $partSet);
+            }
+        }
+
+        return array_values(array_unique($candidates));
+    }
+
+    /**
+     * @param  array<int, string>  $messages
+     */
+    private function signatureMatches(string $signature, array $messages, string $secret): bool
+    {
+        $normalized = $this->normalizeSignature($signature);
+        $raw = trim($signature);
+
+        foreach ($messages as $message) {
+            $hex = hash_hmac('sha256', $message, $secret);
+            $base64 = base64_encode(hash_hmac('sha256', $message, $secret, true));
+
+            if (hash_equals(strtolower($hex), strtolower($normalized)) || hash_equals($base64, $raw)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function normalizeSignature(string $signature): string
+    {
+        return preg_replace('/^sha256=/i', '', trim($signature)) ?: '';
+    }
+
+    private function sortKeysRecursively(mixed $value): mixed
+    {
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        if (array_is_list($value)) {
+            return array_map(fn ($item) => $this->sortKeysRecursively($item), $value);
+        }
+
+        ksort($value);
+
+        return array_map(fn ($item) => $this->sortKeysRecursively($item), $value);
     }
 
     public function applyWebhook(array $payload): ?KycVerification
