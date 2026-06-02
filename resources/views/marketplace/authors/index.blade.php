@@ -55,7 +55,10 @@
                                         <span class="grid h-20 w-20 place-items-center rounded-3xl border-4 border-zinc-950 bg-emerald-400 text-2xl font-black text-zinc-950 shadow-xl shadow-emerald-500/20">{{ mb_strtoupper(mb_substr($author->displayName(), 0, 1)) }}</span>
                                     @endif
                                     <div class="min-w-0 pb-2">
-                                        <a href="{{ $author->profileUrl() }}" class="block truncate text-lg font-black text-white hover:text-emerald-200">{{ $author->displayName() }}</a>
+                                        <div class="flex min-w-0 items-center gap-2">
+                                            <a href="{{ $author->profileUrl() }}" class="block truncate text-lg font-black text-white hover:text-emerald-200">{{ $author->displayName() }}</a>
+                                            <x-ui.verified-badge :user="$author" size="xs" :show-label="false" />
+                                        </div>
                                         <p class="truncate text-xs text-zinc-500">{{ '@'.($author->username ?: 'author-'.$author->id) }}</p>
                                     </div>
                                 </div>

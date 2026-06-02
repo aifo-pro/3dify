@@ -65,6 +65,7 @@
                 ['key' => 'custom-orders', 'label' => __('Custom orders'), 'href' => route('admin.custom-orders.index'), 'icon' => 'bag'],
                 ['key' => 'payments', 'label' => __('Платежі'), 'href' => route('admin.payments'), 'icon' => 'card'],
                 ['key' => 'payouts', 'label' => __('Виплати'), 'href' => route('admin.payouts'), 'icon' => 'card'],
+                ['key' => 'kyc', 'label' => __('kyc.admin.nav'), 'href' => route('admin.kyc.index'), 'icon' => 'shield'],
                 ['key' => 'promo-codes', 'label' => __('Промокоди'), 'href' => route('admin.promo-codes'), 'icon' => 'tag'],
                 ['key' => 'finance', 'label' => __('Тіпи'), 'href' => route('admin.tips'), 'icon' => 'card'],
                 ['key' => 'refunds', 'label' => __('Повернення'), 'href' => route('admin.refunds'), 'icon' => 'shield', 'badge' => $refundsBadge ?: null, 'badge_tone' => 'rose'],

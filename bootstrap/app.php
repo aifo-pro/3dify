@@ -28,6 +28,9 @@ return Application::configure(basePath: dirname(__DIR__))
             SetLocale::class,
             CaptureReferral::class,
         ]);
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/didit',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

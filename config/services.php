@@ -56,4 +56,12 @@ return [
         'endpoint' => env('UKRPOSHTA_API_ENDPOINT', 'https://www.ukrposhta.ua/ecom/0.0.1'),
     ],
 
+    'didit' => [
+        'endpoint' => env('DIDIT_API_ENDPOINT', 'https://verification.didit.me'),
+        'api_key' => env('DIDIT_API_KEY'),
+        'api_secret' => env('DIDIT_API_SECRET'),
+        'workflow_id' => env('DIDIT_WORKFLOW_ID'),
+        'webhook_secret' => env('DIDIT_WEBHOOK_SECRET'),
+    ],
+
 ];

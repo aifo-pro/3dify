@@ -24,7 +24,7 @@ use App\Notifications\TemplatedPasswordResetNotification;
     'bio', 'bio_uk', 'bio_en', 'avatar_path', 'cover_path', 'website_url', 'telegram_url',
     'instagram_url', 'youtube_url', 'github_url', 'twitter_url', 'location', 'country_code', 'city',
     'contact_enabled', 'github_id', 'telegram_id', 'telegram_username', 'locale',
-    'is_suspended', 'manual_verification', 'referral_code', 'referred_by',
+    'is_suspended', 'manual_verification', 'kyc_status', 'kyc_verified_at', 'is_verified', 'referral_code', 'referred_by',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -44,6 +44,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_suspended' => 'boolean',
             'manual_verification' => 'boolean',
+            'is_verified' => 'boolean',
+            'kyc_verified_at' => 'datetime',
             'contact_enabled' => 'boolean',
         ];
     }
@@ -113,6 +115,21 @@ class User extends Authenticatable
     public function payouts()
     {
         return $this->hasMany(Payout::class, 'author_id');
+    }
+
+    public function kycVerifications()
+    {
+        return $this->hasMany(KycVerification::class);
+    }
+
+    public function latestKycVerification(): ?KycVerification
+    {
+        return $this->kycVerifications()->latest()->first();
+    }
+
+    public function hasApprovedKyc(): bool
+    {
+        return $this->kyc_status === KycVerification::STATUS_APPROVED || (bool) $this->kyc_verified_at;
     }
 
     public function accountBalanceTransactions()
@@ -243,6 +260,10 @@ class User extends Authenticatable
      */
     public function verificationTier(): ?string
     {
+        if ($this->hasApprovedKyc()) {
+            return 'verified';
+        }
+
         if ($this->manual_verification) {
             return 'verified';
         }

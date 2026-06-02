@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Marketplace;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AuthorPayoutRequest;
 use App\Models\Payout;
 use App\Services\PayoutService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class PayoutController extends Controller
 {
@@ -23,25 +23,25 @@ class PayoutController extends Controller
             'commission' => PayoutService::COMMISSION_PERCENT,
             'minimum' => PayoutService::MIN_PAYOUT_AMOUNT,
             'methods' => Payout::METHODS,
+            'kycStatus' => $author->kyc_status ?: 'not_started',
+            'kycVerification' => $author->latestKycVerification(),
+            'kycApproved' => $author->hasApprovedKyc(),
         ]);
     }
 
-    public function store(Request $request, PayoutService $payouts)
+    public function store(AuthorPayoutRequest $request, PayoutService $payouts)
     {
-        $author = $request->user();
-        $available = $payouts->availableBalance($author);
+        $data = $request->validated();
 
-        $data = $request->validate([
-            'amount' => ['required', 'numeric', 'min:'.PayoutService::MIN_PAYOUT_AMOUNT, 'max:'.max($available, PayoutService::MIN_PAYOUT_AMOUNT)],
-            'method' => ['required', 'string', Rule::in(array_keys(Payout::METHODS))],
-            'details' => ['required', 'string', 'max:2000'],
-        ], [
-            'amount.max' => __('Сума перевищує доступний баланс :max грн.', ['max' => number_format($available, 2)]),
-            'amount.min' => __('Мінімальна сума виплати — :min грн.', ['min' => number_format(PayoutService::MIN_PAYOUT_AMOUNT, 2)]),
-        ]);
+        $payouts->requestPayout(
+            $request->user(),
+            (float) $data['amount'],
+            $data['method'],
+            $data['details']
+        );
 
-        $payouts->requestPayout($author, (float) $data['amount'], $data['method'], $data['details']);
-
-        return redirect()->route('author.payouts')->with('status', __('Заявка на виплату створена. Адміністратор перевірить її найближчим часом.'));
+        return redirect()
+            ->route('author.payouts')
+            ->with('status', __('kyc.payout.created'));
     }
 }

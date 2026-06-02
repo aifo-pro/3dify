@@ -72,6 +72,8 @@ class PayoutService
 
     public function requestPayout(User $author, float $amount, string $method, ?string $details = null, string $currency = self::DEFAULT_CURRENCY): Payout
     {
+        abort_unless($author->hasApprovedKyc(), 403, __('kyc.payout.blocked'));
+
         return DB::transaction(function () use ($author, $amount, $method, $details, $currency) {
             return Payout::create([
                 'author_id' => $author->id,

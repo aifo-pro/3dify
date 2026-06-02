@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\CustomOrderAdminController;
 use App\Http\Controllers\Admin\PrintChallengeAdminController;
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\FeaturedProductsController;
+use App\Http\Controllers\Admin\KycAdminController;
 use App\Http\Controllers\Admin\LegalPagesController;
 use App\Http\Controllers\Admin\ModerationController;
 use App\Http\Controllers\Admin\NewsletterController as AdminNewsletterController;
@@ -41,6 +42,8 @@ use App\Http\Controllers\Marketplace\CheckoutController;
 use App\Http\Controllers\Marketplace\CompareController;
 use App\Http\Controllers\Marketplace\CustomOrderController;
 use App\Http\Controllers\Marketplace\DeliveryLookupController;
+use App\Http\Controllers\Marketplace\DiditWebhookController;
+use App\Http\Controllers\Marketplace\KycController;
 use App\Http\Controllers\Marketplace\LeaderboardController;
 use App\Http\Controllers\Marketplace\MakesGalleryController;
 use App\Http\Controllers\Marketplace\PrintChallengeController;
@@ -121,6 +124,7 @@ Route::get('/page/{slug}', [PageController::class, 'show'])
 
 Route::match(['get', 'post'], '/payments/aifo/webhook', PaymentWebhookController::class)->name('payments.aifo.webhook');
 Route::match(['get', 'post'], '/payments/aifo/tips/webhook', TipPaymentWebhookController::class)->name('payments.aifo.tips.webhook');
+Route::post('/webhooks/didit', DiditWebhookController::class)->name('webhooks.didit');
 
 // Signed download for slicer custom-protocol opens. Auth is via short-lived URL signature
 // (5 min) that is generated server-side only after MarketplaceAccess passes.
@@ -175,6 +179,9 @@ Route::middleware('auth')->group(function () {
     // Author payouts
     Route::get('/author/payouts', [PayoutController::class, 'index'])->name('author.payouts');
     Route::post('/author/payouts', [PayoutController::class, 'store'])->name('author.payouts.store');
+    Route::get('/kyc', [KycController::class, 'show'])->name('kyc.show');
+    Route::post('/kyc/start', [KycController::class, 'start'])->middleware('throttle:3,10')->name('kyc.start');
+    Route::get('/kyc/return', [KycController::class, 'returned'])->name('kyc.return');
 
     // Author analytics dashboard
     Route::get('/author/analytics', [AuthorAnalyticsController::class, 'index'])->name('author.analytics');
@@ -301,6 +308,7 @@ Route::middleware(['auth', 'role:admin,moderator'])->prefix('admin')->name('admi
 
     Route::get('/payouts', [PayoutAdminController::class, 'index'])->name('payouts');
     Route::patch('/payouts/{payout}', [PayoutAdminController::class, 'update'])->name('payouts.update');
+    Route::get('/kyc', [KycAdminController::class, 'index'])->name('kyc.index');
 
     Route::get('/promo-codes', [PromoCodeAdminController::class, 'index'])->name('promo-codes');
     Route::post('/promo-codes', [PromoCodeAdminController::class, 'store'])->name('promo-codes.store');
