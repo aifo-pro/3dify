@@ -14,19 +14,19 @@
 
             <div class="grid gap-6">
                 <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-                    <h2 class="text-xl font-black text-white">{{ __('Деталі задачі') }}</h2>
+                    <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.task_details') }}</h2>
                     <div class="mt-5 grid gap-4">
-                        <x-admin.field name="title" :label="__('Назва замовлення')" :value="old('title')" required />
-                        <x-admin.field name="description" as="textarea" rows="8" :label="__('Опис')" :value="old('description')" required :helper="__('Опишіть результат, формат файлів, референси, розміри та обмеження.')" />
+                        <x-admin.field name="title" :label="__('custom_orders.form.order_title')" :value="old('title')" required />
+                        <x-admin.field name="description" as="textarea" rows="8" :label="__('custom_orders.form.description')" :value="old('description')" required :helper="__('custom_orders.form.description_helper')" />
                         <div class="grid gap-4 md:grid-cols-2">
-                            <x-admin.field name="type" as="select" :label="__('Тип')" required>
+                            <x-admin.field name="type" as="select" :label="__('custom_orders.form.type')" required>
                                 <option value="model_creation" @selected(old('type') === 'model_creation')>{{ __('custom_orders.types.model_creation') }}</option>
                                 <option value="print_service" @selected(old('type') === 'print_service')>{{ __('custom_orders.types.print_service') }}</option>
                             </x-admin.field>
-                            <x-admin.field name="category_id" as="select" :label="__('Категорія')">
-                                <option value="">{{ __('Не вибрано') }}</option>
+                            <x-admin.field name="category_id" as="select" :label="__('custom_orders.form.category')">
+                                <option value="">{{ __('custom_orders.form.not_selected') }}</option>
                                 @foreach($categories as $category)
-                                    <option value="{{ $category->id }}" @selected((string) old('category_id') === (string) $category->id)>{{ $category->name_uk ?? $category->name }}</option>
+                                    <option value="{{ $category->id }}" @selected((string) old('category_id') === (string) $category->id)>{{ $category->localized('name') ?: $category->slug }}</option>
                                 @endforeach
                             </x-admin.field>
                         </div>
@@ -34,54 +34,54 @@
                 </div>
 
                 <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-                    <h2 class="text-xl font-black text-white">{{ __('Бюджет і терміни') }}</h2>
+                    <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.budget_deadline') }}</h2>
                     <div class="mt-5 grid gap-4 md:grid-cols-2">
-                        <x-admin.field name="budget_amount" type="number" step="0.01" min="0" :label="__('Бюджет, UAH')" :value="old('budget_amount')" />
-                        <x-admin.field name="deadline_at" type="date" :label="__('Бажаний термін')" :value="old('deadline_at')" />
+                        <x-admin.field name="budget_amount" type="number" step="0.01" min="0" :label="__('custom_orders.form.budget_uah')" :value="old('budget_amount')" />
+                        <x-admin.field name="deadline_at" type="date" :label="__('custom_orders.form.deadline')" :value="old('deadline_at')" />
                     </div>
                     <label class="mt-4 flex items-start gap-3 rounded-2xl border border-white/10 bg-zinc-950/50 p-4">
                         <input type="hidden" name="budget_is_negotiable" value="0">
                         <input type="checkbox" name="budget_is_negotiable" value="1" @checked(old('budget_is_negotiable', true)) class="mt-1 rounded border-white/20 bg-zinc-950 text-emerald-400">
                         <span>
-                            <span class="block text-sm font-bold text-white">{{ __('Бюджет можна обговорити') }}</span>
-                            <span class="mt-1 block text-xs text-zinc-500">{{ __('Автор зможе запропонувати точну ціну після уточнення деталей.') }}</span>
+                            <span class="block text-sm font-bold text-white">{{ __('custom_orders.form.negotiable') }}</span>
+                            <span class="mt-1 block text-xs text-zinc-500">{{ __('custom_orders.form.negotiable_helper') }}</span>
                         </span>
                     </label>
                 </div>
 
                 <div class="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-                    <h2 class="text-xl font-black text-white">{{ __('Параметри друку та доставка') }}</h2>
+                    <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.print_delivery') }}</h2>
                     <div class="mt-5 grid gap-4 md:grid-cols-2">
-                        <x-admin.field name="quantity" type="number" min="1" :label="__('Кількість')" :value="old('quantity')" />
-                        <x-admin.field name="dimensions" :label="__('Розміри')" :value="old('dimensions')" placeholder="120x80x40 мм" />
-                        <x-admin.field name="material" :label="__('Матеріал')" :value="old('material')" placeholder="PLA, PETG, resin..." />
-                        <x-admin.field name="color" :label="__('Колір')" :value="old('color')" />
-                        <x-admin.field name="delivery_service" :label="__('Служба доставки')" :value="old('delivery_service')" placeholder="Нова Пошта / Укрпошта" />
-                        <x-admin.field name="delivery_address" :label="__('Адреса / відділення')" :value="old('delivery_address')" />
+                        <x-admin.field name="quantity" type="number" min="1" :label="__('custom_orders.form.quantity')" :value="old('quantity')" />
+                        <x-admin.field name="dimensions" :label="__('custom_orders.form.dimensions')" :value="old('dimensions')" :placeholder="__('custom_orders.form.dimensions_placeholder')" />
+                        <x-admin.field name="material" :label="__('custom_orders.form.material')" :value="old('material')" placeholder="PLA, PETG, resin..." />
+                        <x-admin.field name="color" :label="__('custom_orders.form.color')" :value="old('color')" />
+                        <x-admin.field name="delivery_service" :label="__('custom_orders.form.delivery_service')" :value="old('delivery_service')" :placeholder="__('custom_orders.form.delivery_service_placeholder')" />
+                        <x-admin.field name="delivery_address" :label="__('custom_orders.form.delivery_address')" :value="old('delivery_address')" />
                     </div>
                     <div class="mt-4">
-                        <x-admin.field name="extra_comment" as="textarea" rows="4" :label="__('Додатковий коментар')" :value="old('extra_comment')" />
+                        <x-admin.field name="extra_comment" as="textarea" rows="4" :label="__('custom_orders.form.extra_comment')" :value="old('extra_comment')" />
                     </div>
                 </div>
 
                 <div class="rounded-3xl border border-dashed border-emerald-300/25 bg-emerald-300/[0.05] p-6">
-                    <h2 class="text-xl font-black text-white">{{ __('Файли та референси') }}</h2>
-                    <p class="mt-2 text-sm text-zinc-400">{{ __('Додайте зображення, STL/OBJ/GLB/3MF, ZIP, PDF або текстові файли. Максимум 50MB на файл.') }}</p>
+                    <h2 class="text-xl font-black text-white">{{ __('custom_orders.form.files_refs') }}</h2>
+                    <p class="mt-2 text-sm text-zinc-400">{{ __('custom_orders.form.files_helper') }}</p>
                     <input type="file" name="files[]" multiple class="mt-5 block w-full rounded-2xl border border-white/10 bg-zinc-950/70 px-4 py-4 text-sm text-zinc-300 file:mr-4 file:rounded-xl file:border-0 file:bg-emerald-400 file:px-4 file:py-2 file:text-sm file:font-black file:text-zinc-950">
                 </div>
             </div>
 
             <aside class="self-start rounded-3xl border border-white/10 bg-zinc-950/70 p-5 shadow-2xl shadow-black/30 lg:sticky lg:top-28">
-                <p class="text-sm font-black text-white">{{ __('Безпечний процес') }}</p>
+                <p class="text-sm font-black text-white">{{ __('custom_orders.form.safe_process') }}</p>
                 <div class="mt-4 grid gap-3 text-sm text-zinc-400">
-                    <p>✓ {{ __('Умови узгоджуються в чаті') }}</p>
-                    <p>✓ {{ __('Оплата заморожується в escrow') }}</p>
-                    <p>✓ {{ __('Автор отримує кошти після підтвердження') }}</p>
-                    <p>✓ {{ __('Для проблем є спір та арбітраж') }}</p>
+                    <p>{{ __('custom_orders.form.safe_terms') }}</p>
+                    <p>{{ __('custom_orders.form.safe_escrow') }}</p>
+                    <p>{{ __('custom_orders.form.safe_release') }}</p>
+                    <p>{{ __('custom_orders.form.safe_dispute') }}</p>
                 </div>
                 @if($author)
                     <div class="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                        <p class="text-xs text-zinc-500">{{ __('Автор') }}</p>
+                        <p class="text-xs text-zinc-500">{{ __('custom_orders.form.author') }}</p>
                         <p class="mt-1 font-black text-white">{{ $author->displayName() }}</p>
                     </div>
                 @endif

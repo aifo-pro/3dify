@@ -3,6 +3,7 @@
 namespace Tests\Feature\Marketplace;
 
 use App\Models\AccountBalanceTransaction;
+use App\Models\Category;
 use App\Models\CustomOrder;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -11,6 +12,25 @@ use Tests\TestCase;
 class CustomOrderTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_create_custom_order_page_opens_with_marketplace_categories(): void
+    {
+        $buyer = User::factory()->create();
+        $author = User::factory()->create(['role' => 'author']);
+        Category::query()->create([
+            'slug' => 'gadgets',
+            'name' => ['uk' => 'Гаджети', 'en' => 'Gadgets'],
+            'description' => ['uk' => 'Корисні моделі', 'en' => 'Useful models'],
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $this->actingAs($buyer)
+            ->get(route('custom-orders.create', ['author' => $author->id]))
+            ->assertOk()
+            ->assertSee('Гаджети')
+            ->assertSee($author->displayName());
+    }
 
     public function test_buyer_can_create_custom_order_and_author_can_send_offer(): void
     {

@@ -45,7 +45,20 @@ class CustomOrderController extends Controller
                 ->first();
         }
 
-        $categories = Schema::hasTable('categories') ? Category::orderBy('name_uk')->get() : collect();
+        $categories = collect();
+        if (Schema::hasTable('categories')) {
+            $query = Category::query();
+
+            if (Schema::hasColumn('categories', 'is_active')) {
+                $query->where('is_active', true);
+            }
+
+            if (Schema::hasColumn('categories', 'sort_order')) {
+                $query->orderBy('sort_order');
+            }
+
+            $categories = $query->orderBy('slug')->get();
+        }
 
         return view('marketplace.custom-orders.create', compact('author', 'categories'));
     }
