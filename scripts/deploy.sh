@@ -167,6 +167,25 @@ health_check() {
   fi
 }
 
+ensure_production_assets() {
+  log "Verify frontend assets"
+
+  if [[ -f public/hot ]]; then
+    fail "public/hot still exists. Production would load Vite dev assets from 127.0.0.1."
+  fi
+
+  [[ -f public/build/manifest.json ]] || fail "public/build/manifest.json is missing. Run npm run build."
+
+  local css_file js_file
+  css_file="$(php -r '$m=json_decode(file_get_contents("public/build/manifest.json"), true); echo $m["resources/css/app.css"]["file"] ?? "";')"
+  js_file="$(php -r '$m=json_decode(file_get_contents("public/build/manifest.json"), true); echo $m["resources/js/app.js"]["file"] ?? "";')"
+
+  [[ -n "$css_file" && -f "public/build/$css_file" ]] || fail "Compiled CSS is missing from public/build."
+  [[ -n "$js_file" && -f "public/build/$js_file" ]] || fail "Compiled JS is missing from public/build."
+
+  chmod -R a+rX public/build
+}
+
 cd "$APP_DIR" || fail "Project directory not found: $APP_DIR"
 [[ -f artisan ]] || fail "artisan not found in $APP_DIR"
 [[ -d .git ]] || fail ".git directory not found in $APP_DIR"
@@ -199,6 +218,9 @@ run git fetch origin "$BRANCH"
 run git checkout "$BRANCH"
 run git merge --ff-only "origin/$BRANCH"
 
+log "Disable Vite dev server mode"
+rm -f public/hot
+
 if [[ "${SKIP_COMPOSER:-0}" != "1" ]]; then
   log "Composer install"
   run "$COMPOSER_BIN" install --no-dev --optimize-autoloader --prefer-dist --no-interaction
@@ -217,6 +239,8 @@ if [[ "${SKIP_NPM:-0}" != "1" ]]; then
     echo "npm not found, frontend build skipped."
   fi
 fi
+
+ensure_production_assets
 
 log "Clear Laravel caches"
 run "$PHP_BIN" artisan optimize:clear
