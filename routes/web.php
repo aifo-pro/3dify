@@ -414,6 +414,7 @@ Route::middleware(['auth', 'role:admin,moderator'])->prefix('admin')->name('admi
 
     // Newsletter (admin)
     Route::get('/newsletter', [AdminNewsletterController::class, 'index'])->name('newsletter');
+    Route::get('/newsletter/blast', [AdminNewsletterController::class, 'blastForm'])->name('newsletter.blast.form');
     Route::delete('/newsletter/subscribers/{subscriber}', [AdminNewsletterController::class, 'destroy'])->name('newsletter.destroy');
     Route::post('/newsletter/blast', [AdminNewsletterController::class, 'blast'])->name('newsletter.blast');
     Route::get('/newsletter/template/{key}', [AdminNewsletterController::class, 'template'])->name('newsletter.template');

@@ -57,6 +57,11 @@ class NewsletterController extends Controller
         ]);
     }
 
+    public function blastForm()
+    {
+        return redirect()->route('admin.newsletter');
+    }
+
     public function destroy(NewsletterSubscriber $subscriber, AuditLogger $audit)
     {
         $audit->record('newsletter.delete', $subscriber);
