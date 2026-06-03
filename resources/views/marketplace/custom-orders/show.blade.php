@@ -35,6 +35,191 @@
             'url' => route('custom-orders.files.download', [$order, $file]),
         ])->values()->all(),
     ])->values();
+
+    $money = fn ($value) => filled($value) ? number_format((float) $value, 2, ',', ' ').' грн' : '—';
+    $currentStatus = $order->status;
+    $isTerminal = in_array($currentStatus, [
+        \App\Models\CustomOrder::STATUS_COMPLETED,
+        \App\Models\CustomOrder::STATUS_CANCELLED,
+        \App\Models\CustomOrder::STATUS_REFUNDED,
+        \App\Models\CustomOrder::STATUS_DISPUTED,
+    ], true);
+
+    $workflowSteps = [
+        ['key' => 'request', 'label' => __('custom_orders.workflow.steps.request'), 'hint' => __('custom_orders.workflow.steps.request_hint')],
+        ['key' => 'terms', 'label' => __('custom_orders.workflow.steps.terms'), 'hint' => __('custom_orders.workflow.steps.terms_hint')],
+        ['key' => 'payment', 'label' => __('custom_orders.workflow.steps.payment'), 'hint' => __('custom_orders.workflow.steps.payment_hint')],
+        ['key' => 'work', 'label' => __('custom_orders.workflow.steps.work'), 'hint' => __('custom_orders.workflow.steps.work_hint')],
+        ['key' => 'review', 'label' => __('custom_orders.workflow.steps.review'), 'hint' => __('custom_orders.workflow.steps.review_hint')],
+        ['key' => 'done', 'label' => __('custom_orders.workflow.steps.done'), 'hint' => __('custom_orders.workflow.steps.done_hint')],
+    ];
+
+    $workflowIndex = match ($currentStatus) {
+        \App\Models\CustomOrder::STATUS_PENDING_REVIEW,
+        \App\Models\CustomOrder::STATUS_DISCUSSING => 0,
+        \App\Models\CustomOrder::STATUS_WAITING_BUYER_ACCEPT => 1,
+        \App\Models\CustomOrder::STATUS_WAITING_PAYMENT => 2,
+        \App\Models\CustomOrder::STATUS_PAID,
+        \App\Models\CustomOrder::STATUS_IN_PROGRESS,
+        \App\Models\CustomOrder::STATUS_SHIPPED => 3,
+        \App\Models\CustomOrder::STATUS_DELIVERED => 4,
+        \App\Models\CustomOrder::STATUS_COMPLETED => 5,
+        default => 0,
+    };
+
+    $nextAction = match (true) {
+        $currentStatus === \App\Models\CustomOrder::STATUS_PENDING_REVIEW && ($isAuthor || $isStaff) => [
+            'tone' => 'amber',
+            'eyebrow' => __('custom_orders.workflow.next_for_author'),
+            'title' => __('custom_orders.workflow.review_request_title'),
+            'body' => __('custom_orders.workflow.review_request_body'),
+            'href' => '#offer-form',
+            'cta' => __('custom_orders.workflow.review_request_cta'),
+        ],
+        $currentStatus === \App\Models\CustomOrder::STATUS_PENDING_REVIEW => [
+            'tone' => 'emerald',
+            'eyebrow' => __('custom_orders.workflow.next_for_author'),
+            'title' => __('custom_orders.workflow.wait_author_title'),
+            'body' => __('custom_orders.workflow.wait_author_body'),
+            'href' => '#order-chat',
+            'cta' => __('custom_orders.workflow.write_details_cta'),
+        ],
+        $currentStatus === \App\Models\CustomOrder::STATUS_DISCUSSING && ($isAuthor || $isStaff) => [
+            'tone' => 'amber',
+            'eyebrow' => __('custom_orders.workflow.next_for_author'),
+            'title' => __('custom_orders.workflow.send_terms_title'),
+            'body' => __('custom_orders.workflow.send_terms_body'),
+            'href' => '#offer-form',
+            'cta' => __('custom_orders.workflow.send_terms_cta'),
+        ],
+        $currentStatus === \App\Models\CustomOrder::STATUS_DISCUSSING => [
+            'tone' => 'emerald',
+            'eyebrow' => __('custom_orders.workflow.discussion'),
+            'title' => __('custom_orders.workflow.discuss_title'),
+            'body' => __('custom_orders.workflow.discuss_body'),
+            'href' => '#order-chat',
+            'cta' => __('custom_orders.workflow.open_chat_cta'),
+        ],
+        $currentStatus === \App\Models\CustomOrder::STATUS_WAITING_BUYER_ACCEPT && $isBuyer && $isPrintOrder && ! $order->hasDeliverySelection() => [
+            'tone' => 'amber',
+            'eyebrow' => __('custom_orders.workflow.next_for_buyer'),
+            'title' => __('custom_orders.workflow.delivery_title'),
+            'body' => __('custom_orders.workflow.delivery_body'),
+            'href' => '#delivery-step',
+            'cta' => __('custom_orders.workflow.delivery_cta'),
+        ],
+        $currentStatus === \App\Models\CustomOrder::STATUS_WAITING_BUYER_ACCEPT && $isBuyer => [
+            'tone' => 'amber',
+            'eyebrow' => __('custom_orders.workflow.next_for_buyer'),
+            'title' => __('custom_orders.workflow.accept_terms_title'),
+            'body' => __('custom_orders.workflow.accept_terms_body'),
+            'href' => '#buyer-actions',
+            'cta' => __('custom_orders.workflow.accept_terms_cta'),
+        ],
+        $currentStatus === \App\Models\CustomOrder::STATUS_WAITING_BUYER_ACCEPT => [
+            'tone' => 'emerald',
+            'eyebrow' => __('custom_orders.workflow.next_for_buyer'),
+            'title' => __('custom_orders.workflow.wait_buyer_accept_title'),
+            'body' => __('custom_orders.workflow.wait_buyer_accept_body'),
+            'href' => '#order-chat',
+            'cta' => __('custom_orders.workflow.open_chat_cta'),
+        ],
+        $currentStatus === \App\Models\CustomOrder::STATUS_WAITING_PAYMENT && $isBuyer => [
+            'tone' => 'amber',
+            'eyebrow' => __('custom_orders.workflow.next_for_buyer'),
+            'title' => __('custom_orders.workflow.pay_title'),
+            'body' => __('custom_orders.workflow.pay_body'),
+            'href' => '#buyer-actions',
+            'cta' => __('custom_orders.go_to_payment'),
+        ],
+        $currentStatus === \App\Models\CustomOrder::STATUS_WAITING_PAYMENT => [
+            'tone' => 'emerald',
+            'eyebrow' => __('custom_orders.workflow.next_for_buyer'),
+            'title' => __('custom_orders.workflow.wait_payment_title'),
+            'body' => __('custom_orders.workflow.wait_payment_body'),
+            'href' => '#order-chat',
+            'cta' => __('custom_orders.workflow.open_chat_cta'),
+        ],
+        in_array($currentStatus, [\App\Models\CustomOrder::STATUS_PAID, \App\Models\CustomOrder::STATUS_IN_PROGRESS], true) && $isAuthor && $isModelOrder => [
+            'tone' => 'emerald',
+            'eyebrow' => __('custom_orders.workflow.next_for_author'),
+            'title' => __('custom_orders.workflow.upload_result_title'),
+            'body' => __('custom_orders.workflow.upload_result_body'),
+            'href' => '#result-upload',
+            'cta' => __('custom_orders.result.upload_title'),
+        ],
+        in_array($currentStatus, [\App\Models\CustomOrder::STATUS_PAID, \App\Models\CustomOrder::STATUS_IN_PROGRESS], true) && $isAuthor && $isPrintOrder => [
+            'tone' => 'emerald',
+            'eyebrow' => __('custom_orders.workflow.next_for_author'),
+            'title' => __('custom_orders.workflow.ship_title'),
+            'body' => __('custom_orders.workflow.ship_body'),
+            'href' => '#ship-form',
+            'cta' => __('custom_orders.ship'),
+        ],
+        in_array($currentStatus, [\App\Models\CustomOrder::STATUS_PAID, \App\Models\CustomOrder::STATUS_IN_PROGRESS, \App\Models\CustomOrder::STATUS_SHIPPED], true) => [
+            'tone' => 'emerald',
+            'eyebrow' => __('custom_orders.workflow.in_work'),
+            'title' => __('custom_orders.workflow.work_progress_title'),
+            'body' => __('custom_orders.workflow.work_progress_body'),
+            'href' => '#order-chat',
+            'cta' => __('custom_orders.workflow.open_chat_cta'),
+        ],
+        $currentStatus === \App\Models\CustomOrder::STATUS_DELIVERED && $isBuyer => [
+            'tone' => 'emerald',
+            'eyebrow' => __('custom_orders.workflow.next_for_buyer'),
+            'title' => __('custom_orders.workflow.review_result_title'),
+            'body' => __('custom_orders.workflow.review_result_body'),
+            'href' => '#result-files',
+            'cta' => __('custom_orders.workflow.review_result_cta'),
+        ],
+        $currentStatus === \App\Models\CustomOrder::STATUS_DELIVERED => [
+            'tone' => 'emerald',
+            'eyebrow' => __('custom_orders.workflow.next_for_buyer'),
+            'title' => __('custom_orders.workflow.wait_review_title'),
+            'body' => __('custom_orders.workflow.wait_review_body'),
+            'href' => '#order-chat',
+            'cta' => __('custom_orders.workflow.open_chat_cta'),
+        ],
+        $currentStatus === \App\Models\CustomOrder::STATUS_COMPLETED => [
+            'tone' => 'emerald',
+            'eyebrow' => __('custom_orders.workflow.completed'),
+            'title' => __('custom_orders.workflow.completed_title'),
+            'body' => __('custom_orders.workflow.completed_body'),
+            'href' => '#result-files',
+            'cta' => __('custom_orders.result.ready_files'),
+        ],
+        $currentStatus === \App\Models\CustomOrder::STATUS_CANCELLED => [
+            'tone' => 'zinc',
+            'eyebrow' => __('custom_orders.workflow.stopped'),
+            'title' => __('custom_orders.workflow.cancelled_title'),
+            'body' => __('custom_orders.workflow.cancelled_body'),
+            'href' => '#order-chat',
+            'cta' => __('custom_orders.workflow.open_chat_cta'),
+        ],
+        $currentStatus === \App\Models\CustomOrder::STATUS_DISPUTED => [
+            'tone' => 'rose',
+            'eyebrow' => __('custom_orders.workflow.dispute'),
+            'title' => __('custom_orders.workflow.dispute_title'),
+            'body' => __('custom_orders.workflow.dispute_body'),
+            'href' => '#order-chat',
+            'cta' => __('custom_orders.workflow.open_chat_cta'),
+        ],
+        default => [
+            'tone' => 'zinc',
+            'eyebrow' => __('custom_orders.workflow.status'),
+            'title' => __('custom_orders.workflow.default_title'),
+            'body' => __('custom_orders.workflow.default_body'),
+            'href' => '#order-chat',
+            'cta' => __('custom_orders.workflow.open_chat_cta'),
+        ],
+    };
+
+    $nextToneClasses = [
+        'emerald' => 'border-emerald-300/25 bg-emerald-300/[0.07] text-emerald-100',
+        'amber' => 'border-amber-300/30 bg-amber-300/[0.08] text-amber-100',
+        'rose' => 'border-rose-300/30 bg-rose-300/[0.08] text-rose-100',
+        'zinc' => 'border-white/10 bg-white/[0.04] text-zinc-100',
+    ][$nextAction['tone']] ?? 'border-white/10 bg-white/[0.04] text-zinc-100';
 @endphp
 
 <x-layouts.marketplace>
@@ -59,8 +244,8 @@
                         <span class="text-xs text-zinc-600">·</span>
                         <span class="text-xs text-zinc-400">{{ $order->typeLabel() }}</span>
                     </div>
-                    <h1 class="mt-4 text-3xl font-black tracking-tight text-white sm:text-5xl">{{ $order->title }}</h1>
-                    <p class="mt-4 whitespace-pre-line text-sm leading-7 text-zinc-300">{{ $order->description }}</p>
+                    <h1 class="mt-4 max-w-4xl break-words text-3xl font-black tracking-tight text-white sm:text-5xl">{{ $order->title }}</h1>
+                    <p class="mt-4 max-w-5xl whitespace-pre-line break-words text-sm leading-7 text-zinc-300">{{ $order->description }}</p>
 
                     @if($isPrintOrder)
                         <div class="mt-6 grid gap-3 rounded-3xl border border-white/10 bg-zinc-950/50 p-4 text-sm md:grid-cols-2">
@@ -75,8 +260,47 @@
                     @endif
                 </div>
 
+                <div class="mt-6 rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-center">
+                        @foreach($workflowSteps as $index => $step)
+                            @php
+                                $isStepDone = $index < $workflowIndex || ($currentStatus === \App\Models\CustomOrder::STATUS_COMPLETED && $index === $workflowIndex);
+                                $isStepCurrent = ! $isTerminal && $index === $workflowIndex;
+                            @endphp
+                            <div class="flex min-w-0 flex-1 items-center gap-3">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-sm font-black transition
+                                    @if($isStepDone) border-emerald-300/30 bg-emerald-300 text-zinc-950
+                                    @elseif($isStepCurrent) border-emerald-300/40 bg-emerald-300/[0.14] text-emerald-100
+                                    @else border-white/10 bg-zinc-950/60 text-zinc-500 @endif">
+                                    @if($isStepDone) ✓ @else {{ $index + 1 }} @endif
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-black @if($isStepDone || $isStepCurrent) text-white @else text-zinc-500 @endif">{{ $step['label'] }}</p>
+                                    <p class="mt-0.5 hidden truncate text-xs text-zinc-500 xl:block">{{ $step['hint'] }}</p>
+                                </div>
+                            </div>
+                            @if(! $loop->last)
+                                <div class="hidden h-px w-8 bg-white/10 lg:block"></div>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="mt-6 rounded-[2rem] border p-6 shadow-2xl shadow-black/25 {{ $nextToneClasses }}">
+                    <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="min-w-0">
+                            <p class="text-xs font-black uppercase tracking-[0.18em] opacity-75">{{ $nextAction['eyebrow'] }}</p>
+                            <h2 class="mt-2 break-words text-2xl font-black text-white">{{ $nextAction['title'] }}</h2>
+                            <p class="mt-2 max-w-3xl text-sm leading-6 text-zinc-300">{{ $nextAction['body'] }}</p>
+                        </div>
+                        <a href="{{ $nextAction['href'] }}" class="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white text-sm font-black text-zinc-950 px-5 transition hover:bg-emerald-200">
+                            {{ $nextAction['cta'] }}
+                        </a>
+                    </div>
+                </div>
+
                 @if($canSelectDelivery)
-                    <form method="POST" action="{{ route('custom-orders.delivery', $order) }}" class="mt-6 rounded-3xl border border-emerald-300/25 bg-emerald-300/[0.06] p-6 shadow-2xl shadow-black/20">
+                    <form id="delivery-step" method="POST" action="{{ route('custom-orders.delivery', $order) }}" class="mt-6 rounded-3xl border border-emerald-300/25 bg-emerald-300/[0.06] p-6 shadow-2xl shadow-black/20">
                         @csrf
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                             <div>
@@ -184,7 +408,7 @@
                 @endif
 
                 @if($isModelOrder)
-                    <div class="mt-6 rounded-3xl border border-emerald-300/20 bg-emerald-300/[0.06] p-6">
+                    <div id="result-files" class="mt-6 rounded-3xl border border-emerald-300/20 bg-emerald-300/[0.06] p-6">
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                                 <h2 class="text-xl font-black text-white">{{ __('custom_orders.result.ready_files') }}</h2>
@@ -219,6 +443,7 @@
                 @endif
 
                 <div
+                    id="order-chat"
                     class="mt-6 rounded-3xl border border-white/10 bg-white/[0.04] p-6"
                     x-data="customOrderChat({
                         messages: @js($chatMessages),
@@ -269,15 +494,18 @@
             <aside class="grid gap-5 self-start lg:sticky lg:top-28">
                 <div class="rounded-3xl border border-emerald-300/20 bg-emerald-300/[0.07] p-5">
                     <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-200">{{ __('Escrow') }}</p>
-                    <p class="mt-2 text-3xl font-black text-white">{{ $order->price ? number_format((float) $order->price, 2).' UAH' : '—' }}</p>
+                    <p class="mt-2 text-3xl font-black text-white">{{ $money($order->price) }}</p>
+                    <p class="mt-2 text-xs leading-5 text-emerald-100/80">{{ __('custom_orders.workflow.escrow_hint') }}</p>
                     <div class="mt-4 grid gap-2 text-sm text-zinc-300">
-                        <div class="flex justify-between"><span>{{ __('custom_orders.platform_fee') }}</span><span>{{ number_format((float) $order->platform_fee_amount, 2) }} UAH</span></div>
-                        <div class="flex justify-between"><span>{{ __('custom_orders.author_gets') }}</span><span>{{ number_format((float) $order->author_amount, 2) }} UAH</span></div>
+                        <div class="flex justify-between gap-4"><span>{{ __('custom_orders.workflow.buyer_paid') }}</span><span class="font-bold text-white">{{ $order->paid_at ? __('custom_orders.workflow.yes') : __('custom_orders.workflow.not_yet') }}</span></div>
+                        <div class="flex justify-between gap-4"><span>{{ __('custom_orders.platform_fee') }}</span><span class="font-bold text-white">{{ $money($order->platform_fee_amount) }}</span></div>
+                        <div class="flex justify-between gap-4"><span>{{ __('custom_orders.author_gets') }}</span><span class="font-bold text-white">{{ $money($order->author_amount) }}</span></div>
+                        <div class="flex justify-between gap-4"><span>{{ __('custom_orders.workflow.release_condition') }}</span><span class="max-w-40 text-right font-bold text-emerald-100">{{ __('custom_orders.workflow.after_confirmation') }}</span></div>
                     </div>
                 </div>
 
                 @if($canOffer)
-                    <form method="POST" action="{{ route('custom-orders.offer', $order) }}" class="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+                    <form id="offer-form" method="POST" action="{{ route('custom-orders.offer', $order) }}" class="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
                         @csrf
                         <h3 class="font-black text-white">{{ __('custom_orders.offer') }}</h3>
                         <div class="mt-4 grid gap-3">
@@ -293,6 +521,7 @@
                     </form>
                 @endif
 
+                <div id="buyer-actions" class="grid gap-5">
                 @if($isBuyer && $order->status === \App\Models\CustomOrder::STATUS_WAITING_BUYER_ACCEPT)
                     <form method="POST" action="{{ route('custom-orders.accept', $order) }}">
                         @csrf
@@ -312,6 +541,7 @@
                         <button class="h-12 w-full rounded-2xl bg-amber-300 text-sm font-black text-zinc-950 shadow-lg shadow-amber-300/20">{{ __('custom_orders.go_to_payment') }}</button>
                     </form>
                 @endif
+                </div>
 
                 @if($canCancel)
                     <details class="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
@@ -325,7 +555,7 @@
                 @endif
 
                 @if($isAuthor && $isModelOrder && in_array($order->status, [\App\Models\CustomOrder::STATUS_IN_PROGRESS, \App\Models\CustomOrder::STATUS_PAID, \App\Models\CustomOrder::STATUS_DELIVERED], true))
-                    <form method="POST" action="{{ route('custom-orders.result', $order) }}" enctype="multipart/form-data" class="rounded-3xl border border-emerald-300/20 bg-emerald-300/[0.06] p-5">
+                    <form id="result-upload" method="POST" action="{{ route('custom-orders.result', $order) }}" enctype="multipart/form-data" class="rounded-3xl border border-emerald-300/20 bg-emerald-300/[0.06] p-5">
                         @csrf
                         <h3 class="font-black text-white">{{ __('custom_orders.result.upload_title') }}</h3>
                         <p class="mt-1 text-xs leading-5 text-zinc-400">{{ __('custom_orders.result.upload_hint') }}</p>
@@ -338,7 +568,7 @@
                 @endif
 
                 @if($isAuthor && $isPrintOrder && in_array($order->status, [\App\Models\CustomOrder::STATUS_IN_PROGRESS, \App\Models\CustomOrder::STATUS_PAID], true))
-                    <form method="POST" action="{{ route('custom-orders.ship', $order) }}" class="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+                    <form id="ship-form" method="POST" action="{{ route('custom-orders.ship', $order) }}" class="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
                         @csrf
                         <h3 class="font-black text-white">{{ __('custom_orders.ship') }}</h3>
                         <div class="mt-4 grid gap-3">
