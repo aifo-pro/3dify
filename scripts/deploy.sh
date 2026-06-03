@@ -12,7 +12,7 @@
 #   BACKUP_DIR=storage/backups  Where deployment backups are stored.
 #   SKIP_BACKUP=1               Skip .env/storage/database backup.
 #   SKIP_COMPOSER=1             Skip composer install.
-#   SKIP_NPM=1                  Skip npm ci and npm run build.
+#   SKIP_NPM=1                  Skip npm install and npm run build.
 #   SKIP_MIGRATE=1              Skip php artisan migrate --force.
 #   RUN_TESTS=1                 Run php artisan test before bringing the app up.
 #   PHP_FPM_SERVICE=php8.4-fpm  Reload this service after deploy, if systemctl exists.
@@ -229,11 +229,9 @@ fi
 if [[ "${SKIP_NPM:-0}" != "1" ]]; then
   if command -v "$NPM_BIN" >/dev/null 2>&1; then
     log "Frontend build"
-    if [[ -f package-lock.json ]]; then
-      run "$NPM_BIN" ci --no-audit --no-fund
-    else
-      run "$NPM_BIN" install --no-audit --no-fund
-    fi
+    # npm install is intentionally used instead of npm ci: production deploys
+    # should tolerate lock drift and continue to rebuild Vite assets.
+    run "$NPM_BIN" install --no-audit --no-fund
     run "$NPM_BIN" run build
   else
     echo "npm not found, frontend build skipped."
