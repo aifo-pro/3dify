@@ -41,6 +41,14 @@
 
     // Group helpers for forms
     $supportedLanguages = $list('site.supported_languages', ['uk', 'en']);
+    $mailPort = (int) $val('mail.port', config('mail.mailers.smtp.port', '587'));
+    $mailEncryption = strtolower($val('mail.encryption', 'tls'));
+    if ($mailPort === 587 && in_array($mailEncryption, ['ssl', 'smtps'], true)) {
+        $mailEncryption = 'tls';
+    }
+    if ($mailPort === 465 && in_array($mailEncryption, ['tls', 'starttls'], true)) {
+        $mailEncryption = 'ssl';
+    }
 
     $emailTypes = [
         'registration' => __('Реєстрація'),
@@ -522,7 +530,7 @@
                         <x-admin.field type="password" name="settings[mail.password]" label="Password / Secret Key" :value="''" placeholder="Leave empty to keep current password" />
                         <x-admin.field as="select" name="settings[mail.encryption]" label="Encryption">
                             @foreach(['tls', 'ssl', ''] as $enc)
-                                <option value="{{ $enc }}" @selected($val('mail.encryption', 'tls') === $enc)>{{ $enc ?: '— none' }}</option>
+                                <option value="{{ $enc }}" @selected($mailEncryption === $enc)>{{ $enc ?: '— none' }}</option>
                             @endforeach
                         </x-admin.field>
                         <x-admin.field name="settings[mail.from_address]" label="From address" :value="$val('mail.from_address', config('mail.from.address'))" type="email" />

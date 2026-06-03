@@ -85,9 +85,14 @@ class ContentController extends Controller
 
         $group = $request->input('group');
         $tab = $request->input('tab');
+        $settingsInput = (array) $request->input('settings', []);
+
+        if ($group === 'mail') {
+            $settingsInput = $this->normalizeMailSettings($settingsInput);
+        }
 
         // Plain key/value settings (strings, numbers, booleans).
-        foreach ((array) $request->input('settings', []) as $key => $value) {
+        foreach ($settingsInput as $key => $value) {
             if ($group === 'mail' && $key === 'mail.password' && ($value === '' || $value === null)) {
                 continue;
             }
@@ -126,6 +131,26 @@ class ContentController extends Controller
         return redirect()
             ->to(route('admin.content', $tab ? ['tab' => $tab] : []))
             ->with('status', 'Налаштування збережено.');
+    }
+
+    private function normalizeMailSettings(array $settings): array
+    {
+        $port = (int) ($settings['mail.port'] ?? 0);
+        $encryption = strtolower(trim((string) ($settings['mail.encryption'] ?? '')));
+
+        if ($port === 587 && in_array($encryption, ['ssl', 'smtps'], true)) {
+            $settings['mail.encryption'] = 'tls';
+        }
+
+        if ($port === 465 && in_array($encryption, ['tls', 'starttls'], true)) {
+            $settings['mail.encryption'] = 'ssl';
+        }
+
+        if (($settings['mail.host'] ?? null) === '') {
+            $settings['mail.host'] = 'in-v3.mailjet.com';
+        }
+
+        return $settings;
     }
 
     public function deleteAsset(Request $request)

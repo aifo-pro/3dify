@@ -95,6 +95,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         if ($smtp !== []) {
+            $smtp = $this->normalizeSmtpConfig($smtp);
             config(['mail.mailers.smtp' => array_replace(config('mail.mailers.smtp', []), $smtp)]);
         }
 
@@ -108,5 +109,26 @@ class AppServiceProvider extends ServiceProvider
         if ($fromName) {
             config(['mail.from.name' => $fromName]);
         }
+    }
+
+    /**
+     * Mailjet uses STARTTLS on 587 and implicit SSL on 465. A wrong persisted
+     * pair fails before Laravel can send password reset links, so keep it sane
+     * at runtime as a final guard.
+     */
+    private function normalizeSmtpConfig(array $smtp): array
+    {
+        $port = (int) ($smtp['port'] ?? 0);
+        $scheme = strtolower((string) ($smtp['scheme'] ?? ''));
+
+        if ($port === 587 && in_array($scheme, ['ssl', 'smtps'], true)) {
+            $smtp['scheme'] = 'tls';
+        }
+
+        if ($port === 465 && in_array($scheme, ['tls', 'starttls'], true)) {
+            $smtp['scheme'] = 'ssl';
+        }
+
+        return $smtp;
     }
 }
