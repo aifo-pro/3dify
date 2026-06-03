@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Marketplace;
 
 use App\Http\Controllers\Controller;
+use App\Mail\RenderedTemplateMail;
 use App\Models\User;
+use App\Services\EmailTemplateRenderer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -27,13 +29,28 @@ class AuthorContactController extends Controller
         abort_if(! ($author->contact_enabled ?? true), 404);
 
         try {
-            Mail::raw(
-                "From: {$sender->name} <{$sender->email}>\n\n".$data['message'],
-                function ($message) use ($author, $sender, $data) {
-                    $message->to($author->email, $author->name)
-                        ->replyTo($sender->email, $sender->name)
-                        ->subject('[3Dify] '.$data['subject']);
-                }
+            $rendered = app(EmailTemplateRenderer::class)->render('author_contact', [
+                'user' => [
+                    'name' => e($sender->name),
+                    'email' => e($sender->email),
+                    'username' => e($sender->username ?? ''),
+                    'display_name' => e($sender->displayName()),
+                    'locale' => $sender->locale ?: app()->getLocale(),
+                ],
+                'contact' => [
+                    'subject' => e($data['subject']),
+                    'message' => nl2br(e($data['message'])),
+                    'sender_name' => e($sender->displayName()),
+                ],
+            ], $author->locale ?: app()->getLocale());
+
+            Mail::to($author->email, $author->name)->send(
+                new RenderedTemplateMail(
+                    $rendered['subject'],
+                    $rendered['body'],
+                    $sender->email,
+                    $sender->name
+                )
             );
         } catch (\Throwable $e) {
             Log::warning('Author contact email failed', [

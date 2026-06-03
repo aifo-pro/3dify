@@ -17,12 +17,20 @@ class RenderedTemplateMail extends Mailable
     public function __construct(
         public string $subjectLine,
         public string $body,
+        public ?string $replyToEmail = null,
+        public ?string $replyToName = null,
     ) {}
 
     public function build()
     {
         $html = view('emails.templated', ['body' => $this->body])->render();
 
-        return $this->subject($this->subjectLine)->html($html);
+        $mail = $this->subject($this->subjectLine)->html($html);
+
+        if ($this->replyToEmail) {
+            $mail->replyTo($this->replyToEmail, $this->replyToName);
+        }
+
+        return $mail;
     }
 }
