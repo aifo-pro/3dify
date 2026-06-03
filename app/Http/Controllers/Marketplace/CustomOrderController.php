@@ -171,15 +171,26 @@ class CustomOrderController extends Controller
         return back()->with('status', __('custom_orders.delivery.saved'));
     }
 
-    public function pay(Request $request, CustomOrder $customOrder, AifoPaymentService $payments)
+    public function payRedirect(Request $request, CustomOrder $customOrder)
     {
-        abort_unless($customOrder->buyer_id === $request->user()->id, 403);
+        $user = $request->user();
 
-        if (! $request->isMethod('post')) {
+        if ($customOrder->isParticipant($user) || $user?->canModerate()) {
             return redirect()
                 ->route('custom-orders.show', $customOrder)
                 ->with('error', __('custom_orders.errors.payment_post_required'));
         }
+
+        return redirect()
+            ->route('custom-orders.index')
+            ->with('error', __('custom_orders.errors.wrong_account'));
+    }
+
+    public function pay(Request $request, CustomOrder $customOrder, AifoPaymentService $payments)
+    {
+        $user = $request->user();
+
+        abort_unless($user && $customOrder->buyer_id === $user->id, 403);
 
         if (! $customOrder->canBePaid()) {
             return redirect()
@@ -192,7 +203,7 @@ class CustomOrderController extends Controller
         } catch (\Throwable $e) {
             Log::error('custom_order.aifo_checkout_failed', [
                 'custom_order_id' => $customOrder->id,
-                'buyer_id' => $request->user()->id,
+                'buyer_id' => $user->id,
                 'message' => $e->getMessage(),
             ]);
 
