@@ -15,8 +15,6 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Testing\Fakes\NotificationFake;
 use App\Notifications\TemplatedPasswordResetNotification;
 
 #[Fillable([
@@ -308,36 +306,7 @@ class User extends Authenticatable
      */
     public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
     {
-        if (app()->environment('testing') && Notification::getFacadeRoot() instanceof NotificationFake) {
-            $this->notify(new TemplatedPasswordResetNotification($token));
-
-            return;
-        }
-
-        $url = url(route('password.reset', [
-            'token' => $token,
-            'email' => $this->getEmailForPasswordReset(),
-        ], false));
-        $expire = (string) config('auth.passwords.'.config('auth.defaults.passwords').'.expire');
-
-        $rendered = app(EmailTemplateRenderer::class)->render('password_reset', [
-            'user' => [
-                'name' => $this->name,
-                'email' => $this->email,
-                'username' => $this->username,
-                'display_name' => $this->displayName(),
-                'locale' => $this->locale,
-            ],
-            'link' => $url,
-            'reset' => [
-                'url' => $url,
-                'expires_minutes' => $expire,
-            ],
-        ], $this->locale ?: app()->getLocale());
-
-        Mail::to($this->getEmailForPasswordReset())->queue(
-            new RenderedTemplateMail($rendered['subject'], $rendered['body'])
-        );
+        $this->notify(new TemplatedPasswordResetNotification($token));
     }
 
     /**

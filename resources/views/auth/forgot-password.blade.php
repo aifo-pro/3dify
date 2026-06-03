@@ -2,7 +2,7 @@
     <div class="mb-8">
         <x-ui.badge>{{ __('Відновлення') }}</x-ui.badge>
         <h1 class="mt-4 text-3xl font-black tracking-tight text-white">{{ __('Відновити пароль') }}</h1>
-        <p class="mt-2 text-sm leading-6 text-zinc-400">{{ __('Вкажіть email, і система надішле посилання для зміни пароля. У локальному режимі листи пишуться в log.') }}</p>
+        <p class="mt-2 text-sm leading-6 text-zinc-400">{{ __('Вкажіть email, і ми надішлемо посилання для зміни пароля.') }}</p>
     </div>
 
     <x-auth-session-status class="mb-4" :status="session('status')" />
