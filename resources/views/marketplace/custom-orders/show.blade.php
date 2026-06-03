@@ -38,11 +38,28 @@
 
     $money = fn ($value) => filled($value) ? number_format((float) $value, 2, ',', ' ').' грн' : '—';
     $currentStatus = $order->status;
+    $workflowStatuses = [
+        \App\Models\CustomOrder::STATUS_PENDING_REVIEW,
+        \App\Models\CustomOrder::STATUS_DISCUSSING,
+        \App\Models\CustomOrder::STATUS_WAITING_BUYER_ACCEPT,
+        \App\Models\CustomOrder::STATUS_WAITING_PAYMENT,
+        \App\Models\CustomOrder::STATUS_PAID,
+        \App\Models\CustomOrder::STATUS_IN_PROGRESS,
+        \App\Models\CustomOrder::STATUS_SHIPPED,
+        \App\Models\CustomOrder::STATUS_DELIVERED,
+        \App\Models\CustomOrder::STATUS_COMPLETED,
+    ];
+    $isDisputed = $currentStatus === \App\Models\CustomOrder::STATUS_DISPUTED || filled($order->disputed_at);
+    $workflowStatus = $currentStatus;
+
+    if ($isDisputed) {
+        $workflowStatus = optional($order->statusLogs->first(fn ($log) => in_array($log->to_status, $workflowStatuses, true)))->to_status
+            ?: ($order->paid_at ? \App\Models\CustomOrder::STATUS_IN_PROGRESS : \App\Models\CustomOrder::STATUS_DISCUSSING);
+    }
     $isTerminal = in_array($currentStatus, [
         \App\Models\CustomOrder::STATUS_COMPLETED,
         \App\Models\CustomOrder::STATUS_CANCELLED,
         \App\Models\CustomOrder::STATUS_REFUNDED,
-        \App\Models\CustomOrder::STATUS_DISPUTED,
     ], true);
 
     $workflowSteps = [
@@ -54,7 +71,7 @@
         ['key' => 'done', 'label' => __('custom_orders.workflow.steps.done'), 'hint' => __('custom_orders.workflow.steps.done_hint')],
     ];
 
-    $workflowIndex = match ($currentStatus) {
+    $workflowIndex = match ($workflowStatus) {
         \App\Models\CustomOrder::STATUS_PENDING_REVIEW,
         \App\Models\CustomOrder::STATUS_DISCUSSING => 0,
         \App\Models\CustomOrder::STATUS_WAITING_BUYER_ACCEPT => 1,
@@ -239,7 +256,10 @@
             <div class="min-w-0">
                 <div class="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/30">
                     <div class="flex flex-wrap items-center gap-2">
-                        <span class="rounded-full border border-emerald-300/25 bg-emerald-300/[0.08] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200">{{ $order->statusLabel() }}</span>
+                        <span class="rounded-full border border-emerald-300/25 bg-emerald-300/[0.08] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200">{{ $isDisputed ? __('custom_orders.statuses.'.$workflowStatus) : $order->statusLabel() }}</span>
+                        @if($isDisputed)
+                            <span class="rounded-full border border-rose-300/30 bg-rose-300/[0.10] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-rose-100">{{ __('custom_orders.workflow.dispute') }}</span>
+                        @endif
                         <span class="text-xs font-semibold text-zinc-500">{{ $order->number }}</span>
                         <span class="text-xs text-zinc-600">·</span>
                         <span class="text-xs text-zinc-400">{{ $order->typeLabel() }}</span>
@@ -271,7 +291,7 @@
                     <div class="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
                         @foreach($workflowSteps as $index => $step)
                             @php
-                                $isStepDone = $index < $workflowIndex || ($currentStatus === \App\Models\CustomOrder::STATUS_COMPLETED && $index === $workflowIndex);
+                                $isStepDone = $index < $workflowIndex || ($workflowStatus === \App\Models\CustomOrder::STATUS_COMPLETED && $index === $workflowIndex);
                                 $isStepCurrent = ! $isTerminal && $index === $workflowIndex;
                             @endphp
                             <div class="min-w-0 rounded-2xl border p-4 transition
@@ -303,7 +323,11 @@
                             <h2 class="mt-2 break-words text-2xl font-black text-white">{{ $nextAction['title'] }}</h2>
                             <p class="mt-2 max-w-3xl text-sm leading-6 text-zinc-300">{{ $nextAction['body'] }}</p>
                         </div>
-                        <a href="{{ $nextAction['href'] }}" class="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white text-sm font-black text-zinc-950 px-5 transition hover:bg-emerald-200">
+                        <a
+                            href="{{ $nextAction['href'] }}"
+                            onclick="event.preventDefault(); const target = document.querySelector(this.getAttribute('href')); target?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => target?.querySelector('textarea, input, button')?.focus({ preventScroll: true }), 380);"
+                            class="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white px-5 text-sm font-black text-zinc-950 transition hover:bg-emerald-200"
+                        >
                             {{ $nextAction['cta'] }}
                         </a>
                     </div>
@@ -311,7 +335,7 @@
 
                 <div
                     id="order-chat"
-                    class="mt-6 rounded-3xl border border-white/10 bg-white/[0.04] p-6"
+                    class="mt-6 scroll-mt-28 rounded-3xl border border-white/10 bg-white/[0.04] p-6"
                     x-data="customOrderChat({
                         messages: @js($chatMessages),
                         fetchUrl: @js(route('custom-orders.messages.index', $order)),
@@ -352,7 +376,7 @@
 
                     <form method="POST" action="{{ route('custom-orders.messages.store', $order) }}" enctype="multipart/form-data" x-on:submit.prevent="send($event)" class="mt-5 rounded-2xl border border-white/10 bg-zinc-950/60 p-4">
                         @csrf
-                        <textarea name="body" rows="4" x-model="body" class="w-full rounded-2xl border border-white/10 bg-zinc-950/80 px-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40" placeholder="{{ __('custom_orders.write_message') }}"></textarea>
+                        <textarea id="custom-order-message" name="body" rows="4" x-model="body" class="w-full rounded-2xl border border-white/10 bg-zinc-950/80 px-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40" placeholder="{{ __('custom_orders.write_message') }}"></textarea>
                         <div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <input type="file" name="files[]" multiple class="text-xs text-zinc-400 file:mr-3 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-xs file:font-bold file:text-white">
                             <button class="h-10 rounded-xl bg-emerald-400 px-5 text-sm font-black text-zinc-950 disabled:cursor-wait disabled:opacity-60" :disabled="sending">
@@ -364,7 +388,7 @@
                 </div>
 
                 @if($canSelectDelivery)
-                    <form id="delivery-step" method="POST" action="{{ route('custom-orders.delivery', $order) }}" class="mt-6 rounded-3xl border border-emerald-300/25 bg-emerald-300/[0.06] p-6 shadow-2xl shadow-black/20">
+                    <form id="delivery-step" method="POST" action="{{ route('custom-orders.delivery', $order) }}" class="mt-6 scroll-mt-28 rounded-3xl border border-emerald-300/25 bg-emerald-300/[0.06] p-6 shadow-2xl shadow-black/20">
                         @csrf
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                             <div>
@@ -472,7 +496,7 @@
                 @endif
 
                 @if($isModelOrder)
-                    <div id="result-files" class="mt-6 rounded-3xl border border-emerald-300/20 bg-emerald-300/[0.06] p-6">
+                    <div id="result-files" class="mt-6 scroll-mt-28 rounded-3xl border border-emerald-300/20 bg-emerald-300/[0.06] p-6">
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                                 <h2 class="text-xl font-black text-white">{{ __('custom_orders.result.ready_files') }}</h2>
@@ -522,7 +546,7 @@
                 </div>
 
                 @if($canOffer)
-                    <form id="offer-form" method="POST" action="{{ route('custom-orders.offer', $order) }}" class="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+                    <form id="offer-form" method="POST" action="{{ route('custom-orders.offer', $order) }}" class="scroll-mt-28 rounded-3xl border border-white/10 bg-white/[0.04] p-5">
                         @csrf
                         <h3 class="font-black text-white">{{ __('custom_orders.offer') }}</h3>
                         <div class="mt-4 grid gap-3">
@@ -538,7 +562,7 @@
                     </form>
                 @endif
 
-                <div id="buyer-actions" class="grid gap-5">
+                <div id="buyer-actions" class="grid scroll-mt-28 gap-5">
                 @if($isBuyer && $order->status === \App\Models\CustomOrder::STATUS_WAITING_BUYER_ACCEPT)
                     <form method="POST" action="{{ route('custom-orders.accept', $order) }}">
                         @csrf
@@ -572,7 +596,7 @@
                 @endif
 
                 @if($isAuthor && $isModelOrder && in_array($order->status, [\App\Models\CustomOrder::STATUS_IN_PROGRESS, \App\Models\CustomOrder::STATUS_PAID, \App\Models\CustomOrder::STATUS_DELIVERED], true))
-                    <form id="result-upload" method="POST" action="{{ route('custom-orders.result', $order) }}" enctype="multipart/form-data" class="rounded-3xl border border-emerald-300/20 bg-emerald-300/[0.06] p-5">
+                    <form id="result-upload" method="POST" action="{{ route('custom-orders.result', $order) }}" enctype="multipart/form-data" class="scroll-mt-28 rounded-3xl border border-emerald-300/20 bg-emerald-300/[0.06] p-5">
                         @csrf
                         <h3 class="font-black text-white">{{ __('custom_orders.result.upload_title') }}</h3>
                         <p class="mt-1 text-xs leading-5 text-zinc-400">{{ __('custom_orders.result.upload_hint') }}</p>
@@ -585,7 +609,7 @@
                 @endif
 
                 @if($isAuthor && $isPrintOrder && in_array($order->status, [\App\Models\CustomOrder::STATUS_IN_PROGRESS, \App\Models\CustomOrder::STATUS_PAID], true))
-                    <form id="ship-form" method="POST" action="{{ route('custom-orders.ship', $order) }}" class="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+                    <form id="ship-form" method="POST" action="{{ route('custom-orders.ship', $order) }}" class="scroll-mt-28 rounded-3xl border border-white/10 bg-white/[0.04] p-5">
                         @csrf
                         <h3 class="font-black text-white">{{ __('custom_orders.ship') }}</h3>
                         <div class="mt-4 grid gap-3">
