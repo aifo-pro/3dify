@@ -201,11 +201,15 @@ class CustomOrderController extends Controller
         try {
             $payment = $payments->createCustomOrderPayment($customOrder);
         } catch (\Throwable $e) {
-            Log::error('custom_order.aifo_checkout_failed', [
-                'custom_order_id' => $customOrder->id,
-                'buyer_id' => $user->id,
-                'message' => $e->getMessage(),
-            ]);
+            try {
+                Log::error('custom_order.aifo_checkout_failed', [
+                    'custom_order_id' => $customOrder->id,
+                    'buyer_id' => $user->id,
+                    'message' => $e->getMessage(),
+                ]);
+            } catch (\Throwable) {
+                // Broken log permissions must not turn a checkout failure into a 500 page.
+            }
 
             return redirect()
                 ->route('custom-orders.show', $customOrder)

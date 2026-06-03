@@ -15,6 +15,15 @@ use Illuminate\Support\Facades\Log;
 
 class AifoPaymentService
 {
+    private function safeLog(string $level, string $message, array $context = []): void
+    {
+        try {
+            Log::{$level}($message, $context);
+        } catch (\Throwable) {
+            // Broken log permissions must not break checkout/payment requests.
+        }
+    }
+
     /**
      * Secret used to validate X-Aifo-Signature on webhooks (orders + tips).
      * Accepts canonical key or legacy admin keys from `/admin/content` (payments tab).
@@ -66,7 +75,7 @@ class AifoPaymentService
         $lower = strtolower($url);
         if (str_contains($lower, '/payments/aifo/webhook')
             || str_contains($lower, '/payments/aifo/tips/webhook')) {
-            Log::warning('payments.aifo_endpoint looks like this site webhook URL, not AIFO invoice API — using default.', ['url' => $url]);
+            $this->safeLog('warning', 'payments.aifo_endpoint looks like this site webhook URL, not AIFO invoice API — using default.', ['url' => $url]);
 
             return '';
         }
@@ -77,7 +86,7 @@ class AifoPaymentService
             && is_string($appHost)
             && $endpointHost !== ''
             && strcasecmp($endpointHost, $appHost) === 0) {
-            Log::warning('payments.aifo_endpoint points to this application host, not AIFO invoice API — using default.', ['url' => $url]);
+            $this->safeLog('warning', 'payments.aifo_endpoint points to this application host, not AIFO invoice API — using default.', ['url' => $url]);
 
             return '';
         }
@@ -213,7 +222,7 @@ class AifoPaymentService
                 ->withBody($bodyJson, 'application/json')
                 ->post($endpoint);
         } catch (\Throwable $e) {
-            Log::error('AIFO v2 invoice request threw', [
+            $this->safeLog('error', 'AIFO v2 invoice request threw', [
                 'endpoint' => $endpoint,
                 'message' => $e->getMessage(),
             ]);
@@ -224,7 +233,7 @@ class AifoPaymentService
         $rawBody = $response->body();
 
         if (! $response->successful()) {
-            Log::warning('AIFO v2 invoice request failed', [
+            $this->safeLog('warning', 'AIFO v2 invoice request failed', [
                 'endpoint' => $endpoint,
                 'sign_path' => $path,
                 'status' => $response->status(),
@@ -237,7 +246,7 @@ class AifoPaymentService
         }
 
         if ($this->responseBodyLooksLikeHtml($rawBody)) {
-            Log::warning('AIFO v2 invoice returned HTML instead of JSON (wrong endpoint or gateway error)', [
+            $this->safeLog('warning', 'AIFO v2 invoice returned HTML instead of JSON (wrong endpoint or gateway error)', [
                 'status' => $response->status(),
                 'endpoint' => $endpoint,
                 'content_type' => $response->header('Content-Type'),
@@ -352,7 +361,7 @@ class AifoPaymentService
                         'webhook_url' => route('payments.aifo.webhook'),
                     ]);
             } catch (\Throwable $e) {
-                Log::error('AIFO legacy order checkout HTTP exception', [
+                $this->safeLog('error', 'AIFO legacy order checkout HTTP exception', [
                     'order_id' => $order->id,
                     'message' => $e->getMessage(),
                 ]);
@@ -442,7 +451,7 @@ class AifoPaymentService
                         'webhook_url' => $webhookUrl,
                     ]);
             } catch (\Throwable $e) {
-                Log::error('AIFO legacy custom order checkout HTTP exception', [
+                $this->safeLog('error', 'AIFO legacy custom order checkout HTTP exception', [
                     'custom_order_id' => $customOrder->id,
                     'endpoint' => $endpoint,
                     'message' => $e->getMessage(),
@@ -454,7 +463,7 @@ class AifoPaymentService
             if ($response && $response->successful()) {
                 $checkoutUrl = $response->json('checkout_url');
             } elseif ($response) {
-                Log::warning('AIFO custom order checkout request failed', [
+                $this->safeLog('warning', 'AIFO custom order checkout request failed', [
                     'custom_order_id' => $customOrder->id,
                     'status' => $response->status(),
                     'body_preview' => $this->truncateForLog($response->body()),
@@ -508,7 +517,7 @@ class AifoPaymentService
 
         if (! $useV2 && ! $useLegacy) {
             if ($endpointIsV2) {
-                Log::warning('AIFO tip checkout skipped: v2 endpoint requires numeric Merchant ID and HMAC secret.', [
+                $this->safeLog('warning', 'AIFO tip checkout skipped: v2 endpoint requires numeric Merchant ID and HMAC secret.', [
                     'tip_id' => $tip->id,
                     'endpoint' => $endpoint,
                     'has_shop_id' => $shopId !== null,
@@ -544,7 +553,7 @@ class AifoPaymentService
                         'webhook_url' => $webhookUrl,
                     ]);
             } catch (\Throwable $e) {
-                Log::error('AIFO legacy tip checkout HTTP exception', [
+                $this->safeLog('error', 'AIFO legacy tip checkout HTTP exception', [
                     'tip_id' => $tip->id,
                     'endpoint' => $endpoint,
                     'message' => $e->getMessage(),
@@ -556,14 +565,14 @@ class AifoPaymentService
             if ($response && $response->successful()) {
                 $checkoutUrl = $response->json('checkout_url');
             } elseif ($response) {
-                Log::warning('AIFO tip checkout request failed', [
+                $this->safeLog('warning', 'AIFO tip checkout request failed', [
                     'tip_id' => $tip->id,
                     'status' => $response->status(),
                     'body_preview' => $this->truncateForLog($response->body()),
                 ]);
             }
         } elseif ($checkoutUrl === null && $useV2) {
-            Log::warning('AIFO tip checkout: no payment URL (check response from AIFO / signature)', [
+            $this->safeLog('warning', 'AIFO tip checkout: no payment URL (check response from AIFO / signature)', [
                 'tip_id' => $tip->id,
                 'endpoint' => $endpoint,
             ]);
