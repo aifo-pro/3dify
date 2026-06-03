@@ -39,12 +39,12 @@ return [
 
         'smtp' => [
             'transport' => 'smtp',
-            'scheme' => env('MAIL_SCHEME'),
+            'scheme' => env('MAIL_SCHEME', env('MAIL_ENCRYPTION')),
             'url' => env('MAIL_URL'),
-            'host' => env('MAIL_HOST', '127.0.0.1'),
-            'port' => env('MAIL_PORT', 2525),
-            'username' => env('MAIL_USERNAME'),
-            'password' => env('MAIL_PASSWORD'),
+            'host' => env('MAIL_HOST', env('MAILJET_SMTP_HOST', '127.0.0.1')),
+            'port' => env('MAIL_PORT', env('MAILJET_SMTP_PORT', 2525)),
+            'username' => env('MAIL_USERNAME', env('MAILJET_API_KEY')),
+            'password' => env('MAIL_PASSWORD', env('MAILJET_SECRET_KEY')),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],

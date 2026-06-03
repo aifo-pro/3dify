@@ -11,6 +11,7 @@ use App\Models\Translation;
 use App\Services\EmailTemplateCatalog;
 use App\Services\EmailTemplateRenderer;
 use App\Services\SiteSettings;
+use App\Mail\RenderedTemplateMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
@@ -87,6 +88,10 @@ class ContentController extends Controller
 
         // Plain key/value settings (strings, numbers, booleans).
         foreach ((array) $request->input('settings', []) as $key => $value) {
+            if ($group === 'mail' && $key === 'mail.password' && ($value === '' || $value === null)) {
+                continue;
+            }
+
             if ($value === '' || $value === null) {
                 $value = null;
             } elseif ($value === '1') {
@@ -251,11 +256,17 @@ class ContentController extends Controller
         ]);
 
         try {
-            Mail::raw('Тестовий лист з 3Dify · '.now()->format('Y-m-d H:i:s'), function ($message) use ($data) {
-                $message->to($data['to'])->subject('3Dify · Test email');
-            });
+            $html = '<div style="font-family:Arial,sans-serif;background:#0b0f19;padding:32px;color:#e5e7eb;">'
+                .'<div style="max-width:560px;margin:0 auto;background:#111827;border:1px solid #1f2937;border-radius:20px;padding:32px;">'
+                .'<p style="display:inline-block;margin:0 0 18px;padding:7px 12px;border-radius:999px;background:#34d399;color:#03130d;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">3Dify SMTP</p>'
+                .'<h1 style="margin:0 0 12px;color:#fff;font-size:28px;">Mailjet test email</h1>'
+                .'<p style="margin:0;color:#9ca3af;font-size:15px;line-height:1.7;">If you see this email as HTML, Laravel and Mailjet SMTP are configured correctly.</p>'
+                .'<p style="margin:24px 0 0;color:#6b7280;font-size:13px;">Sent at '.e(now()->toDateTimeString()).'</p>'
+                .'</div></div>';
 
-            return redirect()->to(route('admin.content', ['tab' => 'mail']))->with('status', 'Тестовий лист надіслано на '.$data['to']);
+            Mail::to($data['to'])->send(new RenderedTemplateMail('3Dify · Mailjet SMTP test', $html));
+
+            return redirect()->to(route('admin.content', ['tab' => 'mail']))->with('status', 'Тестовий HTML-лист надіслано на '.$data['to']);
         } catch (\Throwable $e) {
             return redirect()->to(route('admin.content', ['tab' => 'mail']))->withErrors(['mail' => 'Помилка надсилання: '.$e->getMessage()]);
         }

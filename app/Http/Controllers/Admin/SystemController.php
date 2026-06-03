@@ -70,6 +70,25 @@ class SystemController extends Controller
                 'ok' => (string) config('mail.from.address') !== '',
                 'detail' => (string) config('mail.from.address'),
             ],
+            'mailjet_smtp' => [
+                'label' => 'Mailjet SMTP',
+                'ok' => config('mail.default') !== 'smtp' || (
+                    (string) config('mail.mailers.smtp.host') !== ''
+                    && (string) config('mail.mailers.smtp.username') !== ''
+                    && (string) config('mail.mailers.smtp.password') !== ''
+                    && (string) config('mail.from.address') !== ''
+                ),
+                'detail' => config('mail.default') === 'smtp'
+                    ? sprintf(
+                        '%s:%s %s · username %s · password %s',
+                        config('mail.mailers.smtp.host') ?: 'no-host',
+                        config('mail.mailers.smtp.port') ?: 'no-port',
+                        config('mail.mailers.smtp.scheme') ?: 'no-encryption',
+                        config('mail.mailers.smtp.username') ? 'set' : 'missing',
+                        config('mail.mailers.smtp.password') ? 'set' : 'missing'
+                    )
+                    : __('SMTP не активний: поточний mailer :mailer', ['mailer' => config('mail.default')]),
+            ],
             'aifo_secret' => [
                 'label' => 'AIFO secret',
                 'ok' => \App\Services\AifoPaymentService::webhookSigningSecret() !== '',

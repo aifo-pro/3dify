@@ -28,6 +28,14 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'mailjet' => [
+        'api_key' => env('MAILJET_API_KEY'),
+        'secret_key' => env('MAILJET_SECRET_KEY'),
+        'smtp_host' => env('MAILJET_SMTP_HOST', 'in-v3.mailjet.com'),
+        'smtp_port' => env('MAILJET_SMTP_PORT', 587),
+        'smtp_encryption' => env('MAILJET_SMTP_ENCRYPTION', 'tls'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

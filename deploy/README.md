@@ -155,6 +155,48 @@ sudo certbot renew --dry-run
 sudo certbot renew --force-renewal
 ```
 
+## Mailjet SMTP
+
+Mailjet works through Laravel's normal SMTP mailer. In Mailjet, create an API Key
+and Secret Key, verify your sender domain/address, then configure the server:
+
+```bash
+sudo APP_DIR=/var/www/3dify \
+  APP_USER=deploy \
+  MAILJET_API_KEY="your-mailjet-api-key" \
+  MAILJET_SECRET_KEY="your-mailjet-secret-key" \
+  MAIL_FROM_ADDRESS="no-reply@3dify.dev" \
+  MAIL_FROM_NAME="3Dify" \
+  bash deploy/configure-mailjet-smtp.sh
+```
+
+Equivalent `.env` block:
+
+```dotenv
+MAIL_MAILER=smtp
+MAIL_HOST=in-v3.mailjet.com
+MAIL_PORT=587
+MAIL_USERNAME=your-mailjet-api-key
+MAIL_PASSWORD=your-mailjet-secret-key
+MAIL_SCHEME=tls
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=no-reply@3dify.dev
+MAIL_FROM_NAME="3Dify"
+MAIL_EHLO_DOMAIN=3dify.dev
+```
+
+After changing mail settings, always run:
+
+```bash
+sudo -u deploy php artisan optimize:clear
+sudo -u deploy php artisan config:cache
+sudo -u deploy php artisan queue:restart
+sudo systemctl reload php8.4-fpm
+sudo systemctl restart 3dify-queue.service
+```
+
+Then send a test HTML email from `/admin/content?tab=mail`.
+
 ## Backups (recommended)
 
 Quick MySQL + storage backup via cron (run as `deploy`):
