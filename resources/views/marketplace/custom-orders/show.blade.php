@@ -261,27 +261,37 @@
                 </div>
 
                 <div class="mt-6 rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
-                    <div class="flex flex-col gap-4 lg:flex-row lg:items-center">
+                    <div class="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-200">{{ __('custom_orders.workflow.map_title') }}</p>
+                            <h2 class="mt-1 text-xl font-black text-white">{{ __('custom_orders.workflow.map_heading') }}</h2>
+                        </div>
+                        <p class="max-w-md text-sm leading-6 text-zinc-400">{{ __('custom_orders.workflow.map_hint') }}</p>
+                    </div>
+                    <div class="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
                         @foreach($workflowSteps as $index => $step)
                             @php
                                 $isStepDone = $index < $workflowIndex || ($currentStatus === \App\Models\CustomOrder::STATUS_COMPLETED && $index === $workflowIndex);
                                 $isStepCurrent = ! $isTerminal && $index === $workflowIndex;
                             @endphp
-                            <div class="flex min-w-0 flex-1 items-center gap-3">
-                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-sm font-black transition
-                                    @if($isStepDone) border-emerald-300/30 bg-emerald-300 text-zinc-950
-                                    @elseif($isStepCurrent) border-emerald-300/40 bg-emerald-300/[0.14] text-emerald-100
-                                    @else border-white/10 bg-zinc-950/60 text-zinc-500 @endif">
-                                    @if($isStepDone) ✓ @else {{ $index + 1 }} @endif
+                            <div class="min-w-0 rounded-2xl border p-4 transition
+                                @if($isStepDone) border-emerald-300/25 bg-emerald-300/[0.10]
+                                @elseif($isStepCurrent) border-emerald-300/50 bg-emerald-300/[0.14] shadow-lg shadow-emerald-500/10
+                                @else border-white/10 bg-zinc-950/50 @endif">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-sm font-black
+                                        @if($isStepDone) border-emerald-300/30 bg-emerald-300 text-zinc-950
+                                        @elseif($isStepCurrent) border-emerald-300/40 bg-zinc-950/50 text-emerald-100
+                                        @else border-white/10 bg-zinc-950/60 text-zinc-500 @endif">
+                                        @if($isStepDone) ✓ @else {{ $index + 1 }} @endif
+                                    </div>
+                                    @if($isStepCurrent)
+                                        <span class="rounded-full bg-emerald-300 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-zinc-950">{{ __('custom_orders.workflow.now') }}</span>
+                                    @endif
                                 </div>
-                                <div class="min-w-0">
-                                    <p class="truncate text-sm font-black @if($isStepDone || $isStepCurrent) text-white @else text-zinc-500 @endif">{{ $step['label'] }}</p>
-                                    <p class="mt-0.5 hidden truncate text-xs text-zinc-500 xl:block">{{ $step['hint'] }}</p>
-                                </div>
+                                <p class="mt-3 text-sm font-black leading-5 @if($isStepDone || $isStepCurrent) text-white @else text-zinc-400 @endif">{{ $step['label'] }}</p>
+                                <p class="mt-1 text-xs leading-5 text-zinc-500">{{ $step['hint'] }}</p>
                             </div>
-                            @if(! $loop->last)
-                                <div class="hidden h-px w-8 bg-white/10 lg:block"></div>
-                            @endif
                         @endforeach
                     </div>
                 </div>
@@ -297,6 +307,60 @@
                             {{ $nextAction['cta'] }}
                         </a>
                     </div>
+                </div>
+
+                <div
+                    id="order-chat"
+                    class="mt-6 rounded-3xl border border-white/10 bg-white/[0.04] p-6"
+                    x-data="customOrderChat({
+                        messages: @js($chatMessages),
+                        fetchUrl: @js(route('custom-orders.messages.index', $order)),
+                        sendUrl: @js(route('custom-orders.messages.store', $order)),
+                        csrf: @js(csrf_token()),
+                        placeholder: @js(__('custom_orders.chat_empty_message'))
+                    })"
+                    x-init="start()"
+                >
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-200">{{ __('custom_orders.workflow.chat_eyebrow') }}</p>
+                            <h2 class="mt-1 text-xl font-black text-white">{{ __('custom_orders.chat') }}</h2>
+                        </div>
+                        <p class="max-w-md text-sm leading-6 text-zinc-400">{{ __('custom_orders.workflow.chat_hint') }}</p>
+                    </div>
+
+                    <div x-ref="messages" class="mt-5 grid max-h-[440px] min-h-[220px] gap-4 overflow-y-auto pr-1">
+                        <template x-for="message in messages" :key="message.id">
+                            <div class="flex" :class="message.own ? 'justify-end' : 'justify-start'">
+                                <div class="max-w-[82%] break-words rounded-2xl border px-4 py-3" :class="message.own ? 'border-emerald-300/25 bg-emerald-300/[0.10]' : 'border-white/10 bg-zinc-950/70'">
+                                    <div class="mb-1 flex items-center gap-2 text-xs text-zinc-500">
+                                        <span class="font-bold text-zinc-300" x-text="message.author"></span>
+                                        <span x-text="message.created_at"></span>
+                                    </div>
+                                    <p x-show="message.body" class="whitespace-pre-line text-sm leading-6 text-zinc-200" x-text="message.body"></p>
+                                    <div x-show="message.files && message.files.length" class="mt-3 grid gap-2">
+                                        <template x-for="file in message.files" :key="file.id">
+                                            <a :href="file.url" class="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-semibold text-emerald-200" x-text="file.name"></a>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <p x-show="error" x-cloak class="mt-3 rounded-2xl border border-rose-300/25 bg-rose-300/[0.08] px-4 py-3 text-sm font-semibold text-rose-100" x-text="error"></p>
+
+                    <form method="POST" action="{{ route('custom-orders.messages.store', $order) }}" enctype="multipart/form-data" x-on:submit.prevent="send($event)" class="mt-5 rounded-2xl border border-white/10 bg-zinc-950/60 p-4">
+                        @csrf
+                        <textarea name="body" rows="4" x-model="body" class="w-full rounded-2xl border border-white/10 bg-zinc-950/80 px-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40" placeholder="{{ __('custom_orders.write_message') }}"></textarea>
+                        <div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <input type="file" name="files[]" multiple class="text-xs text-zinc-400 file:mr-3 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-xs file:font-bold file:text-white">
+                            <button class="h-10 rounded-xl bg-emerald-400 px-5 text-sm font-black text-zinc-950 disabled:cursor-wait disabled:opacity-60" :disabled="sending">
+                                <span x-show="!sending">{{ __('custom_orders.send') }}</span>
+                                <span x-show="sending" x-cloak>{{ __('custom_orders.sending') }}</span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
 
                 @if($canSelectDelivery)
@@ -442,53 +506,6 @@
                     </div>
                 @endif
 
-                <div
-                    id="order-chat"
-                    class="mt-6 rounded-3xl border border-white/10 bg-white/[0.04] p-6"
-                    x-data="customOrderChat({
-                        messages: @js($chatMessages),
-                        fetchUrl: @js(route('custom-orders.messages.index', $order)),
-                        sendUrl: @js(route('custom-orders.messages.store', $order)),
-                        csrf: @js(csrf_token()),
-                        placeholder: @js(__('custom_orders.chat_empty_message'))
-                    })"
-                    x-init="start()"
-                >
-                    <h2 class="text-xl font-black text-white">{{ __('custom_orders.chat') }}</h2>
-
-                    <div x-ref="messages" class="mt-5 grid max-h-[520px] min-h-[260px] gap-4 overflow-y-auto pr-1">
-                        <template x-for="message in messages" :key="message.id">
-                            <div class="flex" :class="message.own ? 'justify-end' : 'justify-start'">
-                                <div class="max-w-[82%] rounded-2xl border px-4 py-3" :class="message.own ? 'border-emerald-300/25 bg-emerald-300/[0.10]' : 'border-white/10 bg-zinc-950/70'">
-                                    <div class="mb-1 flex items-center gap-2 text-xs text-zinc-500">
-                                        <span class="font-bold text-zinc-300" x-text="message.author"></span>
-                                        <span x-text="message.created_at"></span>
-                                    </div>
-                                    <p x-show="message.body" class="whitespace-pre-line text-sm leading-6 text-zinc-200" x-text="message.body"></p>
-                                    <div x-show="message.files && message.files.length" class="mt-3 grid gap-2">
-                                        <template x-for="file in message.files" :key="file.id">
-                                            <a :href="file.url" class="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-semibold text-emerald-200" x-text="file.name"></a>
-                                        </template>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-
-                    <p x-show="error" x-cloak class="mt-3 rounded-2xl border border-rose-300/25 bg-rose-300/[0.08] px-4 py-3 text-sm font-semibold text-rose-100" x-text="error"></p>
-
-                    <form method="POST" action="{{ route('custom-orders.messages.store', $order) }}" enctype="multipart/form-data" x-on:submit.prevent="send($event)" class="mt-5 rounded-2xl border border-white/10 bg-zinc-950/60 p-4">
-                        @csrf
-                        <textarea name="body" rows="4" x-model="body" class="w-full rounded-2xl border border-white/10 bg-zinc-950/80 px-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40" placeholder="{{ __('custom_orders.write_message') }}"></textarea>
-                        <div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <input type="file" name="files[]" multiple class="text-xs text-zinc-400 file:mr-3 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-xs file:font-bold file:text-white">
-                            <button class="h-10 rounded-xl bg-emerald-400 px-5 text-sm font-black text-zinc-950 disabled:cursor-wait disabled:opacity-60" :disabled="sending">
-                                <span x-show="!sending">{{ __('custom_orders.send') }}</span>
-                                <span x-show="sending" x-cloak>{{ __('custom_orders.sending') }}</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
             </div>
 
             <aside class="grid gap-5 self-start lg:sticky lg:top-28">
