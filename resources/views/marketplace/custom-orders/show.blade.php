@@ -338,6 +338,57 @@
                     </div>
                 </div>
 
+                {{-- Dispute panel: shows the open/resolved dispute and tells the
+                     parties exactly where to submit evidence (the chat below). --}}
+                @php $activeDispute = $order->disputes->firstWhere('status', 'open') ?? $order->disputes->first(); @endphp
+                @if($isDisputed && $activeDispute)
+                    <div class="mt-6 rounded-3xl border border-rose-300/25 bg-rose-300/[0.05] p-6">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="rounded-full border border-rose-300/30 bg-rose-300/[0.10] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-rose-100">{{ __('custom_orders.workflow.dispute') }}</span>
+                            @if($activeDispute->status === 'resolved')
+                                <span class="rounded-full border border-emerald-300/30 bg-emerald-300/[0.10] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-100">{{ __('custom_orders.dispute_panel.resolved') }}</span>
+                            @else
+                                <span class="rounded-full border border-amber-300/30 bg-amber-300/[0.10] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-100">{{ __('custom_orders.dispute_panel.under_review') }}</span>
+                            @endif
+                        </div>
+
+                        <div class="mt-4 grid gap-3 text-sm">
+                            <div>
+                                <p class="text-[11px] font-black uppercase tracking-[0.14em] text-zinc-500">{{ __('custom_orders.reason') }}</p>
+                                <p class="mt-1 font-bold text-white">{{ $activeDispute->reason }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] font-black uppercase tracking-[0.14em] text-zinc-500">{{ __('custom_orders.problem_description') }}</p>
+                                <p class="mt-1 whitespace-pre-line break-words leading-6 text-zinc-300">{{ $activeDispute->description }}</p>
+                            </div>
+                            <p class="text-[11px] text-zinc-600">{{ __('custom_orders.dispute_panel.opened_by', ['name' => $activeDispute->opener?->displayName() ?: __('custom_orders.system')]) }} · {{ $activeDispute->created_at->translatedFormat('d M H:i') }}</p>
+                        </div>
+
+                        @if($activeDispute->status === 'resolved')
+                            <div class="mt-4 rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.06] p-4 text-sm">
+                                @if($activeDispute->resolution_note)
+                                    <p class="text-zinc-200">{{ $activeDispute->resolution_note }}</p>
+                                @endif
+                                @if((float) $activeDispute->refund_amount > 0)
+                                    <p class="mt-2 text-emerald-200">{{ __('custom_orders.dispute_panel.refund_issued', ['amount' => number_format((float) $activeDispute->refund_amount, 2)]) }}</p>
+                                @endif
+                            </div>
+                        @else
+                            <div class="mt-4 rounded-2xl border border-white/10 bg-zinc-950/40 p-4">
+                                <p class="text-sm leading-6 text-zinc-300">{{ __('custom_orders.dispute_panel.evidence_hint') }}</p>
+                                <a
+                                    href="#order-chat"
+                                    onclick="event.preventDefault(); const t = document.getElementById('order-chat'); t?.scrollIntoView({behavior:'smooth',block:'start'}); setTimeout(() => t?.querySelector('textarea, input')?.focus({preventScroll:true}), 380);"
+                                    class="mt-3 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-rose-300 px-5 text-sm font-black text-zinc-950 transition hover:bg-rose-200"
+                                >
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                    {{ __('custom_orders.dispute_panel.add_evidence') }}
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
                 <div
                     id="order-chat"
                     class="mt-6 scroll-mt-28 rounded-3xl border border-white/10 bg-white/[0.04] p-6"

@@ -158,7 +158,7 @@ return [
         'cancelled_title' => 'Order cancelled before completion',
         'cancelled_body' => 'The order is stopped. Use chat history if you need to keep notes or create a new request later.',
         'dispute_title' => 'Dispute is open',
-        'dispute_body' => 'Staff will review the order terms, chat, files, and delivery evidence before making a decision.',
+        'dispute_body' => 'Staff will review the order terms, chat, and files before deciding. Add your evidence and arguments in the chat below.',
         'default_title' => 'Follow the order status',
         'default_body' => 'Use the chat and action blocks on this page to move the order through the workflow.',
         'escrow_hint' => 'Buyer payment is held safely and released only after the result is confirmed.',
@@ -253,6 +253,14 @@ return [
         'cancelled' => 'The custom order was cancelled before payment.',
         'auto_completed' => 'Order auto-completed after delivery — funds released to the author.',
         'dispute_resolved' => 'Dispute resolved by an administrator.',
+    ],
+    'dispute_panel' => [
+        'under_review' => 'Under review',
+        'resolved' => 'Resolved',
+        'opened_by' => 'Opened by :name',
+        'evidence_hint' => 'Add your evidence — screenshots, files, tracking number, arguments — in the chat below. Support can see the full conversation and attachments and will weigh them when deciding.',
+        'add_evidence' => 'Add evidence in chat',
+        'refund_issued' => 'Refunded to buyer: :amount UAH',
     ],
     'dispute' => [
         'title' => 'Resolve dispute',
