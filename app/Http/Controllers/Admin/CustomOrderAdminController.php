@@ -49,6 +49,41 @@ class CustomOrderAdminController extends Controller
     }
 
     /**
+     * Resolve a disputed order: refund the buyer, release escrow to the author, or split.
+     */
+    public function resolveDispute(Request $request, CustomOrder $customOrder, CustomOrderService $orders)
+    {
+        $data = $request->validate([
+            'outcome' => ['required', Rule::in([
+                CustomOrderService::RESOLVE_REFUND_BUYER,
+                CustomOrderService::RESOLVE_PARTIAL,
+                CustomOrderService::RESOLVE_RELEASE_AUTHOR,
+            ])],
+            'refund_amount' => ['nullable', 'numeric', 'min:0', 'max:'.((float) $customOrder->price)],
+            'note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        if ($data['outcome'] === CustomOrderService::RESOLVE_PARTIAL
+            && (float) ($data['refund_amount'] ?? 0) <= 0) {
+            return back()->withErrors(['refund_amount' => __('custom_orders.dispute.partial_requires_amount')]);
+        }
+
+        try {
+            $orders->resolveDispute(
+                $customOrder,
+                $request->user(),
+                $data['outcome'],
+                isset($data['refund_amount']) ? (float) $data['refund_amount'] : null,
+                $data['note'] ?? null,
+            );
+        } catch (\InvalidArgumentException $e) {
+            return back()->withErrors(['dispute' => __('custom_orders.dispute.not_resolvable')]);
+        }
+
+        return back()->with('status', __('custom_orders.dispute.resolved'));
+    }
+
+    /**
      * Manually re-poll the carrier for every shipment of this order.
      */
     public function track(CustomOrder $customOrder, ParcelTrackingService $tracker, CustomOrderService $orders)

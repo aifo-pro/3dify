@@ -308,6 +308,100 @@ class CustomOrderService
         });
     }
 
+    public const RESOLVE_REFUND_BUYER = 'refund_buyer';
+    public const RESOLVE_PARTIAL = 'partial_refund';
+    public const RESOLVE_RELEASE_AUTHOR = 'release_author';
+
+    /**
+     * Resolve a disputed order. Admin picks the outcome:
+     *  - refund_buyer:    full price → buyer balance, author gets nothing, order refunded.
+     *  - partial_refund:  $refundAmount → buyer balance, remaining author share → author, order refunded.
+     *  - release_author:  no refund, escrow released to author, order completed.
+     *
+     * Idempotent: a non-disputed order is left untouched.
+     */
+    public function resolveDispute(CustomOrder $order, User $admin, string $outcome, ?float $refundAmount = null, ?string $note = null): CustomOrder
+    {
+        return DB::transaction(function () use ($order, $admin, $outcome, $refundAmount, $note) {
+            throw_unless(
+                $order->status === CustomOrder::STATUS_DISPUTED,
+                \InvalidArgumentException::class,
+                'Only a disputed order can be resolved.'
+            );
+
+            $price = (float) $order->price;
+            $authorShare = (float) $order->author_amount;
+
+            // Clamp refund to [0, price].
+            $refund = round(min(max(0.0, (float) ($refundAmount ?? 0)), $price), 2);
+
+            [$buyerRefund, $authorRelease, $targetStatus] = match ($outcome) {
+                self::RESOLVE_REFUND_BUYER    => [$price, 0.0, CustomOrder::STATUS_REFUNDED],
+                self::RESOLVE_RELEASE_AUTHOR  => [0.0, $authorShare, CustomOrder::STATUS_COMPLETED],
+                self::RESOLVE_PARTIAL         => [$refund, max(0.0, round($authorShare - $refund, 2)), CustomOrder::STATUS_REFUNDED],
+                default => throw new \InvalidArgumentException('Unknown dispute outcome: '.$outcome),
+            };
+
+            // Close every open dispute on the order.
+            $order->disputes()
+                ->where('status', 'open')
+                ->update([
+                    'status' => 'resolved',
+                    'resolution_note' => $note,
+                    'refund_amount' => $buyerRefund,
+                    'resolved_at' => now(),
+                ]);
+
+            if ($buyerRefund > 0) {
+                $this->creditBuyerRefund($order, $buyerRefund, $note);
+            }
+
+            if ($authorRelease > 0) {
+                $this->releaseEscrow($order, $authorRelease);
+            }
+
+            $order->forceFill([
+                'completed_at' => $targetStatus === CustomOrder::STATUS_COMPLETED ? now() : $order->completed_at,
+            ])->save();
+
+            $this->transition($order, $targetStatus, $admin, $note ?: __('custom_orders.logs.dispute_resolved'), [
+                'outcome' => $outcome,
+                'buyer_refund' => $buyerRefund,
+                'author_release' => $authorRelease,
+            ]);
+
+            return $order->fresh(['disputes']);
+        });
+    }
+
+    private function creditBuyerRefund(CustomOrder $order, float $amount, ?string $note = null): void
+    {
+        if (! Schema::hasTable('account_balance_transactions') || ! $order->buyer_id || $amount <= 0) {
+            return;
+        }
+
+        $existing = AccountBalanceTransaction::query()
+            ->where('user_id', $order->buyer_id)
+            ->where('type', AccountBalanceTransaction::TYPE_CREDIT)
+            ->whereJsonContains('metadata->source', 'custom_order_refund')
+            ->whereJsonContains('metadata->custom_order_id', $order->id)
+            ->first();
+
+        if ($existing) {
+            return;
+        }
+
+        AccountBalanceTransaction::create([
+            'user_id' => $order->buyer_id,
+            'type' => AccountBalanceTransaction::TYPE_CREDIT,
+            'status' => AccountBalanceTransaction::STATUS_SETTLED,
+            'amount' => round($amount, 2),
+            'currency' => 'UAH',
+            'description' => $note ?: __('custom_orders.balance_refund', ['number' => $order->number]),
+            'metadata' => ['source' => 'custom_order_refund', 'custom_order_id' => $order->id],
+        ]);
+    }
+
     public function transition(CustomOrder $order, string $status, ?User $actor = null, ?string $note = null, array $metadata = []): void
     {
         $from = $order->status;
@@ -480,9 +574,11 @@ class CustomOrderService
         }
     }
 
-    private function releaseEscrow(CustomOrder $order): void
+    private function releaseEscrow(CustomOrder $order, ?float $amount = null): void
     {
-        if (! Schema::hasTable('account_balance_transactions') || ! $order->author_id || (float) $order->author_amount <= 0) {
+        $payout = round($amount ?? (float) $order->author_amount, 2);
+
+        if (! Schema::hasTable('account_balance_transactions') || ! $order->author_id || $payout <= 0) {
             return;
         }
 
@@ -494,7 +590,7 @@ class CustomOrderService
             ],
             [
                 'status' => AccountBalanceTransaction::STATUS_SETTLED,
-                'amount' => $order->author_amount,
+                'amount' => $payout,
                 'currency' => 'UAH',
                 'metadata' => ['source' => 'custom_order', 'custom_order_id' => $order->id],
             ]

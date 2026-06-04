@@ -326,4 +326,152 @@ class CustomOrderTest extends TestCase
             ->assertOk()
             ->assertJsonCount(0, 'messages');
     }
+
+    private function disputedOrder(User $buyer, User $author): CustomOrder
+    {
+        $order = CustomOrder::query()->create([
+            'buyer_id' => $buyer->id,
+            'author_id' => $author->id,
+            'type' => CustomOrder::TYPE_MODEL_CREATION,
+            'status' => CustomOrder::STATUS_WAITING_PAYMENT,
+            'title' => 'Disputed model',
+            'description' => 'A model order that ends up disputed.',
+            'price' => 1000,
+            'currency' => 'UAH',
+            'escrow_amount' => 1000,
+            'platform_fee_amount' => 100,
+            'author_amount' => 900,
+        ]);
+
+        app(CustomOrderService::class)->markPaid($order, $buyer, $order->number, ['source' => 'test']);
+        app(CustomOrderService::class)->dispute($order->refresh(), $buyer, [
+            'reason' => 'not_as_described',
+            'description' => 'The result does not match the brief at all.',
+        ]);
+
+        return $order->refresh();
+    }
+
+    public function test_admin_resolves_dispute_with_full_refund_to_buyer(): void
+    {
+        $buyer = User::factory()->create();
+        $author = User::factory()->create(['role' => 'author']);
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $order = $this->disputedOrder($buyer, $author);
+        $this->assertSame(CustomOrder::STATUS_DISPUTED, $order->status);
+
+        $this->actingAs($admin)
+            ->post(route('admin.custom-orders.resolve-dispute', $order), [
+                'outcome' => CustomOrderService::RESOLVE_REFUND_BUYER,
+                'note' => 'Result did not match the brief.',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('custom_orders', [
+            'id' => $order->id,
+            'status' => CustomOrder::STATUS_REFUNDED,
+        ]);
+        // Buyer refunded full price.
+        $this->assertDatabaseHas('account_balance_transactions', [
+            'user_id' => $buyer->id,
+            'type' => AccountBalanceTransaction::TYPE_CREDIT,
+            'status' => AccountBalanceTransaction::STATUS_SETTLED,
+            'amount' => 1000,
+        ]);
+        // Author received nothing.
+        $this->assertDatabaseMissing('account_balance_transactions', [
+            'user_id' => $author->id,
+            'type' => AccountBalanceTransaction::TYPE_CREDIT,
+        ]);
+        $this->assertDatabaseHas('custom_order_disputes', [
+            'custom_order_id' => $order->id,
+            'status' => 'resolved',
+            'refund_amount' => 1000,
+        ]);
+    }
+
+    public function test_admin_resolves_dispute_in_favour_of_author(): void
+    {
+        $buyer = User::factory()->create();
+        $author = User::factory()->create(['role' => 'author']);
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $order = $this->disputedOrder($buyer, $author);
+
+        $this->actingAs($admin)
+            ->post(route('admin.custom-orders.resolve-dispute', $order), [
+                'outcome' => CustomOrderService::RESOLVE_RELEASE_AUTHOR,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('custom_orders', [
+            'id' => $order->id,
+            'status' => CustomOrder::STATUS_COMPLETED,
+        ]);
+        $this->assertDatabaseHas('account_balance_transactions', [
+            'user_id' => $author->id,
+            'type' => AccountBalanceTransaction::TYPE_CREDIT,
+            'amount' => 900,
+        ]);
+        $this->assertDatabaseMissing('account_balance_transactions', [
+            'user_id' => $buyer->id,
+            'type' => AccountBalanceTransaction::TYPE_CREDIT,
+        ]);
+    }
+
+    public function test_admin_resolves_dispute_with_partial_refund_split(): void
+    {
+        $buyer = User::factory()->create();
+        $author = User::factory()->create(['role' => 'author']);
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $order = $this->disputedOrder($buyer, $author);
+
+        $this->actingAs($admin)
+            ->post(route('admin.custom-orders.resolve-dispute', $order), [
+                'outcome' => CustomOrderService::RESOLVE_PARTIAL,
+                'refund_amount' => 400,
+                'note' => 'Partial — minor issues.',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('custom_orders', [
+            'id' => $order->id,
+            'status' => CustomOrder::STATUS_REFUNDED,
+        ]);
+        // Buyer gets the 400 refund.
+        $this->assertDatabaseHas('account_balance_transactions', [
+            'user_id' => $buyer->id,
+            'type' => AccountBalanceTransaction::TYPE_CREDIT,
+            'amount' => 400,
+        ]);
+        // Author gets author_amount - refund = 900 - 400 = 500.
+        $this->assertDatabaseHas('account_balance_transactions', [
+            'user_id' => $author->id,
+            'type' => AccountBalanceTransaction::TYPE_CREDIT,
+            'amount' => 500,
+        ]);
+    }
+
+    public function test_partial_refund_requires_amount(): void
+    {
+        $buyer = User::factory()->create();
+        $author = User::factory()->create(['role' => 'author']);
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $order = $this->disputedOrder($buyer, $author);
+
+        $this->actingAs($admin)
+            ->post(route('admin.custom-orders.resolve-dispute', $order), [
+                'outcome' => CustomOrderService::RESOLVE_PARTIAL,
+                'refund_amount' => 0,
+            ])
+            ->assertSessionHasErrors('refund_amount');
+
+        $this->assertDatabaseHas('custom_orders', [
+            'id' => $order->id,
+            'status' => CustomOrder::STATUS_DISPUTED,
+        ]);
+    }
 }

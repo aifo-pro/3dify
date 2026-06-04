@@ -61,6 +61,33 @@
                 </form>
             </x-admin.section>
 
+            @php $openDispute = $order->disputes->firstWhere('status', 'open'); @endphp
+            @if($openDispute)
+                <x-admin.section :title="__('custom_orders.dispute.title')">
+                    <div class="mb-3 rounded-2xl border border-rose-300/25 bg-rose-300/[0.06] p-3 text-sm">
+                        <p class="font-bold text-rose-200">{{ $openDispute->reason }}</p>
+                        <p class="mt-1 text-xs leading-5 text-zinc-300">{{ $openDispute->description }}</p>
+                        <p class="mt-2 text-[11px] text-zinc-500">{{ $openDispute->opener?->displayName() }} · {{ $openDispute->created_at->translatedFormat('d M H:i') }}</p>
+                    </div>
+                    <form method="POST" action="{{ route('admin.custom-orders.resolve-dispute', $order) }}"
+                          class="grid gap-3"
+                          x-data="{ outcome: 'release_author' }">
+                        @csrf
+                        <x-admin.field name="outcome" as="select" :label="__('custom_orders.dispute.outcome')" x-model="outcome">
+                            <option value="release_author">{{ __('custom_orders.dispute.release_author') }}</option>
+                            <option value="refund_buyer">{{ __('custom_orders.dispute.refund_buyer') }}</option>
+                            <option value="partial_refund">{{ __('custom_orders.dispute.partial_refund') }}</option>
+                        </x-admin.field>
+                        <div x-show="outcome === 'partial_refund'" x-cloak>
+                            <x-admin.field name="refund_amount" type="number" step="0.01" min="0" :max="(float) $order->price"
+                                :label="__('custom_orders.dispute.refund_amount', ['max' => number_format((float) $order->price, 2)])" />
+                        </div>
+                        <x-admin.field name="note" as="textarea" rows="2" :label="__('custom_orders.dispute.note')" />
+                        <button class="h-11 rounded-2xl bg-rose-400 text-sm font-black text-zinc-950 hover:bg-rose-300">{{ __('custom_orders.dispute.resolve_btn') }}</button>
+                    </form>
+                </x-admin.section>
+            @endif
+
             @if($order->shipments->isNotEmpty())
                 <x-admin.section :title="__('Доставка')">
                     <form method="POST" action="{{ route('admin.custom-orders.track', $order) }}" class="mb-3">
