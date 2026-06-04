@@ -112,21 +112,34 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Mailjet uses STARTTLS on 587 and implicit SSL on 465. A wrong persisted
-     * pair fails before Laravel can send password reset links, so keep it sane
-     * at runtime as a final guard.
+     * The admin UI stores human-friendly encryption values, while Laravel 12
+     * passes the value as a Symfony Mailer DSN scheme. For Mailjet that means
+     * port 587 must become "smtp" (STARTTLS) and port 465 must become "smtps".
      */
     private function normalizeSmtpConfig(array $smtp): array
     {
         $port = (int) ($smtp['port'] ?? 0);
         $scheme = strtolower((string) ($smtp['scheme'] ?? ''));
 
-        if ($port === 587 && in_array($scheme, ['ssl', 'smtps'], true)) {
-            $smtp['scheme'] = 'tls';
+        if ($port === 587) {
+            $smtp['scheme'] = 'smtp';
+            return $smtp;
         }
 
-        if ($port === 465 && in_array($scheme, ['tls', 'starttls'], true)) {
-            $smtp['scheme'] = 'ssl';
+        if ($port === 465) {
+            $smtp['scheme'] = 'smtps';
+            return $smtp;
+        }
+
+        if (in_array($scheme, ['ssl', 'smtps'], true)) {
+            $smtp['scheme'] = 'smtps';
+            $smtp['port'] = $port ?: 465;
+            return $smtp;
+        }
+
+        if (in_array($scheme, ['tls', 'starttls', 'smtp'], true)) {
+            $smtp['scheme'] = 'smtp';
+            $smtp['port'] = $port ?: 587;
         }
 
         return $smtp;
