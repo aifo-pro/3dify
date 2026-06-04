@@ -1,5 +1,20 @@
 @props(['siteName' => '3Dify'])
 
+@php
+    $siteSettings = app(\App\Services\SiteSettings::class);
+    $footerLocale = app()->getLocale() === 'en' ? 'en' : 'uk';
+    $footerDescription = $siteSettings->string(
+        "footer.description_{$footerLocale}",
+        __('Маркетплейс STL, OBJ, GLB та 3MF файлів для 3D-друку. Купуйте, продавайте й друкуйте без зайвих клопотів.')
+    );
+    $footerCopyright = $siteSettings->string(
+        "footer.copyright_text_{$footerLocale}",
+        $footerLocale === 'en'
+            ? '© '.date('Y').' '.$siteName.'. All rights reserved.'
+            : '© '.date('Y').' '.$siteName.'. Усі права захищено.'
+    );
+@endphp
+
 <footer class="mt-24 border-t border-white/10 bg-zinc-950/80">
     <div class="h-px bg-gradient-to-r from-transparent via-emerald-300/30 to-transparent"></div>
 
@@ -11,7 +26,7 @@
                 <span class="grid h-9 w-9 place-items-center rounded-xl bg-emerald-400 text-zinc-950 shadow-lg shadow-emerald-500/20">3D</span>
                 {{ $siteName }}
             </a>
-            <p class="mt-4 max-w-xs text-sm leading-6 text-zinc-400">{{ __('Маркетплейс STL, OBJ, GLB та 3MF файлів для 3D-друку. Купуйте, продавайте й друкуйте без зайвих клопотів.') }}</p>
+            <p class="mt-4 max-w-xs text-sm leading-6 text-zinc-400">{{ $footerDescription }}</p>
             <div class="mt-5 flex gap-2">
                 <a href="#" aria-label="X" class="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-xs font-bold text-zinc-400 transition hover:border-emerald-300/40 hover:bg-emerald-300/10 hover:text-emerald-100">X</a>
                 <a href="#" aria-label="GitHub" class="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-xs font-bold text-zinc-400 transition hover:border-emerald-300/40 hover:bg-emerald-300/10 hover:text-emerald-100">GH</a>
@@ -88,7 +103,7 @@
     {{-- Bottom bar --}}
     <div class="border-t border-white/10">
         <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-zinc-500 sm:flex-row sm:px-6 lg:px-8">
-            <p>© {{ date('Y') }} {{ $siteName }}. {{ __('Усі права захищено.') }}</p>
+            <p>{{ $footerCopyright }}</p>
             <div class="flex items-center gap-6">
                 <a href="{{ route('feed') }}" class="transition hover:text-zinc-300">RSS</a>
                 <a href="{{ route('sitemap') }}" class="transition hover:text-zinc-300">Sitemap</a>

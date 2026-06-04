@@ -160,11 +160,11 @@
                     {{-- Rating filter --}}
                     <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                         <p class="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">{{ __('Мінімальний рейтинг') }}</p>
-                        <div class="flex gap-1.5">
+                        <div class="grid grid-cols-2 gap-2">
                             @foreach([0, 3, 4, 5] as $r)
-                                <label class="flex-1 cursor-pointer text-center">
+                                <label class="cursor-pointer text-center">
                                     <input type="radio" name="min_rating" value="{{ $r ?: '' }}" @checked((int)($filters['min_rating'] ?? 0) === $r) onchange="this.form.submit()" class="sr-only">
-                                    <span class="{{ (int)($filters['min_rating'] ?? 0) === $r ? 'border-amber-400/50 bg-amber-400/15 text-amber-300' : 'border-white/10 bg-white/[0.04] text-zinc-400 hover:bg-white/[0.07]' }} block rounded-xl border py-2 text-xs font-bold transition">
+                                    <span class="{{ (int)($filters['min_rating'] ?? 0) === $r ? 'border-amber-400/60 bg-amber-400/15 text-amber-200 shadow-[0_0_18px_rgba(251,191,36,0.12)]' : 'border-white/10 bg-white/[0.04] text-zinc-400 hover:border-white/20 hover:bg-white/[0.07] hover:text-white' }} flex min-h-11 items-center justify-center rounded-2xl border px-3 py-2 text-center text-[13px] font-black leading-tight transition">
                                         {{ $r ? $r.'★' : __('Будь-який') }}
                                     </span>
                                 </label>

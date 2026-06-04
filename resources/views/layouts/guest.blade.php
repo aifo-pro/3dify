@@ -10,6 +10,16 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="min-h-screen bg-zinc-950 text-zinc-100 antialiased">
+        @php
+            $siteSettings = app(\App\Services\SiteSettings::class);
+            $footerLocale = app()->getLocale() === 'en' ? 'en' : 'uk';
+            $authCopyright = $siteSettings->string(
+                "footer.copyright_text_{$footerLocale}",
+                $footerLocale === 'en'
+                    ? '© '.date('Y').' 3Dify. All rights reserved.'
+                    : '© '.date('Y').' 3Dify. Усі права захищено.'
+            );
+        @endphp
         <x-site.google-body />
         <main class="grid min-h-screen lg:grid-cols-[1.05fr_.95fr]">
             <section class="relative hidden overflow-hidden border-r border-white/10 bg-zinc-950 lg:block">
@@ -41,7 +51,7 @@
                     <x-site.auth-card>
                         {{ $slot }}
                     </x-site.auth-card>
-                    <p class="mt-6 text-center text-xs text-zinc-500">© {{ date('Y') }} 3Dify. {{ __('Локальний режим розробки.') }}</p>
+                    <p class="mt-6 text-center text-xs text-zinc-500">{{ $authCopyright }}</p>
                 </div>
             </section>
         </main>

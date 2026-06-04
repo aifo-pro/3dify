@@ -978,12 +978,12 @@
                     </div>
                 </x-admin.settings-card>
 
-                <x-admin.settings-card :title="__('Footer — текст')" :description="__('Опис компанії та copyright.')">
+                <x-admin.settings-card :title="__('Footer — текст')" :description="__('Опис компанії та повний текст нижнього copyright для сайту й auth-сторінок.')">
                     <div class="grid gap-4 sm:grid-cols-2">
                         <x-admin.field as="textarea" rows="3" name="settings[footer.description_uk]" :label="__('Опис (UK)')" :value="$val('footer.description_uk')" />
                         <x-admin.field as="textarea" rows="3" name="settings[footer.description_en]" :label="__('Опис (EN)')" :value="$val('footer.description_en')" />
-                        <x-admin.field name="settings[footer.copyright_text_uk]" :label="__('Copyright (UK)')" :value="$val('footer.copyright_text_uk')" placeholder="© 2026 3Dify" />
-                        <x-admin.field name="settings[footer.copyright_text_en]" :label="__('Copyright (EN)')" :value="$val('footer.copyright_text_en')" placeholder="© 2026 3Dify" />
+                        <x-admin.field name="settings[footer.copyright_text_uk]" :label="__('Нижній текст (UK)')" :value="$val('footer.copyright_text_uk')" placeholder="© 2026 3Dify. Усі права захищено." />
+                        <x-admin.field name="settings[footer.copyright_text_en]" :label="__('Нижній текст (EN)')" :value="$val('footer.copyright_text_en')" placeholder="© 2026 3Dify. All rights reserved." />
                     </div>
                 </x-admin.settings-card>
 
