@@ -37,7 +37,10 @@ class CustomOrderStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'author_id' => ['nullable', 'integer', 'exists:users,id'],
+            // An order must target a specific author — otherwise no one can make an
+            // offer (the offer guard requires author_id === current user) and it would
+            // be stuck in pending_review forever.
+            'author_id' => ['required', 'integer', 'exists:users,id', 'different:'.($this->user()?->id ?? 0)],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'type' => ['required', Rule::in([CustomOrder::TYPE_MODEL_CREATION, CustomOrder::TYPE_PRINT_SERVICE])],
             'title' => ['required', 'string', 'max:160'],

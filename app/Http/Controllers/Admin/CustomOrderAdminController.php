@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CustomOrder;
 use App\Services\CustomOrderService;
+use App\Services\ParcelTrackingService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -45,5 +46,26 @@ class CustomOrderAdminController extends Controller
         $orders->transition($customOrder, $data['status'], $request->user(), $data['note'] ?? null);
 
         return back()->with('status', __('custom_orders.status'));
+    }
+
+    /**
+     * Manually re-poll the carrier for every shipment of this order.
+     */
+    public function track(CustomOrder $customOrder, ParcelTrackingService $tracker, CustomOrderService $orders)
+    {
+        $customOrder->load('shipments');
+
+        foreach ($customOrder->shipments as $shipment) {
+            try {
+                $update = $tracker->track($shipment);
+                if ($update) {
+                    $orders->applyTracking($shipment, $update);
+                }
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return back()->with('status', __('custom_orders.tracking_refreshed'));
     }
 }

@@ -61,6 +61,40 @@
                 </form>
             </x-admin.section>
 
+            @if($order->shipments->isNotEmpty())
+                <x-admin.section :title="__('Доставка')">
+                    <form method="POST" action="{{ route('admin.custom-orders.track', $order) }}" class="mb-3">
+                        @csrf
+                        <button class="inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] text-xs font-bold text-zinc-300 transition hover:bg-white/[0.08]">
+                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                            {{ __('Оновити трекінг') }}
+                        </button>
+                    </form>
+                    @foreach($order->shipments as $shipment)
+                        <div class="rounded-2xl border border-white/10 bg-zinc-950/40 p-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-white">{{ strtoupper(str_replace('_', ' ', (string) $shipment->carrier)) }}</span>
+                                <span class="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-200">{{ $shipment->status }}</span>
+                            </div>
+                            @if($shipment->tracking_number)
+                                <p class="mt-1 font-mono text-xs text-zinc-400">{{ $shipment->tracking_number }}</p>
+                            @endif
+                            @if($shipment->events->isNotEmpty())
+                                <div class="mt-3 grid gap-2 border-t border-white/5 pt-3">
+                                    @foreach($shipment->events as $event)
+                                        <div class="text-[11px]">
+                                            <span class="font-bold text-zinc-300">{{ $event->status }}</span>
+                                            <span class="text-zinc-500">— {{ $event->description }}</span>
+                                            <span class="block text-zinc-600">{{ $event->happened_at?->translatedFormat('d M H:i') }} · {{ $event->location }}</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </x-admin.section>
+            @endif
+
             <x-admin.section :title="__('Історія статусів')">
                 <div class="grid gap-3">
                     @foreach($order->statusLogs as $log)

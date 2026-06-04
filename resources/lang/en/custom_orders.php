@@ -10,6 +10,7 @@ return [
     'create_title' => 'New custom order',
     'create_hint' => 'Describe the job, attach references, and agree on terms with the author in a secure 3Dify chat.',
     'status' => 'Status',
+    'tracking_refreshed' => 'Delivery status refreshed.',
     'budget' => 'Budget',
     'deadline' => 'Deadline',
     'files' => 'Files',
@@ -63,6 +64,8 @@ return [
     'problem_description' => 'Problem description',
     'history' => 'History',
     'errors' => [
+        'choose_author' => 'Choose an author to create a custom order.',
+        'self_order' => 'You cannot create an order for yourself.',
         'shipment_only_for_print' => 'Shipping is available only for print orders.',
         'delivery_only_for_print' => 'Delivery branch can be selected only for print orders.',
         'delivery_not_available' => 'Delivery can be selected only after the author sends an offer and before payment.',
@@ -247,5 +250,46 @@ return [
         'result_sent' => 'The author sent finished model files.',
         'delivery_selected' => 'The buyer selected delivery method and branch.',
         'cancelled' => 'The custom order was cancelled before payment.',
+        'auto_completed' => 'Order auto-completed after delivery — funds released to the author.',
+    ],
+    'notify' => [
+        'greeting' => 'Hello, :name!',
+        'action' => 'Open order',
+        'waiting_buyer_accept' => [
+            'subject' => 'The author sent terms for order :number',
+            'line' => 'The author sent an offer for “:title”. Review and accept the terms.',
+        ],
+        'waiting_payment' => [
+            'subject' => 'The buyer accepted your terms for :number',
+            'line' => 'The buyer accepted your terms for “:title”. Awaiting payment.',
+        ],
+        'paid' => [
+            'subject' => 'Payment received — you can start :number',
+            'line' => 'Funds for “:title” are held in escrow. You can start working.',
+        ],
+        'shipped' => [
+            'subject' => 'Your order :number has shipped',
+            'line' => 'The author shipped “:title”. Track the delivery status.',
+        ],
+        'delivered' => [
+            'subject' => 'Order :number delivered',
+            'line' => '“:title” was delivered. Confirm receipt to complete the order.',
+        ],
+        'completed' => [
+            'subject' => 'Order :number completed',
+            'line' => 'Order “:title” is completed. Funds released to your balance.',
+        ],
+        'cancelled' => [
+            'subject' => 'Order :number cancelled',
+            'line' => 'Order “:title” was cancelled.',
+        ],
+        'refunded' => [
+            'subject' => 'Refund for :number',
+            'line' => 'A refund was issued for order “:title”.',
+        ],
+        'disputed' => [
+            'subject' => 'Dispute opened for order :number',
+            'line' => 'A dispute was opened for “:title”. An administrator will review it shortly.',
+        ],
     ],
 ];

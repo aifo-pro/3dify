@@ -9,6 +9,8 @@ use App\Models\CustomOrderMessage;
 use App\Models\CustomOrderMilestone;
 use App\Models\CustomOrderShipment;
 use App\Models\User;
+use App\Notifications\CustomOrderStatusNotification;
+use App\Services\ParcelTrackingService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -315,23 +317,147 @@ class CustomOrderService
 
         $order->forceFill(['status' => $status])->save();
         $this->log($order, $actor, $from, $status, $note, $metadata);
+        $this->notifyStatusChange($order, $status, $actor);
+    }
+
+    /**
+     * Notify the relevant party about a status change (in-app + email).
+     * Buyer-facing statuses go to the buyer; payment/dispute also ping the author.
+     */
+    private function notifyStatusChange(CustomOrder $order, string $status, ?User $actor = null): void
+    {
+        $buyerStatuses = [
+            CustomOrder::STATUS_WAITING_BUYER_ACCEPT, // offer is ready
+            CustomOrder::STATUS_SHIPPED,
+            CustomOrder::STATUS_DELIVERED,
+            CustomOrder::STATUS_CANCELLED,
+            CustomOrder::STATUS_REFUNDED,
+        ];
+
+        $authorStatuses = [
+            CustomOrder::STATUS_WAITING_PAYMENT, // buyer accepted the offer
+            CustomOrder::STATUS_PAID,            // escrow funded — start work
+            CustomOrder::STATUS_COMPLETED,       // escrow released
+            CustomOrder::STATUS_DISPUTED,
+        ];
+
+        try {
+            if (in_array($status, $buyerStatuses, true) && $order->buyer) {
+                $order->buyer->notify(new CustomOrderStatusNotification($order, $status));
+            }
+
+            if (in_array($status, $authorStatuses, true) && $order->author) {
+                $order->author->notify(new CustomOrderStatusNotification($order, $status));
+            }
+        } catch (\Throwable $e) {
+            // Notification failures must never break the state transition.
+            \Illuminate\Support\Facades\Log::warning('custom_order.notify_failed', [
+                'custom_order_id' => $order->id,
+                'status' => $status,
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Apply a carrier tracking update to a shipment. Records a tracking event when
+     * the status advances, updates the shipment, and auto-marks the order delivered.
+     * Returns true if anything changed.
+     */
+    public function applyTracking(CustomOrderShipment $shipment, array $update): bool
+    {
+        $newStatus = (string) ($update['status'] ?? '');
+        if ($newStatus === '') {
+            return false;
+        }
+
+        return DB::transaction(function () use ($shipment, $update, $newStatus) {
+            $changed = $shipment->status !== $newStatus;
+
+            // Record an event the first time we see this status (avoid duplicates).
+            $alreadyLogged = $shipment->events()
+                ->where('status', $newStatus)
+                ->where('description', (string) ($update['description'] ?? ''))
+                ->exists();
+
+            if (! $alreadyLogged) {
+                $shipment->events()->create([
+                    'status'      => $newStatus,
+                    'location'    => $update['location'] ?? null,
+                    'description' => $update['description'] ?? null,
+                    'happened_at' => $update['happened_at'] ?? now(),
+                    'payload'     => $update['raw'] ?? null,
+                ]);
+                $changed = true;
+            }
+
+            if ($shipment->status !== $newStatus) {
+                $shipment->forceFill([
+                    'status'       => $newStatus,
+                    'delivered_at' => $newStatus === ParcelTrackingService::STATUS_DELIVERED ? now() : $shipment->delivered_at,
+                ])->save();
+            }
+
+            // When the parcel is delivered, advance the order so the buyer can confirm.
+            if ($newStatus === ParcelTrackingService::STATUS_DELIVERED) {
+                $order = $shipment->customOrder;
+                if ($order && $order->status === CustomOrder::STATUS_SHIPPED) {
+                    $this->markDelivered($order, $order->author);
+                }
+            }
+
+            return $changed;
+        });
+    }
+
+    /**
+     * Auto-complete a delivered order after the grace window if no dispute is open.
+     * Releases escrow to the author. Returns true if completed.
+     */
+    public function autoComplete(CustomOrder $order): bool
+    {
+        if ($order->status !== CustomOrder::STATUS_DELIVERED) {
+            return false;
+        }
+
+        if (! $order->auto_complete_at || $order->auto_complete_at->isFuture()) {
+            return false;
+        }
+
+        // Never auto-complete while a dispute is open.
+        if ($order->disputes()->where('status', 'open')->exists()) {
+            return false;
+        }
+
+        return DB::transaction(function () use ($order) {
+            $order->forceFill(['completed_at' => now()])->save();
+            $this->transition($order, CustomOrder::STATUS_COMPLETED, null, __('custom_orders.logs.auto_completed'));
+            $this->releaseEscrow($order);
+
+            return true;
+        });
     }
 
     public function storeFiles(CustomOrder $order, User $user, array $files, string $purpose, ?CustomOrderMessage $message = null): void
     {
+        // Paid deliverables ("result") and source briefs must never be world-readable
+        // via a guessable public URL — store them on the private disk and serve only
+        // through the authorized download controller. Inline chat attachments stay public.
+        $disk = in_array($purpose, ['result', 'brief'], true) ? 'private' : 'public';
+
         foreach ($files as $file) {
             if (! $file instanceof UploadedFile) {
                 continue;
             }
 
-            $path = $file->store('custom-orders/'.$order->id, 'public');
+            $path = $file->store('custom-orders/'.$order->id, $disk);
 
             CustomOrderFile::create([
                 'custom_order_id' => $order->id,
                 'message_id' => $message?->id,
                 'user_id' => $user->id,
                 'purpose' => $purpose,
-                'disk' => 'public',
+                'disk' => $disk,
                 'path' => $path,
                 'original_name' => $file->getClientOriginalName(),
                 'mime_type' => $file->getClientMimeType(),

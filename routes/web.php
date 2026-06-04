@@ -291,6 +291,7 @@ Route::middleware(['auth', 'role:admin,moderator'])->prefix('admin')->name('admi
     Route::get('/custom-orders', [CustomOrderAdminController::class, 'index'])->name('custom-orders.index');
     Route::get('/custom-orders/{customOrder}', [CustomOrderAdminController::class, 'show'])->name('custom-orders.show');
     Route::patch('/custom-orders/{customOrder}', [CustomOrderAdminController::class, 'update'])->name('custom-orders.update');
+    Route::post('/custom-orders/{customOrder}/track', [CustomOrderAdminController::class, 'track'])->name('custom-orders.track');
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/blog', [AdminBlogPostController::class, 'index'])->name('blog.index');

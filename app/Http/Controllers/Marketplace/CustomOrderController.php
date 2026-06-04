@@ -51,6 +51,21 @@ class CustomOrderController extends Controller
                 ->first();
         }
 
+        // A custom order must be directed at a specific author — without one the
+        // form cannot be submitted (author_id is required). Send the user to the
+        // authors directory to pick one instead of showing a dead-end form.
+        if (! $author) {
+            return redirect()
+                ->route('authors.index')
+                ->with('status', __('custom_orders.errors.choose_author'));
+        }
+
+        if ($author->id === $request->user()->id) {
+            return redirect()
+                ->route('authors.show', $author)
+                ->withErrors(['author' => __('custom_orders.errors.self_order')]);
+        }
+
         $categories = collect();
         if (Schema::hasTable('categories')) {
             $query = Category::query();

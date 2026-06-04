@@ -13,3 +13,7 @@ Schedule::command('saved-searches:run')->dailyAt('07:30')->withoutOverlapping();
 
 // Webhook fallback: poll Didit for pending KYC verifications every 10 minutes.
 Schedule::command('kyc:sync-pending')->everyTenMinutes()->withoutOverlapping();
+
+// Track custom-order parcels (Nova Poshta / Ukrposhta) and auto-complete delivered
+// orders after the grace window. Runs every 30 minutes.
+Schedule::command('custom-orders:track')->everyThirtyMinutes()->withoutOverlapping();

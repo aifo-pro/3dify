@@ -54,6 +54,9 @@ return [
     'ukrposhta' => [
         'token' => env('UKRPOSHTA_API_TOKEN'),
         'endpoint' => env('UKRPOSHTA_API_ENDPOINT', 'https://www.ukrposhta.ua/ecom/0.0.1'),
+        // Status-tracking API uses a separate bearer token and base URL.
+        'status_token' => env('UKRPOSHTA_STATUS_TOKEN', env('UKRPOSHTA_API_TOKEN')),
+        'status_endpoint' => env('UKRPOSHTA_STATUS_ENDPOINT', 'https://www.ukrposhta.ua/status-tracking/0.0.1'),
     ],
 
     'didit' => [
