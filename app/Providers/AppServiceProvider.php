@@ -56,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
             $message = $event->message;
 
             Log::info('Mail delivery accepted by mailer.', [
+                'message_id' => $event->sent->getMessageId(),
                 'subject' => $message->getSubject(),
                 'from' => $this->mailAddresses($message->getFrom()),
                 'to' => $this->mailAddresses($message->getTo()),
@@ -138,6 +139,9 @@ class AppServiceProvider extends ServiceProvider
         }
 
         if ($smtp !== []) {
+            // Admin-managed SMTP fields must win over MAIL_URL. Laravel builds
+            // the transport from "url" when it is present, ignoring host/port.
+            $smtp['url'] = null;
             $smtp = $this->normalizeSmtpConfig($smtp);
             config(['mail.mailers.smtp' => array_replace(config('mail.mailers.smtp', []), $smtp)]);
         }

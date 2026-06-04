@@ -14,13 +14,18 @@ class MailRuntime
     {
         $mailer = (string) config('mail.default');
         $smtp = (array) config('mail.mailers.smtp', []);
+        $smtpUrl = $smtp['url'] ?? null;
+        $smtpUsername = $smtp['username'] ?? null;
 
         return [
             'default' => $mailer,
+            'smtp_url_present' => is_string($smtpUrl) && trim($smtpUrl) !== '',
+            'smtp_url_host' => self::urlHost($smtpUrl),
             'smtp_host' => $smtp['host'] ?? null,
             'smtp_port' => $smtp['port'] ?? null,
             'smtp_scheme' => $smtp['scheme'] ?? null,
             'smtp_local_domain' => $smtp['local_domain'] ?? null,
+            'smtp_username_fingerprint' => self::fingerprint($smtpUsername),
             'from_address' => config('mail.from.address'),
             'from_name' => config('mail.from.name'),
             'queue' => config('queue.default'),
@@ -44,5 +49,25 @@ class MailRuntime
     public static function isRealSmtp(): bool
     {
         return self::context()['default'] === 'smtp';
+    }
+
+    private static function fingerprint(mixed $value): ?string
+    {
+        $value = is_string($value) ? trim($value) : null;
+
+        return $value === null || $value === ''
+            ? null
+            : substr(hash('sha256', $value), 0, 12);
+    }
+
+    private static function urlHost(mixed $value): ?string
+    {
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        $host = parse_url($value, PHP_URL_HOST);
+
+        return is_string($host) && $host !== '' ? $host : null;
     }
 }
