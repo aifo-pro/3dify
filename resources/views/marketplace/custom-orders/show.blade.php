@@ -323,13 +323,18 @@
                             <h2 class="mt-2 break-words text-2xl font-black text-white">{{ $nextAction['title'] }}</h2>
                             <p class="mt-2 max-w-3xl text-sm leading-6 text-zinc-300">{{ $nextAction['body'] }}</p>
                         </div>
-                        <a
-                            href="{{ $nextAction['href'] }}"
-                            onclick="event.preventDefault(); const target = document.querySelector(this.getAttribute('href')); target?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => target?.querySelector('textarea, input, button')?.focus({ preventScroll: true }), 380);"
-                            class="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white px-5 text-sm font-black text-zinc-950 transition hover:bg-emerald-200"
-                        >
-                            {{ $nextAction['cta'] }}
-                        </a>
+                        {{-- The chat sits directly below this card, so a "go to chat"
+                             button here is redundant — only show a CTA when it points
+                             to a different action (offer form, payment, delivery, etc.). --}}
+                        @if($nextAction['href'] !== '#order-chat')
+                            <a
+                                href="{{ $nextAction['href'] }}"
+                                onclick="event.preventDefault(); const target = document.querySelector(this.getAttribute('href')); target?.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => target?.querySelector('textarea, input, button')?.focus({ preventScroll: true }), 380);"
+                                class="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white px-5 text-sm font-black text-zinc-950 transition hover:bg-emerald-200"
+                            >
+                                {{ $nextAction['cta'] }}
+                            </a>
+                        @endif
                     </div>
                 </div>
 
