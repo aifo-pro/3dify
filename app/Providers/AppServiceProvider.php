@@ -7,10 +7,16 @@ use App\Listeners\NotifyFollowersOnProductPublish;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Policies\ProductPolicy;
+use App\Support\MailRuntime;
+use Illuminate\Mail\Events\MessageSending;
+use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Email;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,9 +34,46 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureMailFromSettings();
+        $this->registerMailDiagnostics();
 
         Gate::policy(Product::class, ProductPolicy::class);
         Event::listen(ProductPublished::class, NotifyFollowersOnProductPublish::class);
+    }
+
+    private function registerMailDiagnostics(): void
+    {
+        Event::listen(MessageSending::class, function (MessageSending $event): void {
+            Log::info('Mail delivery started.', [
+                'subject' => $event->message->getSubject(),
+                'from' => $this->mailAddresses($event->message->getFrom()),
+                'to' => $this->mailAddresses($event->message->getTo()),
+                'mail' => MailRuntime::context(),
+            ]);
+        });
+
+        Event::listen(MessageSent::class, function (MessageSent $event): void {
+            /** @var Email $message */
+            $message = $event->message;
+
+            Log::info('Mail delivery accepted by mailer.', [
+                'subject' => $message->getSubject(),
+                'from' => $this->mailAddresses($message->getFrom()),
+                'to' => $this->mailAddresses($message->getTo()),
+                'mail' => MailRuntime::context(),
+            ]);
+        });
+    }
+
+    /**
+     * @param  array<int, Address>  $addresses
+     * @return list<string>
+     */
+    private function mailAddresses(array $addresses): array
+    {
+        return array_values(array_map(
+            static fn (Address $address): string => $address->toString(),
+            $addresses
+        ));
     }
 
     private function configureMailFromSettings(): void

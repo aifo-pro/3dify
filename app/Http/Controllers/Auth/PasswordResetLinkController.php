@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\MailRuntime;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -43,6 +44,7 @@ class PasswordResetLinkController extends Controller
             Log::error('Password reset link delivery failed.', [
                 'email' => $request->input('email'),
                 'message' => $exception->getMessage(),
+                'mail' => MailRuntime::context(),
             ]);
 
             return back()
@@ -52,9 +54,16 @@ class PasswordResetLinkController extends Controller
                 ]);
         }
 
-        return $status == Password::RESET_LINK_SENT
-                    ? back()->with('status', __($status))
-                    : back()->withInput($request->only('email'))
-                        ->withErrors(['email' => __($status)]);
+        if ($status == Password::RESET_LINK_SENT) {
+            Log::info('Password reset link delivery accepted.', [
+                'email' => $request->input('email'),
+                'mail' => MailRuntime::context(),
+            ]);
+
+            return back()->with('status', __($status));
+        }
+
+        return back()->withInput($request->only('email'))
+            ->withErrors(['email' => __($status)]);
     }
 }
