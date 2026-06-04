@@ -8,6 +8,7 @@ return [
     'rejection_reason' => 'Rejection reason',
     'start' => 'Start verification',
     'retry' => 'Retry verification',
+    'refresh_status' => 'Check status',
     'already_verified' => 'Your account is already verified.',
     'date' => 'Date',
     'total' => 'total',
@@ -24,10 +25,14 @@ return [
         'not_configured' => 'KYC provider is not configured yet. Add DIDIT_API_KEY and DIDIT_WORKFLOW_ID to .env.',
         'missing_redirect' => 'Didit did not return a valid verification URL.',
         'start_failed' => 'Could not create a KYC session. Try again or contact support.',
+        'sync_failed' => 'Could not fetch the status from didit.me. Please try again in a minute.',
     ],
     'return' => [
         'approved' => 'Verification completed. Payouts are available.',
-        'pending' => 'Thank you. We are waiting for didit.me confirmation; the status will update automatically via webhook.',
+        'pending' => 'Thank you. We are waiting for didit.me confirmation; the status will update automatically.',
+    ],
+    'sync' => [
+        'no_change' => 'Status has not changed yet. didit.me is still reviewing — try again in a few minutes.',
     ],
     'page' => [
         'title' => 'Author KYC verification',
@@ -84,5 +89,11 @@ return [
         'approved' => 'Approved',
         'show_payload' => 'Show payload',
         'empty' => 'No KYC requests yet.',
+        'sync_btn' => 'Sync',
+        'synced' => 'Status synced with didit.me.',
+        'approve_btn' => 'Approve manually',
+        'reject_btn' => 'Reject',
+        'status_updated' => 'Verification status updated.',
+        'actions' => 'Actions',
     ],
 ];

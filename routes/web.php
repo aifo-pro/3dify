@@ -182,6 +182,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/kyc', [KycController::class, 'show'])->name('kyc.show');
     Route::post('/kyc/start', [KycController::class, 'start'])->middleware('throttle:3,10')->name('kyc.start');
     Route::get('/kyc/return', [KycController::class, 'returned'])->name('kyc.return');
+    Route::post('/kyc/refresh', [KycController::class, 'refresh'])->middleware('throttle:10,1')->name('kyc.refresh');
 
     // Author analytics dashboard
     Route::get('/author/analytics', [AuthorAnalyticsController::class, 'index'])->name('author.analytics');
@@ -312,6 +313,8 @@ Route::middleware(['auth', 'role:admin,moderator'])->prefix('admin')->name('admi
     Route::get('/payouts', [PayoutAdminController::class, 'index'])->name('payouts');
     Route::patch('/payouts/{payout}', [PayoutAdminController::class, 'update'])->name('payouts.update');
     Route::get('/kyc', [KycAdminController::class, 'index'])->name('kyc.index');
+    Route::post('/kyc/{verification}/sync', [KycAdminController::class, 'sync'])->name('kyc.sync');
+    Route::patch('/kyc/{verification}/status', [KycAdminController::class, 'updateStatus'])->name('kyc.status');
 
     Route::get('/promo-codes', [PromoCodeAdminController::class, 'index'])->name('promo-codes');
     Route::post('/promo-codes', [PromoCodeAdminController::class, 'store'])->name('promo-codes.store');

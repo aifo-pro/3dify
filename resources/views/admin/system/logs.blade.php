@@ -37,7 +37,7 @@
             @endif
         </aside>
 
-        <section class="rounded-2xl border border-white/10 bg-white/[0.04]">
+        <section class="min-w-0 rounded-2xl border border-white/10 bg-white/[0.04]">
             <div class="flex flex-wrap items-center gap-2 border-b border-white/5 p-3">
                 <p class="font-mono text-xs text-zinc-200">{{ $selected }}</p>
                 <form method="GET" class="ml-auto flex items-center gap-2">
@@ -50,10 +50,10 @@
                     </select>
                 </form>
             </div>
-            <pre class="max-h-[70vh] overflow-auto bg-zinc-950/60 p-3 font-mono text-[11px] leading-5">@if(empty($tail)){{ __('Файл порожній або недоступний.') }}@else
-@foreach(preg_split('/\n/', $tail) as $line)<div class="{{ $highlight($line) }}">{{ $line }}</div>
+            <div class="max-h-[70vh] overflow-y-auto bg-zinc-950/60 p-3 font-mono text-[11px] leading-5">@if(empty($tail))<span class="text-zinc-500">{{ __('Файл порожній або недоступний.') }}</span>@else
+@foreach(preg_split('/\n/', $tail) as $line)<div class="{{ $highlight($line) }} whitespace-pre-wrap break-all">{{ $line === '' ? ' ' : $line }}</div>
 @endforeach
-@endif</pre>
+@endif</div>
         </section>
     </div>
 </x-layouts.admin>

@@ -92,6 +92,110 @@ class DiditKycService
         return $verification;
     }
 
+    /**
+     * Directly query Didit for the latest decision of a session and sync it
+     * locally. Used as a fallback when the webhook did not arrive (or failed
+     * the signature check). Safe to call repeatedly — it only writes changes.
+     *
+     * Returns true if the verification status changed.
+     */
+    public function fetchAndSyncSession(KycVerification $verification): bool
+    {
+        $apiKey = (string) config('services.didit.api_key');
+        $sessionId = (string) $verification->provider_session_id;
+
+        if ($apiKey === '' || $sessionId === '') {
+            return false;
+        }
+
+        // Don't hammer the API: skip already-final statuses.
+        if (in_array($verification->status, [
+            KycVerification::STATUS_APPROVED,
+            KycVerification::STATUS_REJECTED,
+        ], true)) {
+            return false;
+        }
+
+        $base = rtrim((string) config('services.didit.endpoint'), '/');
+
+        // Didit exposes the decision/details under a couple of paths across
+        // workflow versions; try them in order until one returns JSON.
+        $paths = [
+            "/v3/session/{$sessionId}/decision/",
+            "/v3/session/{$sessionId}/",
+            "/v2/session/{$sessionId}/decision/",
+        ];
+
+        $payload = null;
+        foreach ($paths as $path) {
+            try {
+                $response = Http::asJson()
+                    ->withHeaders(['x-api-key' => $apiKey])
+                    ->timeout(20)
+                    ->get($base.$path);
+            } catch (\Throwable $exception) {
+                Log::warning('didit.kyc.fetch_failed', [
+                    'verification_id' => $verification->id,
+                    'path' => $path,
+                    'message' => $exception->getMessage(),
+                ]);
+                continue;
+            }
+
+            if ($response->successful() && is_array($response->json())) {
+                $payload = $response->json();
+                break;
+            }
+        }
+
+        if (! is_array($payload)) {
+            return false;
+        }
+
+        $previousStatus = $verification->status;
+        $status = $this->normalizeStatus($payload);
+
+        // If the API still reports pending, nothing to do.
+        if ($status === KycVerification::STATUS_PENDING && $previousStatus === KycVerification::STATUS_PENDING) {
+            return false;
+        }
+
+        $decision = $this->firstString($payload, ['decision', 'result.decision', 'status']);
+        $applicantId = $this->firstString($payload, ['applicant_id', 'applicant.id', 'identity.id']);
+        $reason = $this->firstString($payload, ['rejection_reason', 'reject_reason', 'reason', 'result.reason']);
+
+        $updates = [
+            'provider_applicant_id' => $applicantId ?: $verification->provider_applicant_id,
+            'status' => $status,
+            'decision' => $decision ?: $verification->decision,
+            'rejection_reason' => $status === KycVerification::STATUS_REJECTED ? $reason : $verification->rejection_reason,
+            'webhook_payload' => $payload,
+        ];
+
+        if ($status === KycVerification::STATUS_APPROVED) {
+            $updates['approved_at'] = $verification->approved_at ?: now();
+        } elseif ($status === KycVerification::STATUS_REJECTED) {
+            $updates['rejected_at'] = $verification->rejected_at ?: now();
+        } elseif ($status === KycVerification::STATUS_EXPIRED) {
+            $updates['expired_at'] = $verification->expired_at ?: now();
+        }
+
+        $verification->update($updates);
+        $this->syncUserStatus($verification->user, $verification);
+
+        if ($status !== $previousStatus) {
+            app(AuditLogger::class)->record('kyc.session.synced', $verification, [
+                'status' => $status,
+                'previous_status' => $previousStatus,
+                'source' => 'api_poll',
+            ]);
+
+            return true;
+        }
+
+        return false;
+    }
+
     public function verifyWebhookSignature(
         string $payload,
         array $jsonBody,

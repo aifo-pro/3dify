@@ -35,6 +35,7 @@
                             <th class="px-5 py-3">{{ __('kyc.admin.decision') }}</th>
                             <th class="px-5 py-3">{{ __('kyc.admin.dates') }}</th>
                             <th class="px-5 py-3">{{ __('kyc.admin.payload') }}</th>
+                            <th class="px-5 py-3">{{ __('kyc.admin.actions') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-white/5">
@@ -64,6 +65,33 @@
                                         <summary class="cursor-pointer text-xs font-bold text-emerald-200">{{ __('kyc.admin.show_payload') }}</summary>
                                         <pre class="mt-2 max-h-52 overflow-auto rounded-2xl border border-white/10 bg-black/30 p-3 text-[11px] leading-5 text-zinc-300">{{ json_encode($verification->webhook_payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
                                     </details>
+                                </td>
+                                <td class="px-5 py-3">
+                                    <div class="flex flex-col gap-2">
+                                        @if($verification->provider_session_id)
+                                            <form method="POST" action="{{ route('admin.kyc.sync', $verification) }}">
+                                                @csrf
+                                                <button class="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-xs font-bold text-zinc-300 transition hover:bg-white/[0.08] hover:text-white">
+                                                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                                                    {{ __('kyc.admin.sync_btn') }}
+                                                </button>
+                                            </form>
+                                        @endif
+                                        @if($verification->status !== \App\Models\KycVerification::STATUS_APPROVED)
+                                            <form method="POST" action="{{ route('admin.kyc.status', $verification) }}">
+                                                @csrf @method('PATCH')
+                                                <input type="hidden" name="status" value="approved">
+                                                <button class="h-8 w-full rounded-lg bg-emerald-400/15 px-3 text-xs font-bold text-emerald-300 transition hover:bg-emerald-400/25">{{ __('kyc.admin.approve_btn') }}</button>
+                                            </form>
+                                        @endif
+                                        @if($verification->status !== \App\Models\KycVerification::STATUS_REJECTED)
+                                            <form method="POST" action="{{ route('admin.kyc.status', $verification) }}" onsubmit="return confirm('?')">
+                                                @csrf @method('PATCH')
+                                                <input type="hidden" name="status" value="rejected">
+                                                <button class="h-8 w-full rounded-lg bg-rose-400/10 px-3 text-xs font-bold text-rose-300 transition hover:bg-rose-400/20">{{ __('kyc.admin.reject_btn') }}</button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

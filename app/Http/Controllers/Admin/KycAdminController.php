@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\KycVerification;
+use App\Services\AuditLogger;
+use App\Services\DiditKycService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class KycAdminController extends Controller
 {
@@ -38,5 +41,56 @@ class KycAdminController extends Controller
             'search' => $search,
             'counts' => $counts,
         ]);
+    }
+
+    /**
+     * Re-pull the decision from Didit for one verification (manual sync).
+     */
+    public function sync(KycVerification $verification, DiditKycService $kyc)
+    {
+        try {
+            $kyc->fetchAndSyncSession($verification);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return back()->withErrors(['kyc' => __('kyc.errors.sync_failed')]);
+        }
+
+        return back()->with('status', __('kyc.admin.synced'));
+    }
+
+    /**
+     * Manual override: admin approves or rejects a verification directly.
+     */
+    public function updateStatus(Request $request, KycVerification $verification, DiditKycService $kyc, AuditLogger $audit)
+    {
+        $data = $request->validate([
+            'status' => ['required', Rule::in([
+                KycVerification::STATUS_APPROVED,
+                KycVerification::STATUS_REJECTED,
+                KycVerification::STATUS_PENDING,
+            ])],
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $updates = ['status' => $data['status'], 'decision' => 'manual_'.$data['status']];
+
+        if ($data['status'] === KycVerification::STATUS_APPROVED) {
+            $updates['approved_at'] = $verification->approved_at ?: now();
+            $updates['rejection_reason'] = null;
+        } elseif ($data['status'] === KycVerification::STATUS_REJECTED) {
+            $updates['rejected_at'] = $verification->rejected_at ?: now();
+            $updates['rejection_reason'] = $data['reason'] ?? null;
+        }
+
+        $verification->update($updates);
+        $kyc->syncUserStatus($verification->user, $verification);
+
+        $audit->record('kyc.admin.manual_status', $verification, [
+            'status' => $data['status'],
+            'admin_id' => $request->user()->id,
+        ]);
+
+        return back()->with('status', __('kyc.admin.status_updated'));
     }
 }

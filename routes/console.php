@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Daily run of saved-searches alerts.
 Schedule::command('saved-searches:run')->dailyAt('07:30')->withoutOverlapping();
+
+// Webhook fallback: poll Didit for pending KYC verifications every 10 minutes.
+Schedule::command('kyc:sync-pending')->everyTenMinutes()->withoutOverlapping();

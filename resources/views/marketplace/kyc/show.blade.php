@@ -50,12 +50,23 @@
                 </div>
 
                 @unless($approved)
-                    <form method="POST" action="{{ route('kyc.start') }}" class="flex justify-end">
-                        @csrf
-                        <button class="inline-flex h-12 items-center justify-center rounded-2xl bg-emerald-400 px-6 text-sm font-black text-zinc-950 shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-300">
-                            {{ in_array($status, ['rejected', 'expired', 'failed'], true) ? __('kyc.retry') : __('kyc.start') }}
-                        </button>
-                    </form>
+                    <div class="flex flex-wrap items-center justify-end gap-3">
+                        @if($status === 'pending')
+                            <form method="POST" action="{{ route('kyc.refresh') }}">
+                                @csrf
+                                <button class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/[0.06] px-5 text-sm font-bold text-white transition hover:bg-white/[0.12]">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                                    {{ __('kyc.refresh_status') }}
+                                </button>
+                            </form>
+                        @endif
+                        <form method="POST" action="{{ route('kyc.start') }}">
+                            @csrf
+                            <button class="inline-flex h-12 items-center justify-center rounded-2xl bg-emerald-400 px-6 text-sm font-black text-zinc-950 shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-300">
+                                {{ in_array($status, ['rejected', 'expired', 'failed'], true) ? __('kyc.retry') : __('kyc.start') }}
+                            </button>
+                        </form>
+                    </div>
                 @endunless
             </div>
         </div>
