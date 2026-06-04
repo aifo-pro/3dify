@@ -956,6 +956,17 @@
                     </div>
                 </x-admin.settings-card>
 
+                <x-admin.settings-card :title="__('Telegram login')" :description="__('Параметри Telegram Login Widget для входу та реєстрації користувачів.')">
+                    <div class="mb-5 rounded-2xl border border-sky-300/20 bg-sky-300/[0.06] p-4 text-xs leading-6 text-sky-100">
+                        <p class="font-black text-white">{{ __('Як налаштувати') }}</p>
+                        <p class="mt-1 text-sky-100/80">{{ __('Створіть бота через @BotFather, додайте домен сайту в /setdomain, потім вкажіть username бота та token нижче.') }}</p>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <x-admin.field name="settings[auth.telegram_bot_username]" :label="__('Bot username')" :value="$val('auth.telegram_bot_username', config('services.telegram.bot_username'))" placeholder="YourBotNameBot" />
+                        <x-admin.field type="password" name="settings[auth.telegram_bot_token]" :label="__('Bot token')" value="" placeholder="Leave empty to keep current token" />
+                    </div>
+                </x-admin.settings-card>
+
                 <div class="flex justify-end">
                     <button type="submit" class="inline-flex h-11 items-center gap-2 rounded-xl bg-emerald-400 px-6 text-sm font-bold text-zinc-950 shadow-lg shadow-emerald-500/25 hover:bg-emerald-300">{{ __('Зберегти соцмережі') }}</button>
                 </div>

@@ -66,17 +66,25 @@ class SocialAuthController extends Controller
 
     public function telegram(Request $request)
     {
-        $data = $request->validate([
-            'id' => ['required', 'string'],
-            'first_name' => ['nullable', 'string'],
-            'last_name' => ['nullable', 'string'],
-            'username' => ['nullable', 'string'],
-            'photo_url' => ['nullable', 'url'],
-            'auth_date' => ['nullable', 'integer'],
-            'hash' => ['required', 'string'],
-        ]);
+        try {
+            $data = $request->validate([
+                'id' => ['required', 'string'],
+                'first_name' => ['nullable', 'string'],
+                'last_name' => ['nullable', 'string'],
+                'username' => ['nullable', 'string'],
+                'photo_url' => ['nullable', 'url'],
+                'auth_date' => ['required', 'integer'],
+                'hash' => ['required', 'string'],
+            ]);
 
-        $this->verifyTelegramPayload($request->except('_token'));
+            $this->verifyTelegramPayload($request->except('_token'));
+        } catch (\Throwable $e) {
+            Log::warning('Telegram OAuth failed', ['message' => $e->getMessage()]);
+
+            return redirect()
+                ->route('login')
+                ->with('error', __('Не вдалося авторизуватися через Telegram. Перевірте налаштування бота або спробуйте ще раз.'));
+        }
 
         $user = User::where('telegram_id', $data['id'])->first();
 
@@ -117,6 +125,9 @@ class SocialAuthController extends Controller
         $botToken = app(SiteSettings::class)->string('auth.telegram_bot_token') ?: config('services.telegram.bot_token');
 
         abort_unless($botToken, 501, 'Telegram bot token is not configured.');
+
+        $authDate = (int) ($payload['auth_date'] ?? 0);
+        abort_if($authDate < now()->subDay()->timestamp, 403, 'Telegram auth payload is expired.');
 
         $hash = $payload['hash'] ?? '';
         unset($payload['hash']);

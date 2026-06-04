@@ -97,6 +97,10 @@ class ContentController extends Controller
                 continue;
             }
 
+            if ($key === 'auth.telegram_bot_token' && ($value === '' || $value === null)) {
+                continue;
+            }
+
             if ($value === '' || $value === null) {
                 $value = null;
             } elseif ($value === '1') {

@@ -7,19 +7,15 @@
 
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
+    @if(session('error'))
+        <div class="mb-4 rounded-2xl border border-rose-300/20 bg-rose-300/10 px-4 py-3 text-sm font-semibold text-rose-100">
+            {{ session('error') }}
+        </div>
+    @endif
+
     <div class="mb-6 grid gap-3">
         <a href="{{ route('auth.github.redirect') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.08] px-4 py-3 text-sm font-bold text-white transition hover:bg-white/[0.12]">GitHub</a>
-        @if(config('services.telegram.bot_username'))
-            <div class="rounded-2xl border border-white/10 bg-zinc-950/70 p-3">
-                <script async src="https://telegram.org/js/telegram-widget.js?22"
-                    data-telegram-login="{{ config('services.telegram.bot_username') }}"
-                    data-size="large"
-                    data-auth-url="{{ route('auth.telegram') }}"
-                    data-request-access="write"></script>
-            </div>
-        @else
-            <div class="rounded-2xl border border-dashed border-white/10 bg-zinc-950/50 px-4 py-3 text-center text-sm text-zinc-500">{{ __('Telegram login буде доступний після налаштування бота.') }}</div>
-        @endif
+        <x-auth.telegram-login />
     </div>
 
     <form method="POST" action="{{ route('login') }}" class="grid gap-5">
