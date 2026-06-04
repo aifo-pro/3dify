@@ -70,8 +70,8 @@ class SystemController extends Controller
                 'ok' => (string) config('mail.from.address') !== '',
                 'detail' => (string) config('mail.from.address'),
             ],
-            'mailjet_smtp' => [
-                'label' => 'Mailjet SMTP',
+            'smtp' => [
+                'label' => 'SMTP',
                 'ok' => config('mail.default') !== 'smtp' || (
                     (string) config('mail.mailers.smtp.host') !== ''
                     && (string) config('mail.mailers.smtp.username') !== ''

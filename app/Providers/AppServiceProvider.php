@@ -7,16 +7,10 @@ use App\Listeners\NotifyFollowersOnProductPublish;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Policies\ProductPolicy;
-use App\Support\MailRuntime;
-use Illuminate\Mail\Events\MessageSending;
-use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
-use Symfony\Component\Mime\Address;
-use Symfony\Component\Mime\Email;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,47 +28,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureMailFromSettings();
-        $this->registerMailDiagnostics();
 
         Gate::policy(Product::class, ProductPolicy::class);
         Event::listen(ProductPublished::class, NotifyFollowersOnProductPublish::class);
-    }
-
-    private function registerMailDiagnostics(): void
-    {
-        Event::listen(MessageSending::class, function (MessageSending $event): void {
-            Log::info('Mail delivery started.', [
-                'subject' => $event->message->getSubject(),
-                'from' => $this->mailAddresses($event->message->getFrom()),
-                'to' => $this->mailAddresses($event->message->getTo()),
-                'mail' => MailRuntime::context(),
-            ]);
-        });
-
-        Event::listen(MessageSent::class, function (MessageSent $event): void {
-            /** @var Email $message */
-            $message = $event->message;
-
-            Log::info('Mail delivery accepted by mailer.', [
-                'message_id' => $event->sent->getMessageId(),
-                'subject' => $message->getSubject(),
-                'from' => $this->mailAddresses($message->getFrom()),
-                'to' => $this->mailAddresses($message->getTo()),
-                'mail' => MailRuntime::context(),
-            ]);
-        });
-    }
-
-    /**
-     * @param  array<int, Address>  $addresses
-     * @return list<string>
-     */
-    private function mailAddresses(array $addresses): array
-    {
-        return array_values(array_map(
-            static fn (Address $address): string => $address->toString(),
-            $addresses
-        ));
     }
 
     private function configureMailFromSettings(): void
@@ -139,9 +95,6 @@ class AppServiceProvider extends ServiceProvider
         }
 
         if ($smtp !== []) {
-            // Admin-managed SMTP fields must win over MAIL_URL. Laravel builds
-            // the transport from "url" when it is present, ignoring host/port.
-            $smtp['url'] = null;
             $smtp = $this->normalizeSmtpConfig($smtp);
             config(['mail.mailers.smtp' => array_replace(config('mail.mailers.smtp', []), $smtp)]);
         }
@@ -159,9 +112,8 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * The admin UI stores human-friendly encryption values, while Laravel 12
-     * passes the value as a Symfony Mailer DSN scheme. For Mailjet that means
-     * port 587 must become "smtp" (STARTTLS) and port 465 must become "smtps".
+     * The admin UI stores familiar SMTP encryption values, while Symfony Mailer
+     * expects DSN schemes: "smtp" for STARTTLS and "smtps" for implicit TLS.
      */
     private function normalizeSmtpConfig(array $smtp): array
     {

@@ -515,19 +515,19 @@
 
                 <x-admin.settings-card :title="__('SMTP-сервер')" :description="__('Параметри підключення до поштового сервера.')">
                     <div class="mb-5 rounded-2xl border border-sky-300/20 bg-sky-300/[0.06] p-4 text-xs leading-6 text-sky-100">
-                        <p class="font-black text-white">Mailjet SMTP</p>
-                        <p class="mt-1 text-sky-100/80">Host: in-v3.mailjet.com · Port: 587 · TLS. Username = Mailjet API Key, Password = Mailjet Secret Key.</p>
+                        <p class="font-black text-white">Standard SMTP</p>
+                        <p class="mt-1 text-sky-100/80">Enter the SMTP host, port, username, password, encryption, and sender address from your mail provider.</p>
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2">
                         <x-admin.field as="select" name="settings[mail.mailer]" label="Mailer">
-                            @foreach(['smtp' => 'SMTP / Mailjet', 'log' => 'Log only', 'array' => 'Array test'] as $mailer => $label)
+                            @foreach(['smtp' => 'SMTP', 'log' => 'Log only', 'array' => 'Array test'] as $mailer => $label)
                                 <option value="{{ $mailer }}" @selected($val('mail.mailer', config('mail.default')) === $mailer)>{{ $label }}</option>
                             @endforeach
                         </x-admin.field>
-                        <x-admin.field name="settings[mail.host]" label="Host" :value="$val('mail.host', config('mail.mailers.smtp.host', 'in-v3.mailjet.com'))" placeholder="in-v3.mailjet.com" />
+                        <x-admin.field name="settings[mail.host]" label="Host" :value="$val('mail.host', config('mail.mailers.smtp.host'))" placeholder="smtp.example.com" />
                         <x-admin.field type="number" name="settings[mail.port]" label="Port" :value="$val('mail.port', config('mail.mailers.smtp.port', '587'))" placeholder="587" />
-                        <x-admin.field name="settings[mail.username]" label="Username / API Key" :value="$val('mail.username')" placeholder="Mailjet API Key" />
-                        <x-admin.field type="password" name="settings[mail.password]" label="Password / Secret Key" :value="''" placeholder="Leave empty to keep current password" />
+                        <x-admin.field name="settings[mail.username]" label="Username" :value="$val('mail.username')" placeholder="SMTP username" />
+                        <x-admin.field type="password" name="settings[mail.password]" label="Password" :value="''" placeholder="Leave empty to keep current password" />
                         <x-admin.field as="select" name="settings[mail.encryption]" label="Encryption">
                             @foreach(['tls', 'ssl', ''] as $enc)
                                 <option value="{{ $enc }}" @selected($mailEncryption === $enc)>{{ $enc ?: '— none' }}</option>

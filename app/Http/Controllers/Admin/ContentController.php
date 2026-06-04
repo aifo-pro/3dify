@@ -146,10 +146,6 @@ class ContentController extends Controller
             $settings['mail.encryption'] = 'ssl';
         }
 
-        if (($settings['mail.host'] ?? null) === '') {
-            $settings['mail.host'] = 'in-v3.mailjet.com';
-        }
-
         return $settings;
     }
 
@@ -284,12 +280,12 @@ class ContentController extends Controller
             $html = '<div style="font-family:Arial,sans-serif;background:#0b0f19;padding:32px;color:#e5e7eb;">'
                 .'<div style="max-width:560px;margin:0 auto;background:#111827;border:1px solid #1f2937;border-radius:20px;padding:32px;">'
                 .'<p style="display:inline-block;margin:0 0 18px;padding:7px 12px;border-radius:999px;background:#34d399;color:#03130d;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">3Dify SMTP</p>'
-                .'<h1 style="margin:0 0 12px;color:#fff;font-size:28px;">Mailjet test email</h1>'
-                .'<p style="margin:0;color:#9ca3af;font-size:15px;line-height:1.7;">If you see this email as HTML, Laravel and Mailjet SMTP are configured correctly.</p>'
+                .'<h1 style="margin:0 0 12px;color:#fff;font-size:28px;">SMTP test email</h1>'
+                .'<p style="margin:0;color:#9ca3af;font-size:15px;line-height:1.7;">If you see this email as HTML, Laravel SMTP is configured correctly.</p>'
                 .'<p style="margin:24px 0 0;color:#6b7280;font-size:13px;">Sent at '.e(now()->toDateTimeString()).'</p>'
                 .'</div></div>';
 
-            Mail::to($data['to'])->send(new RenderedTemplateMail('3Dify · Mailjet SMTP test', $html));
+            Mail::to($data['to'])->send(new RenderedTemplateMail('3Dify - SMTP test', $html));
 
             return redirect()->to(route('admin.content', ['tab' => 'mail']))->with('status', 'Тестовий HTML-лист надіслано на '.$data['to']);
         } catch (\Throwable $e) {
