@@ -11,6 +11,7 @@ use App\Services\AuditLogger;
 use App\Services\NewsletterTemplateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
@@ -18,6 +19,8 @@ class NewsletterController extends Controller
 {
     public function index(Request $request, NewsletterTemplateService $templates)
     {
+        $this->syncUsersIntoNewsletterRecipients();
+
         $q = $request->input('q');
         $status = $request->input('status', 'active');
 
@@ -34,16 +37,13 @@ class NewsletterController extends Controller
             'unsubscribed' => NewsletterSubscriber::whereNotNull('unsubscribed_at')->count(),
             'this_month' => NewsletterSubscriber::whereNull('unsubscribed_at')->where('created_at', '>=', now()->startOfMonth())->count(),
             'authors' => User::where('role', 'author')->count(),
+            'users' => User::whereNotNull('email')->count(),
         ];
 
         $audienceCounts = [
             'all_subscribers' => $totals['active'],
-            'authors' => NewsletterSubscriber::whereNull('unsubscribed_at')
-                ->whereIn('email', User::where('role', 'author')->pluck('email'))
-                ->count(),
-            'buyers' => NewsletterSubscriber::whereNull('unsubscribed_at')
-                ->whereIn('email', User::has('orders')->pluck('email'))
-                ->count(),
+            'authors' => $this->subscribersForUsers(User::where('role', 'author')->pluck('email'))->count(),
+            'buyers' => $this->subscribersForUsers(User::has('orders')->pluck('email'))->count(),
         ];
 
         return view('admin.newsletter.index', [
@@ -72,18 +72,17 @@ class NewsletterController extends Controller
 
     public function blast(Request $request, AuditLogger $audit)
     {
+        $this->syncUsersIntoNewsletterRecipients();
+
         $data = $request->validate([
             'subject' => ['required', 'string', 'max:200'],
             'body' => ['required', 'string', 'max:50000'],
             'audience' => ['required', Rule::in(['all_subscribers', 'authors', 'buyers'])],
+            'template_key' => ['nullable', 'string', 'max:100'],
             'confirm' => ['required', 'accepted'],
         ]);
 
-        $recipients = match ($data['audience']) {
-            'all_subscribers' => NewsletterSubscriber::whereNull('unsubscribed_at')->get(),
-            'authors' => $this->subscribersForUsers(User::where('role', 'author')->pluck('email')),
-            'buyers' => $this->subscribersForUsers(User::has('orders')->pluck('email')),
-        };
+        $recipients = $this->recipientsForAudience($data['audience']);
 
         $blast = NewsletterBlast::create([
             'subject' => $data['subject'],
@@ -98,7 +97,10 @@ class NewsletterController extends Controller
             Mail::to($sub->email)->queue(new NewsletterBlastMailable($blast, $sub));
         }
 
-        $audit->record('newsletter.blast', $blast, ['recipients' => $recipients->count()]);
+        $audit->record('newsletter.blast', $blast, [
+            'recipients' => $recipients->count(),
+            'template_key' => $data['template_key'] ?? null,
+        ]);
 
         return back()->with('status', __('Розсилку поставлено в чергу: :n листів.', ['n' => $recipients->count()]));
     }
@@ -145,10 +147,86 @@ class NewsletterController extends Controller
         ])->render(), 200, ['Content-Type' => 'text/html; charset=utf-8']);
     }
 
-    private function subscribersForUsers($emails)
+    private function recipientsForAudience(string $audience): Collection
     {
-        $emails = collect($emails)->filter()->unique()->all();
+        return match ($audience) {
+            'authors' => $this->subscribersForUsers(User::where('role', 'author')->pluck('email')),
+            'buyers' => $this->subscribersForUsers(User::has('orders')->pluck('email')),
+            default => NewsletterSubscriber::query()
+                ->whereNull('unsubscribed_at')
+                ->get()
+                ->unique('email')
+                ->values(),
+        };
+    }
 
-        return NewsletterSubscriber::whereIn('email', $emails)->whereNull('unsubscribed_at')->get();
+    private function subscribersForUsers($emails): Collection
+    {
+        $emails = collect($emails)
+            ->filter()
+            ->map(fn ($email) => mb_strtolower(trim((string) $email)))
+            ->unique()
+            ->all();
+
+        return NewsletterSubscriber::query()
+            ->whereIn('email', $emails)
+            ->whereNull('unsubscribed_at')
+            ->get()
+            ->unique('email')
+            ->values();
+    }
+
+    private function syncUsersIntoNewsletterRecipients(): void
+    {
+        User::query()
+            ->whereNotNull('email')
+            ->select(['id', 'name', 'email', 'locale', 'email_verified_at'])
+            ->orderBy('id')
+            ->chunkById(500, function ($users): void {
+                foreach ($users as $user) {
+                    $email = mb_strtolower(trim((string) $user->email));
+                    if ($email === '') {
+                        continue;
+                    }
+
+                    $subscriber = NewsletterSubscriber::firstOrNew(['email' => $email]);
+
+                    if (! $subscriber->exists) {
+                        $subscriber->name = $user->name;
+                        $subscriber->locale = $user->locale ?: app()->getLocale();
+                        $subscriber->source = 'user';
+                        $subscriber->verified_at = $user->email_verified_at;
+                        $subscriber->save();
+
+                        continue;
+                    }
+
+                    $dirty = false;
+
+                    if (! $subscriber->name && $user->name) {
+                        $subscriber->name = $user->name;
+                        $dirty = true;
+                    }
+
+                    if (! $subscriber->locale && $user->locale) {
+                        $subscriber->locale = $user->locale;
+                        $dirty = true;
+                    }
+
+                    if (! $subscriber->verified_at && $user->email_verified_at) {
+                        $subscriber->verified_at = $user->email_verified_at;
+                        $dirty = true;
+                    }
+
+                    if (! str_contains((string) $subscriber->source, 'user')) {
+                        $subscriber->source = trim(((string) $subscriber->source).'+user', '+');
+                        $dirty = true;
+                    }
+
+                    if ($dirty) {
+                        $subscriber->save();
+                    }
+                }
+            });
     }
 }

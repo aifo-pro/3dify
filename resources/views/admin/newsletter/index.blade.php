@@ -108,6 +108,7 @@
                     @submit="if (!confirmSend($event)) $event.preventDefault();"
                 >
                     @csrf
+                    <input type="hidden" name="template_key" x-model="currentTemplate">
 
                     <div>
                         <label class="mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-400">{{ __('Тема') }}</label>
