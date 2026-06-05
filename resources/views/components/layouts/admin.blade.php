@@ -183,7 +183,21 @@
                         <ul class="grid gap-1">
                             @foreach($section['items'] as $item)
                                 @continue(! empty($item['admin_only']) && ! auth()->user()?->isAdmin())
-                                @php $isActive = $active === $item['key']; @endphp
+                                @php
+                                    // Active state: explicit `active` prop wins; otherwise auto-detect
+                                    // from the current URL so every page highlights its own menu item
+                                    // even when it doesn't pass `active`.
+                                    $itemPath = trim((string) parse_url($item['href'] ?? '', PHP_URL_PATH), '/');
+                                    $isDashboard = ($item['key'] ?? null) === 'dashboard';
+                                    $pathActive = $itemPath !== '' && (
+                                        $isDashboard
+                                            ? request()->is($itemPath)
+                                            : (request()->is($itemPath) || request()->is($itemPath.'/*'))
+                                    );
+                                    $isActive = $active !== 'dashboard'
+                                        ? $active === $item['key']
+                                        : $pathActive;
+                                @endphp
                                 <li>
                                     <a
                                         href="{{ $item['href'] }}"
