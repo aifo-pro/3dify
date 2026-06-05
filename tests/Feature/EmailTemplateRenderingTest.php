@@ -5,9 +5,11 @@ namespace Tests\Feature;
 use App\Models\EmailTemplate;
 use App\Models\User;
 use App\Mail\RenderedTemplateMail;
+use App\Notifications\TemplatedPasswordResetNotification;
 use App\Services\EmailTemplateRenderer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class EmailTemplateRenderingTest extends TestCase
@@ -42,9 +44,9 @@ class EmailTemplateRenderingTest extends TestCase
         $this->assertStringNotContainsString('{{ link }}', $rendered['body']);
     }
 
-    public function test_password_reset_queues_rendered_html_mailable(): void
+    public function test_password_reset_sends_templated_notification(): void
     {
-        Mail::fake();
+        Notification::fake();
 
         EmailTemplate::updateOrCreate(
             ['key' => 'password_reset', 'locale' => 'uk'],
@@ -63,10 +65,8 @@ class EmailTemplateRenderingTest extends TestCase
 
         $user->sendPasswordResetNotification('token');
 
-        Mail::assertQueued(RenderedTemplateMail::class, function (RenderedTemplateMail $mail) {
-            return $mail->subjectLine === 'Reset Denys'
-                && str_contains($mail->body, '<h1>Reset</h1>')
-                && ! str_contains($mail->body, '{{ link }}');
+        Notification::assertSentTo($user, TemplatedPasswordResetNotification::class, function ($notification) {
+            return $notification->token === 'token';
         });
     }
 
