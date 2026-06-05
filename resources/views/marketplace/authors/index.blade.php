@@ -34,7 +34,12 @@
                 </div>
 
                 <form method="GET" action="{{ route('authors.index') }}" class="flex flex-col gap-3 rounded-3xl border border-white/10 bg-zinc-950/55 p-3 sm:flex-row sm:items-center">
-                    <input name="q" value="{{ $filters['q'] }}" placeholder="{{ __('Пошук автора') }}" class="h-11 min-w-0 flex-1 rounded-2xl border border-white/10 bg-white/[0.06] px-4 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40">
+                    <label class="relative block min-w-0 flex-1">
+                        <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-zinc-500">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.65" y2="16.65"/></svg>
+                        </span>
+                        <input name="q" value="{{ $filters['q'] }}" placeholder="{{ __('Пошук автора за ім\'ям або @username…') }}" style="min-width:200px;" class="h-11 w-full rounded-2xl border border-white/10 bg-white/[0.06] pl-10 pr-4 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40">
+                    </label>
                     <select name="sort" style="background-image:url(&quot;data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 8 10 12 14 8'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 0.875rem center;background-size:1.1rem 1.1rem;" class="h-11 w-full appearance-none rounded-2xl border border-white/10 bg-white/[0.06] pl-4 pr-11 text-sm font-medium text-white transition hover:border-white/20 focus:border-emerald-300 focus:outline-none focus:ring-1 focus:ring-emerald-300/40 sm:w-60 sm:shrink-0">
                         <option value="popular" @selected($filters['sort'] === 'popular')>{{ __('Популярні') }}</option>
                         <option value="new" @selected($filters['sort'] === 'new')>{{ __('Нові') }}</option>
