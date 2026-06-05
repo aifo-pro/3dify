@@ -17,6 +17,13 @@
     @endpush
 
     <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        {{-- Visible breadcrumbs (matches BreadcrumbList schema) --}}
+        <nav aria-label="Breadcrumb" class="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
+            <a href="{{ route('home') }}" class="transition hover:text-emerald-300">{{ __('Головна') }}</a>
+            <span class="text-zinc-700">›</span>
+            <span class="text-zinc-300">{{ __('Автори') }}</span>
+        </nav>
+
         <div class="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/30 sm:p-8 lg:p-10">
             <div class="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-400/15 blur-3xl"></div>
             <x-ui.badge>{{ __('Автори') }}</x-ui.badge>
