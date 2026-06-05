@@ -294,6 +294,43 @@
                 @endif
             </div>
         </div>
+
+        {{-- Internal linking: categories + tags (crawl depth + long-tail SEO) --}}
+        @if($categories->isNotEmpty() || $tags->isNotEmpty())
+            <div class="mt-16 border-t border-white/10 pt-10">
+                @if($categories->isNotEmpty())
+                    <h2 class="text-sm font-black uppercase tracking-[0.16em] text-zinc-400">{{ __('Категорії моделей') }}</h2>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        @foreach($categories as $cat)
+                            <a href="{{ route('categories.show', $cat) }}"
+                               @class([
+                                   'rounded-full border px-3.5 py-1.5 text-xs font-bold transition',
+                                   'border-emerald-400/50 bg-emerald-400/15 text-emerald-100' => $activeCategory && $activeCategory->id === $cat->id,
+                                   'border-white/10 bg-white/[0.04] text-zinc-300 hover:border-emerald-300/35 hover:text-emerald-100' => ! ($activeCategory && $activeCategory->id === $cat->id),
+                               ])>
+                                {{ $cat->localized('name') }}
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
+
+                @if($tags->isNotEmpty())
+                    <h2 class="mt-8 text-sm font-black uppercase tracking-[0.16em] text-zinc-400">{{ __('Популярні теги') }}</h2>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        @foreach($tags->take(40) as $tag)
+                            <a href="{{ route('products.index', ['tag' => $tag->slug]) }}"
+                               @class([
+                                   'rounded-full border px-3 py-1 text-xs font-medium transition',
+                                   'border-emerald-400/40 text-emerald-200' => $activeTag && $activeTag->id === $tag->id,
+                                   'border-white/[0.07] text-zinc-400 hover:border-emerald-300/30 hover:text-emerald-200' => ! ($activeTag && $activeTag->id === $tag->id),
+                               ])>
+                                #{{ $tag->localized() }}
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        @endif
     </section>
 
     {{-- FAQ only on the main catalog (avoid duplicate FAQPage schema on category/tag pages) --}}
