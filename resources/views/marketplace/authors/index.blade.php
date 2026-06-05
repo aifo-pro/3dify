@@ -35,7 +35,7 @@
 
                 <form method="GET" action="{{ route('authors.index') }}" class="grid gap-3 rounded-3xl border border-white/10 bg-zinc-950/55 p-3 sm:grid-cols-[minmax(0,1fr)_240px_auto]">
                     <input name="q" value="{{ $filters['q'] }}" placeholder="{{ __('Пошук автора') }}" class="h-11 rounded-2xl border border-white/10 bg-white/[0.06] px-4 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40">
-                    <select name="sort" class="h-11 rounded-2xl border border-white/10 bg-white/[0.06] pl-4 pr-10 text-sm text-white focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40">
+                    <select name="sort" style="background-image:url(&quot;data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 8 10 12 14 8'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 0.875rem center;background-size:1.1rem 1.1rem;" class="h-11 w-full appearance-none rounded-2xl border border-white/10 bg-white/[0.06] pl-4 pr-11 text-sm font-medium text-white transition hover:border-white/20 focus:border-emerald-300 focus:outline-none focus:ring-1 focus:ring-emerald-300/40">
                         <option value="popular" @selected($filters['sort'] === 'popular')>{{ __('Популярні') }}</option>
                         <option value="new" @selected($filters['sort'] === 'new')>{{ __('Нові') }}</option>
                         <option value="models" @selected($filters['sort'] === 'models')>{{ __('Найбільше моделей') }}</option>
