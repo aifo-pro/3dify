@@ -33,20 +33,20 @@
                     <p class="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">{{ __('Знайдіть дизайнерів, які публікують якісні 3D-моделі, підписуйтеся на оновлення та відкривайте їхні колекції.') }}</p>
                 </div>
 
-                <form method="GET" action="{{ route('authors.index') }}" class="flex flex-col gap-3 rounded-3xl border border-white/10 bg-zinc-950/55 p-3 sm:flex-row sm:items-center">
-                    <label class="relative block min-w-0 flex-1">
-                        <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-zinc-500">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.65" y2="16.65"/></svg>
+                <form method="GET" action="{{ route('authors.index') }}" style="display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;padding:.75rem;border-radius:1.5rem;border:1px solid rgba(255,255,255,.10);background-color:rgba(9,9,11,.55);">
+                    <label style="position:relative;display:block;flex:1 1 220px;min-width:220px;">
+                        <span style="position:absolute;top:0;bottom:0;left:.75rem;display:flex;align-items:center;color:#71717a;pointer-events:none;">
+                            <svg style="height:1rem;width:1rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.65" y2="16.65"/></svg>
                         </span>
-                        <input name="q" value="{{ $filters['q'] }}" placeholder="{{ __('Пошук автора за ім\'ям або @username…') }}" style="min-width:200px;" class="h-11 w-full rounded-2xl border border-white/10 bg-white/[0.06] pl-10 pr-4 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40">
+                        <input name="q" value="{{ $filters['q'] }}" placeholder="{{ __('Пошук автора за ім\'ям або @username…') }}" style="height:2.75rem;width:100%;border-radius:1rem;border:1px solid rgba(255,255,255,.10);background-color:rgba(255,255,255,.06);padding:0 1rem 0 2.5rem;font-size:.875rem;color:#fff;" class="placeholder:text-zinc-500 focus:border-emerald-300 focus:outline-none focus:ring-1 focus:ring-emerald-300/40">
                     </label>
-                    <select name="sort" style="background-image:url(&quot;data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 8 10 12 14 8'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 0.875rem center;background-size:1.1rem 1.1rem;" class="h-11 w-full appearance-none rounded-2xl border border-white/10 bg-white/[0.06] pl-4 pr-11 text-sm font-medium text-white transition hover:border-white/20 focus:border-emerald-300 focus:outline-none focus:ring-1 focus:ring-emerald-300/40 sm:w-60 sm:shrink-0">
+                    <select name="sort" style="height:2.75rem;width:240px;flex:0 0 240px;-webkit-appearance:none;-moz-appearance:none;appearance:none;border-radius:1rem;border:1px solid rgba(255,255,255,.10);background-color:rgba(255,255,255,.06);padding:0 2.75rem 0 1rem;font-size:.875rem;font-weight:500;color:#fff;background-image:url(&quot;data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 8 10 12 14 8'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right .875rem center;background-size:1.1rem 1.1rem;">
                         <option value="popular" @selected($filters['sort'] === 'popular')>{{ __('Популярні') }}</option>
                         <option value="new" @selected($filters['sort'] === 'new')>{{ __('Нові') }}</option>
                         <option value="models" @selected($filters['sort'] === 'models')>{{ __('Найбільше моделей') }}</option>
                         <option value="downloads" @selected($filters['sort'] === 'downloads')>{{ __('Найбільше завантажень') }}</option>
                     </select>
-                    <button class="h-11 rounded-2xl bg-emerald-400 px-5 text-sm font-black text-zinc-950 transition hover:bg-emerald-300">{{ __('Знайти') }}</button>
+                    <button style="height:2.75rem;flex:0 0 auto;border-radius:1rem;background-color:#34d399;padding:0 1.25rem;font-size:.875rem;font-weight:900;color:#09090b;" class="transition hover:bg-emerald-300">{{ __('Знайти') }}</button>
                 </form>
             </div>
         </div>
