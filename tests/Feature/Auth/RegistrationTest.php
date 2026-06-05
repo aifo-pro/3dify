@@ -21,11 +21,24 @@ class RegistrationTest extends TestCase
         $response = $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Str0ng-Pass!',
+            'password_confirmation' => 'Str0ng-Pass!',
         ]);
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
+    public function test_weak_password_is_rejected(): void
+    {
+        $response = $this->from('/register')->post('/register', [
+            'name' => 'Weak User',
+            'email' => 'weak@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors('password');
     }
 }
