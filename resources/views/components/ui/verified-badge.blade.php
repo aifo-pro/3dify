@@ -9,11 +9,20 @@
     $tier = $tier ?? ($user?->verificationTier());
     if (! $tier) return;
 
-    $sizes = [
-        'xs' => 'h-4 px-1.5 text-[9px] gap-1 [&_svg]:h-2.5 [&_svg]:w-2.5',
-        'sm' => 'h-5 px-2 text-[10px] gap-1 [&_svg]:h-3 [&_svg]:w-3',
-        'md' => 'h-6 px-2.5 text-xs gap-1.5 [&_svg]:h-3.5 [&_svg]:w-3.5',
-    ];
+    // Square (icon-only) sizes when there's no label, pill sizes with text otherwise.
+    if ($showLabel) {
+        $sizes = [
+            'xs' => 'h-4 px-1.5 text-[9px] gap-1 [&_svg]:h-2.5 [&_svg]:w-2.5',
+            'sm' => 'h-5 px-2 text-[10px] gap-1 [&_svg]:h-3 [&_svg]:w-3',
+            'md' => 'h-6 px-2.5 text-xs gap-1.5 [&_svg]:h-3.5 [&_svg]:w-3.5',
+        ];
+    } else {
+        $sizes = [
+            'xs' => 'h-4 w-4 justify-center [&_svg]:h-2.5 [&_svg]:w-2.5',
+            'sm' => 'h-5 w-5 justify-center [&_svg]:h-3 [&_svg]:w-3',
+            'md' => 'h-6 w-6 justify-center [&_svg]:h-4 [&_svg]:w-4',
+        ];
+    }
     $palette = $tier === 'verified'
         ? 'border-sky-300/40 bg-sky-300/[0.10] text-sky-100'
         : 'border-amber-300/40 bg-amber-300/[0.08] text-amber-100';
