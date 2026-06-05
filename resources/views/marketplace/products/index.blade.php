@@ -1,10 +1,65 @@
-<x-layouts.marketplace>
+@php
+    $activeCategory = $activeCategory ?? null;
+    $activeTag = $activeTag ?? null;
+
+    if ($activeCategory) {
+        $pageH1 = $activeCategory->localized('name');
+        $pageCanonical = route('categories.show', $activeCategory);
+        $catDesc = trim((string) $activeCategory->localized('description'));
+        $pageDescription = \Illuminate\Support\Str::limit($catDesc !== ''
+            ? $catDesc
+            : __('3D-моделі в категорії «:name» для друку: STL, OBJ, GLB, 3MF. :count моделей на 3Dify.', ['name' => $pageH1, 'count' => $products->total()]), 160);
+        $pageTitle = $pageH1.' — '.__('3D-моделі для друку').' · 3Dify';
+        $pageLead = $catDesc;
+    } elseif ($activeTag) {
+        $pageH1 = '#'.$activeTag->localized();
+        $pageCanonical = route('products.index', ['tag' => $activeTag->slug]);
+        $pageDescription = \Illuminate\Support\Str::limit(__('3D-моделі з тегом «:tag» для друку. STL, OBJ, GLB, 3MF на маркетплейсі 3Dify.', ['tag' => $activeTag->localized()]), 160);
+        $pageTitle = $activeTag->localized().' — '.__('3D-моделі за тегом').' · 3Dify';
+        $pageLead = '';
+    } else {
+        $pageH1 = __('3D-моделі для друку, прототипів і декору');
+        $pageCanonical = route('products.index');
+        $pageDescription = __('Фільтруйте за категорією, ціною, ліцензією, форматом файлів. Зберігайте улюблені моделі та читайте відгуки покупців.');
+        $pageTitle = __('Каталог 3D-моделей для друку').' · 3Dify';
+        $pageLead = '';
+    }
+
+    $crumbs = [['name' => __('Головна'), 'url' => route('home')], ['name' => __('Каталог'), 'url' => route('products.index')]];
+    if ($activeCategory) { $crumbs[] = ['name' => $pageH1, 'url' => $pageCanonical]; }
+    if ($activeTag) { $crumbs[] = ['name' => $pageH1, 'url' => $pageCanonical]; }
+
+    $collectionItems = $products->take(20)->map(fn ($p) => ['name' => $p->localized('title'), 'url' => route('products.show', $p)])->all();
+@endphp
+
+<x-layouts.marketplace
+    :seo-title="$pageTitle"
+    :seo-description="$pageDescription"
+    :seo-canonical="$pageCanonical"
+>
+    @push('head')
+        {!! \App\Support\Seo::jsonLd(\App\Support\Seo::breadcrumb($crumbs)) !!}
+        {!! \App\Support\Seo::jsonLd(\App\Support\Seo::collectionPage($pageH1, $pageCanonical, $pageDescription, $collectionItems)) !!}
+    @endpush
+
     <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        {{-- Breadcrumbs --}}
+        <nav aria-label="Breadcrumb" class="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
+            @foreach($crumbs as $i => $crumb)
+                @if($i > 0)<span class="text-zinc-700">›</span>@endif
+                @if($i === count($crumbs) - 1)
+                    <span class="text-zinc-300">{{ $crumb['name'] }}</span>
+                @else
+                    <a href="{{ $crumb['url'] }}" class="transition hover:text-emerald-300">{{ $crumb['name'] }}</a>
+                @endif
+            @endforeach
+        </nav>
+
         {{-- Hero --}}
         <header class="mb-8">
-            <x-ui.badge>{{ __('Каталог 3Dify') }}</x-ui.badge>
-            <h1 class="mt-4 text-4xl font-black tracking-tight text-white sm:text-5xl">{{ __('3D-моделі для друку, прототипів і декору') }}</h1>
-            <p class="mt-3 max-w-3xl text-zinc-400">{{ __('Фільтруйте за категорією, ціною, ліцензією, форматом файлів. Зберігайте улюблені моделі та читайте відгуки покупців.') }}</p>
+            <x-ui.badge>{{ $activeCategory ? __('Категорія') : ($activeTag ? __('Тег') : __('Каталог 3Dify')) }}</x-ui.badge>
+            <h1 class="mt-4 text-4xl font-black tracking-tight text-white sm:text-5xl">{{ $pageH1 }}</h1>
+            <p class="mt-3 max-w-3xl text-zinc-400">{{ $pageLead !== '' ? $pageLead : $pageDescription }}</p>
         </header>
 
         {{-- Top toolbar (search + sort) --}}

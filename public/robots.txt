@@ -19,6 +19,25 @@ Allow: /
 User-agent: redditbot
 Allow: /
 
+# AI search crawlers (AI Overviews, ChatGPT Search, Perplexity, Gemini)
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
 User-agent: *
 Disallow: /admin
 Disallow: /author/
@@ -26,13 +45,23 @@ Disallow: /dashboard
 Disallow: /notifications
 Disallow: /wishlist
 Disallow: /checkout
+Disallow: /my/
+Disallow: /custom-orders
+Disallow: /refunds
+Disallow: /balance
+Disallow: /profile
 Disallow: /login
 Disallow: /register
 Disallow: /password
 Disallow: /verify-email
+Disallow: /two-factor
 Allow: /authors
 Allow: /authors/
 Allow: /
 
 Sitemap: https://3dify.dev/sitemap.xml
+Sitemap: https://3dify.dev/sitemap-pages.xml
+Sitemap: https://3dify.dev/sitemap-models.xml
+Sitemap: https://3dify.dev/sitemap-categories.xml
+Sitemap: https://3dify.dev/sitemap-authors.xml
 Sitemap: https://3dify.dev/sitemap-blog.xml

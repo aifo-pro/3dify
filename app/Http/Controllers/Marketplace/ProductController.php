@@ -84,12 +84,21 @@ class ProductController extends Controller
             ->limit(12)
             ->get();
 
+        // Resolve the active category/tag models for SEO (CollectionPage, dynamic meta).
+        $activeCategory = $category
+            ?: ($categorySlug !== '' ? Category::query()->where('slug', $categorySlug)->first() : null);
+        $activeTag = $request->filled('tag')
+            ? Tag::query()->where('slug', $request->string('tag')->toString())->first()
+            : null;
+
         return view('marketplace.products.index', [
             'products' => $products,
             'categories' => Category::query()->where('is_active', true)->orderBy('sort_order')->get(),
             'tags' => Tag::query()->orderBy('slug')->get(),
             'licenses' => License::query()->orderBy('id')->get(),
             'availableFormats' => $availableFormats,
+            'activeCategory' => $activeCategory,
+            'activeTag' => $activeTag,
             'filters' => [
                 'q' => (string) $request->input('q', ''),
                 'category' => $categorySlug,

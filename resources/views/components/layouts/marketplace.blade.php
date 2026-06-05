@@ -4,6 +4,7 @@
     'seoImage' => null,
     'ogType' => null,
     'seoCanonical' => null,
+    'robots' => 'index,follow',
 ])
 
 @php
@@ -51,6 +52,7 @@
     @endphp
     <title>{{ $finalTitle }}</title>
     <meta name="description" content="{{ $finalDescription }}">
+    <meta name="robots" content="{{ $robots }}">
     <link rel="canonical" href="{{ $canonical }}">
 
     {{-- Open Graph --}}
@@ -73,12 +75,28 @@
     <meta name="twitter:image" content="{{ $finalImage }}">
     <meta name="twitter:image:alt" content="{{ $finalTitle }}">
 
-    {{-- Hreflang --}}
-    <link rel="alternate" hreflang="uk" href="{{ url()->current() }}?lang=uk">
-    <link rel="alternate" hreflang="en" href="{{ url()->current() }}?lang=en">
-    <link rel="alternate" hreflang="x-default" href="{{ url()->current() }}">
+    {{-- Hreflang: locale is set per-session via /locale/{x}; the canonical URL is
+         shared, so x-default points at it and each enabled locale at the switch URL. --}}
+    @php
+        $hreflangLocales = array_values(array_intersect(
+            \App\Http\Middleware\SetLocale::SUPPORTED_LOCALES,
+            $settings->list('site.supported_languages', ['uk', 'en']) ?: ['uk', 'en']
+        ));
+    @endphp
+    <link rel="alternate" hreflang="x-default" href="{{ $canonical }}">
+    @foreach($hreflangLocales as $hl)
+        <link rel="alternate" hreflang="{{ $hl }}" href="{{ route('locale.switch', $hl) }}">
+    @endforeach
+
+    {{-- Sitewide structured data: Organization + WebSite (SGE / sitelinks search) --}}
+    {!! \App\Support\Seo::jsonLd(\App\Support\Seo::organization()) !!}
+    {!! \App\Support\Seo::jsonLd(\App\Support\Seo::website()) !!}
 
     @if($faviconPath)<link rel="icon" href="{{ Storage::disk('public')->url($faviconPath) }}">@endif
+
+    {{-- Performance: preconnect to asset/CDN origins for faster LCP --}}
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+    <link rel="dns-prefetch" href="https://fonts.bunny.net">
 
     <x-site.google-head />
 

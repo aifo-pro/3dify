@@ -1,4 +1,21 @@
-<x-layouts.marketplace>
+<x-layouts.marketplace
+    :seo-title="__('Автори 3Dify — дизайнери 3D-моделей для друку') . ' · 3Dify'"
+    :seo-description="__('Каталог авторів 3D-моделей: дизайнери STL, OBJ, GLB та 3MF. Підписуйтесь на оновлення та відкривайте колекції моделей для друку.')"
+    :seo-canonical="route('authors.index')"
+>
+    @push('head')
+        {!! \App\Support\Seo::jsonLd(\App\Support\Seo::breadcrumb([
+            ['name' => __('Головна'), 'url' => route('home')],
+            ['name' => __('Автори'), 'url' => route('authors.index')],
+        ])) !!}
+        {!! \App\Support\Seo::jsonLd(\App\Support\Seo::collectionPage(
+            __('Автори 3Dify'),
+            route('authors.index'),
+            __('Каталог авторів 3D-моделей для друку.'),
+            $authors->take(20)->map(fn ($a) => ['name' => $a->displayName(), 'url' => $a->profileUrl()])->all()
+        )) !!}
+    @endpush
+
     <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div class="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/30 sm:p-8 lg:p-10">
             <div class="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-400/15 blur-3xl"></div>

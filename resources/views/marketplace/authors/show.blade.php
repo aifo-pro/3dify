@@ -23,9 +23,32 @@
     $hueB = ($hueA + 60 + ($hashSeed >> 8) % 100) % 360;
     $hueC = ($hueA + 200 + ($hashSeed >> 16) % 80) % 360;
     $initials = mb_strtoupper(mb_substr($author->displayName(), 0, 1));
+
+    $authorUrl = $author->profileUrl();
+    $seoTitle = $author->displayName().' — '.__('Автор 3D-моделей').' · 3Dify';
+    $seoDescription = \Illuminate\Support\Str::limit(
+        $bio ? strip_tags($bio) : __(':author — :count моделей для 3D-друку на 3Dify. Завантажте STL, OBJ, GLB, 3MF.', ['author' => $author->displayName(), 'count' => $stats['models']]),
+        160
+    );
 @endphp
 
-<x-layouts.marketplace>
+<x-layouts.marketplace
+    :seo-title="$seoTitle"
+    :seo-description="$seoDescription"
+    :seo-image="$author->avatarUrl() ?: $author->coverUrl()"
+    :seo-canonical="$authorUrl"
+    og-type="profile"
+>
+    @push('head')
+        {!! \App\Support\Seo::jsonLd(\App\Support\Seo::person($author)) !!}
+        {!! \App\Support\Seo::jsonLd(\App\Support\Seo::profilePage($author, $stats['models'])) !!}
+        {!! \App\Support\Seo::jsonLd(\App\Support\Seo::breadcrumb([
+            ['name' => __('Головна'), 'url' => route('home')],
+            ['name' => __('Автори'), 'url' => route('authors.index')],
+            ['name' => $author->displayName(), 'url' => $authorUrl],
+        ])) !!}
+    @endpush
+
     @if(session('status'))
         <div class="mx-auto mt-6 max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="rounded-2xl border border-emerald-300/30 bg-emerald-300/[0.08] px-4 py-3 text-sm text-emerald-100">{{ session('status') }}</div>
