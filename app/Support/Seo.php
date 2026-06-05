@@ -110,7 +110,10 @@ class Seo
         ];
     }
 
-    public static function person(\App\Models\User $user): array
+    /**
+     * @param  array{value: float, count: int}|null  $rating  optional aggregate rating
+     */
+    public static function person(\App\Models\User $user, ?array $rating = null): array
     {
         $person = [
             '@context' => 'https://schema.org',
@@ -122,6 +125,16 @@ class Seo
 
         if ($avatar = $user->avatarUrl()) {
             $person['image'] = $avatar;
+        }
+
+        if ($rating && ($rating['count'] ?? 0) > 0) {
+            $person['aggregateRating'] = [
+                '@type' => 'AggregateRating',
+                'ratingValue' => (float) $rating['value'],
+                'reviewCount' => (int) $rating['count'],
+                'bestRating' => 5,
+                'worstRating' => 1,
+            ];
         }
 
         $bio = $user->localizedBio();

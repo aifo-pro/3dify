@@ -105,7 +105,23 @@ class AuthorController extends Controller
                     ->whereHas('order', fn (Builder $q) => $q->where('status', 'paid'))
                     ->count()
                 : 0,
+            'rating_avg' => 0.0,
+            'rating_count' => 0,
         ];
+
+        // Aggregate rating across the author's published models (EEAT signal).
+        if (Schema::hasTable('product_reviews') && $productIds->isNotEmpty()) {
+            $reviewAgg = DB::table('product_reviews')
+                ->whereIn('product_id', $productIds)
+                ->where('status', 'published')
+                ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as cnt')
+                ->first();
+
+            if ($reviewAgg && (int) $reviewAgg->cnt > 0) {
+                $stats['rating_avg'] = round((float) $reviewAgg->avg_rating, 1);
+                $stats['rating_count'] = (int) $reviewAgg->cnt;
+            }
+        }
 
         $isFollowing = $author->isFollowedBy($request->user());
         $isSelf = $request->user()?->id === $author->id;

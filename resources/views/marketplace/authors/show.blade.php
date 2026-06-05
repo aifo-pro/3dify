@@ -40,7 +40,7 @@
     og-type="profile"
 >
     @push('head')
-        {!! \App\Support\Seo::jsonLd(\App\Support\Seo::person($author)) !!}
+        {!! \App\Support\Seo::jsonLd(\App\Support\Seo::person($author, ($stats['rating_count'] ?? 0) > 0 ? ['value' => $stats['rating_avg'], 'count' => $stats['rating_count']] : null)) !!}
         {!! \App\Support\Seo::jsonLd(\App\Support\Seo::profilePage($author, $stats['models'])) !!}
         {!! \App\Support\Seo::jsonLd(\App\Support\Seo::breadcrumb([
             ['name' => __('Головна'), 'url' => route('home')],
@@ -48,6 +48,17 @@
             ['name' => $author->displayName(), 'url' => $authorUrl],
         ])) !!}
     @endpush
+
+    {{-- Visible breadcrumbs (matches BreadcrumbList schema) --}}
+    <div class="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+        <nav aria-label="Breadcrumb" class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
+            <a href="{{ route('home') }}" class="transition hover:text-emerald-300">{{ __('Головна') }}</a>
+            <span class="text-zinc-700">›</span>
+            <a href="{{ route('authors.index') }}" class="transition hover:text-emerald-300">{{ __('Автори') }}</a>
+            <span class="text-zinc-700">›</span>
+            <span class="text-zinc-300">{{ $author->displayName() }}</span>
+        </nav>
+    </div>
 
     @if(session('status'))
         <div class="mx-auto mt-6 max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -228,14 +239,22 @@
                 ['key' => 'followers', 'label' => __('Підписники'), 'value' => $stats['followers'], 'tone' => 'violet', 'icon' => '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'],
                 ['key' => 'likes', 'label' => __('Обране'), 'value' => $stats['likes'], 'tone' => 'rose', 'icon' => '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>'],
             ];
+            if (($stats['rating_count'] ?? 0) > 0) {
+                $statCards[] = ['key' => 'rating', 'label' => __('Рейтинг'), 'value' => number_format($stats['rating_avg'], 1).' ★', 'tone' => 'amber', 'icon' => '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>'];
+            }
             $tones = [
                 'emerald' => ['ring' => 'group-hover:border-emerald-300/40', 'icon' => 'bg-emerald-300/[0.10] text-emerald-200', 'value' => 'text-emerald-100', 'glow' => 'from-emerald-500/[0.10]'],
                 'sky' => ['ring' => 'group-hover:border-sky-300/40', 'icon' => 'bg-sky-300/[0.10] text-sky-200', 'value' => 'text-sky-100', 'glow' => 'from-sky-500/[0.10]'],
                 'violet' => ['ring' => 'group-hover:border-violet-300/40', 'icon' => 'bg-violet-300/[0.10] text-violet-200', 'value' => 'text-violet-100', 'glow' => 'from-violet-500/[0.10]'],
                 'rose' => ['ring' => 'group-hover:border-rose-300/40', 'icon' => 'bg-rose-300/[0.10] text-rose-200', 'value' => 'text-rose-100', 'glow' => 'from-rose-500/[0.10]'],
+                'amber' => ['ring' => 'group-hover:border-amber-300/40', 'icon' => 'bg-amber-300/[0.10] text-amber-200', 'value' => 'text-amber-100', 'glow' => 'from-amber-500/[0.10]'],
             ];
         @endphp
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div @class([
+            'grid gap-3 sm:grid-cols-2',
+            'lg:grid-cols-5' => count($statCards) === 5,
+            'lg:grid-cols-4' => count($statCards) !== 5,
+        ])>
             @foreach($statCards as $card)
                 @php $t = $tones[$card['tone']]; @endphp
                 <div class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition {{ $t['ring'] }}">
