@@ -73,9 +73,16 @@
                 <x-ui.footer-link :href="route('pages.show', 'privacy')">Конфіденційність</x-ui.footer-link>
                 <x-ui.footer-link :href="route('pages.show', 'faq')">FAQ</x-ui.footer-link>
                 <x-ui.footer-link :href="route('pages.show', 'contact')">Контакти</x-ui.footer-link>
-                <x-ui.footer-link :href="route('locale.switch', app()->getLocale() === 'uk' ? 'en' : 'uk')">
-                    🌐 {{ app()->getLocale() === 'uk' ? 'English' : 'Українська' }}
-                </x-ui.footer-link>
+                @php
+                    $footerLocaleNames = ['uk' => 'Українська', 'en' => 'English', 'pl' => 'Polski'];
+                    $footerEnabled = app(\App\Services\SiteSettings::class)->list('site.supported_languages', ['uk', 'en']);
+                    $footerLocales = array_values(array_intersect(\App\Http\Middleware\SetLocale::SUPPORTED_LOCALES, $footerEnabled ?: ['uk', 'en']));
+                @endphp
+                @foreach($footerLocales as $loc)
+                    @if($loc !== app()->getLocale())
+                        <x-ui.footer-link :href="route('locale.switch', $loc)">🌐 {{ $footerLocaleNames[$loc] ?? strtoupper($loc) }}</x-ui.footer-link>
+                    @endif
+                @endforeach
             </div>
         </div>
     </div>

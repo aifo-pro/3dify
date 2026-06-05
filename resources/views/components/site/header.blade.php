@@ -8,6 +8,17 @@
         ['label' => __('Блог'),         'href' => route('blog.index'), 'active' => request()->routeIs('blog.*')],
         ['label' => __('Безкоштовні'), 'href' => route('products.index', ['free' => 1]), 'active' => request()->boolean('free')],
     ];
+
+    // Languages offered in the public switcher: admin-enabled set, limited to
+    // locales that actually ship translations.
+    $localeNames = ['uk' => 'Українська', 'en' => 'English', 'pl' => 'Polski'];
+    $enabledLocales = app(\App\Services\SiteSettings::class)->list('site.supported_languages', ['uk', 'en']);
+    $switcherLocales = array_values(array_intersect(
+        \App\Http\Middleware\SetLocale::SUPPORTED_LOCALES,
+        is_array($enabledLocales) && $enabledLocales ? $enabledLocales : ['uk', 'en']
+    ));
+    if (count($switcherLocales) < 1) { $switcherLocales = ['uk', 'en']; }
+    $currentLocale = app()->getLocale();
 @endphp
 
 <header
@@ -77,9 +88,29 @@
             </a>
 
             {{-- Lang switcher --}}
-            <a href="{{ route('locale.switch', app()->getLocale() === 'uk' ? 'en' : 'uk') }}" class="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-[10px] font-bold text-zinc-300 transition hover:bg-white/10 hover:text-white">
-                {{ app()->getLocale() === 'uk' ? 'EN' : 'UK' }}
-            </a>
+            @if(count($switcherLocales) > 1)
+                <div class="relative" x-data="{ langOpen: false }">
+                    <button @click="langOpen = !langOpen" class="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-[10px] font-bold uppercase text-zinc-300 transition hover:bg-white/10 hover:text-white" :aria-expanded="langOpen">
+                        {{ $currentLocale }}
+                    </button>
+                    <div x-show="langOpen" x-cloak @click.outside="langOpen = false"
+                         x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+                         class="absolute right-0 top-full z-[9999] mt-2 w-40 origin-top-right overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/95 shadow-2xl shadow-black/50 backdrop-blur-xl">
+                        <div class="py-1.5">
+                            @foreach($switcherLocales as $loc)
+                                <a href="{{ route('locale.switch', $loc) }}"
+                                   class="flex items-center justify-between gap-3 px-4 py-2.5 text-sm transition hover:bg-white/[0.06] {{ $loc === $currentLocale ? 'text-emerald-300' : 'text-zinc-200 hover:text-white' }}">
+                                    {{ $localeNames[$loc] ?? strtoupper($loc) }}
+                                    <span class="text-[10px] font-bold uppercase text-zinc-500">{{ $loc }}</span>
+                                    @if($loc === $currentLocale)
+                                        <svg class="h-3.5 w-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                    @endif
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             {{-- Sell CTA --}}
             <a href="{{ auth()->check() ? route('author.products.create') : route('register') }}" class="hidden h-9 items-center whitespace-nowrap rounded-full bg-emerald-400 px-4 text-[13px] font-bold text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-300 lg:inline-flex">

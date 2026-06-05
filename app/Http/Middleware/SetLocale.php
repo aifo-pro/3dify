@@ -11,14 +11,17 @@ use Illuminate\Support\Facades\Schema;
 
 class SetLocale
 {
+    /** Locales that ship with a resources/lang/{locale} directory. */
+    public const SUPPORTED_LOCALES = ['uk', 'en', 'pl'];
+
     public function handle(Request $request, Closure $next)
     {
         $locale = $request->session()->get('locale')
             ?? $request->user()?->locale
             ?? config('app.locale', 'uk');
 
-        if (! in_array($locale, ['uk', 'en'], true)) {
-            $locale = in_array(config('app.locale'), ['uk', 'en'], true)
+        if (! in_array($locale, self::SUPPORTED_LOCALES, true)) {
+            $locale = in_array(config('app.locale'), self::SUPPORTED_LOCALES, true)
                 ? config('app.locale')
                 : 'uk';
         }

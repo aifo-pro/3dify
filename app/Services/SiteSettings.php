@@ -19,6 +19,16 @@ class SiteSettings
         return is_array($value) ? json_encode($value) : (string) $value;
     }
 
+    /**
+     * Read a list setting, always returning an array.
+     */
+    public function list(string $key, array $default = []): array
+    {
+        $value = $this->get($key, $default);
+
+        return is_array($value) ? $value : $default;
+    }
+
     public function forget(string $key): void
     {
         Cache::forget("setting:{$key}");

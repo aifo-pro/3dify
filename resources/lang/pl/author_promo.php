@@ -1,0 +1,30 @@
+<?php
+
+return [
+    'badge' => 'Kody promocyjne autora',
+    'title' => 'Kody promocyjne na Twoje modele',
+    'subtitle' => 'Twórz zniżki na własne modele — kod, procent i limit użyć.',
+    'funding_note' => 'Zniżki z Twoich kodów promocyjnych są finansowane przez Ciebie: zmniejszają Twoją wypłatę. Kody utworzone przez serwis nie wpływają na Twoją wypłatę — różnicę pokrywa platforma.',
+    'create_title' => 'Nowy kod promocyjny',
+    'create_btn' => 'Utwórz kod promocyjny',
+    'code' => 'Kod',
+    'percent' => 'Zniżka, %',
+    'discount' => 'Zniżka',
+    'usage_limit' => 'Limit użyć',
+    'expires_at' => 'Wygasa',
+    'your_codes' => 'Twoje kody promocyjne',
+    'used' => 'Użyto',
+    'status' => 'Status',
+    'actions' => 'Akcje',
+    'active' => 'Aktywny',
+    'inactive' => 'Wyłączony',
+    'delete' => 'Usuń',
+    'empty' => 'Brak kodów promocyjnych. Utwórz pierwszy powyżej.',
+    'created' => 'Kod promocyjny utworzony.',
+    'updated' => 'Kod promocyjny zaktualizowany.',
+    'deleted' => 'Kod promocyjny usunięty.',
+    'author_code_desc' => 'Kod promocyjny autora :author',
+    'errors' => [
+        'limit_reached' => 'Osiągnięto limit kodów promocyjnych. Usuń stare, aby utworzyć nowe.',
+    ],
+];
