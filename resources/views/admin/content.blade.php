@@ -124,9 +124,9 @@
                 >
                     <div class="grid gap-4 sm:grid-cols-2">
                         <x-admin.field name="settings[site.name]" :label="__('Назва сайту')" :value="$val('site.name', '3Dify')" placeholder="3Dify" required />
-                        <x-admin.field name="settings[site.url]" label="URL" :value="$val('site.url', config('app.url'))" placeholder="https://3dify.local" type="url" />
-                        <x-admin.field name="settings[site.contact_email]" :label="__('Контактний email')" :value="$val('site.contact_email')" placeholder="hello@3dify.local" type="email" />
-                        <x-admin.field name="settings[site.support_email]" :label="__('Email підтримки')" :value="$val('site.support_email')" placeholder="support@3dify.local" type="email" />
+                        <x-admin.field name="settings[site.url]" label="URL" :value="$val('site.url', config('app.url'))" placeholder="https://3dify.dev" type="url" />
+                        <x-admin.field name="settings[site.contact_email]" :label="__('Контактний email')" :value="$val('site.contact_email')" placeholder="hello@3dify.dev" type="email" />
+                        <x-admin.field name="settings[site.support_email]" :label="__('Email підтримки')" :value="$val('site.support_email')" placeholder="support@3dify.dev" type="email" />
                     </div>
                 </x-admin.settings-card>
 

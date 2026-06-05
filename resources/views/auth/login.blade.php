@@ -22,7 +22,7 @@
         @csrf
         <div>
             <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="mt-2" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" placeholder="admin@3dify.local" />
+            <x-text-input id="email" class="mt-2" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" placeholder="admin@3dify.dev" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
