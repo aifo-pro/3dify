@@ -15,7 +15,7 @@ class PromoCodeController extends Controller
             'code' => ['required', 'string', 'max:60'],
         ]);
 
-        $result = $service->validate($data['code'], $request->user(), (float) $product->price);
+        $result = $service->validate($data['code'], $request->user(), (float) $product->price, $product);
 
         if (! $result) {
             return back()->withErrors(['promo' => __('Промокод неактивний, прострочений або вже використовувався вами.')]);

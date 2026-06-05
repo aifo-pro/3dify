@@ -25,11 +25,13 @@ class PayoutService
      */
     public function totalEarnings(User $author, string $currency = self::DEFAULT_CURRENCY): float
     {
+        // Use the author earning base when present (system promos keep it at the
+        // full price so the platform covers the discount), otherwise the paid price.
         $gross = (float) OrderItem::query()
             ->where('author_id', $author->id)
             ->where('currency', $currency)
             ->whereHas('order', fn ($q) => $q->where('status', 'paid'))
-            ->sum('price');
+            ->sum(DB::raw('COALESCE(author_earning_base, price)'));
 
         $tips = (float) Tip::query()
             ->where('author_id', $author->id)

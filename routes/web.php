@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\TipsAdminController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\Marketplace\AuthorAnalyticsController;
+use App\Http\Controllers\Marketplace\AuthorPromoCodeController;
 use App\Http\Controllers\Marketplace\AuthorContactController;
 use App\Http\Controllers\Marketplace\AuthorController;
 use App\Http\Controllers\Marketplace\AuthorFollowController;
@@ -186,6 +187,12 @@ Route::middleware('auth')->group(function () {
 
     // Author analytics dashboard
     Route::get('/author/analytics', [AuthorAnalyticsController::class, 'index'])->name('author.analytics');
+
+    // Author-owned promo codes (apply to the author's own models; author funds the discount)
+    Route::get('/author/promo-codes', [AuthorPromoCodeController::class, 'index'])->name('author.promo-codes');
+    Route::post('/author/promo-codes', [AuthorPromoCodeController::class, 'store'])->middleware('throttle:20,1')->name('author.promo-codes.store');
+    Route::patch('/author/promo-codes/{promoCode}/toggle', [AuthorPromoCodeController::class, 'toggle'])->name('author.promo-codes.toggle');
+    Route::delete('/author/promo-codes/{promoCode}', [AuthorPromoCodeController::class, 'destroy'])->name('author.promo-codes.destroy');
 
     // Printer profiles (user's own)
     Route::get('/profile/printers', [PrinterProfileController::class, 'index'])->name('printers.index');

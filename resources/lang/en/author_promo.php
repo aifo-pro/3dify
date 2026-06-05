@@ -1,0 +1,30 @@
+<?php
+
+return [
+    'badge' => 'Author promo codes',
+    'title' => 'Promo codes for your models',
+    'subtitle' => 'Create discounts for your own models — code, percentage and usage limit.',
+    'funding_note' => 'Discounts from your own promo codes are funded by you: they reduce your payout. Promo codes created by the site do not affect your payout — the platform covers the difference.',
+    'create_title' => 'New promo code',
+    'create_btn' => 'Create promo code',
+    'code' => 'Code',
+    'percent' => 'Discount, %',
+    'discount' => 'Discount',
+    'usage_limit' => 'Usage limit',
+    'expires_at' => 'Expires',
+    'your_codes' => 'Your promo codes',
+    'used' => 'Used',
+    'status' => 'Status',
+    'actions' => 'Actions',
+    'active' => 'Active',
+    'inactive' => 'Disabled',
+    'delete' => 'Delete',
+    'empty' => 'No promo codes yet. Create your first one above.',
+    'created' => 'Promo code created.',
+    'updated' => 'Promo code updated.',
+    'deleted' => 'Promo code deleted.',
+    'author_code_desc' => 'Author promo code :author',
+    'errors' => [
+        'limit_reached' => 'Promo code limit reached. Delete old ones to create new.',
+    ],
+];

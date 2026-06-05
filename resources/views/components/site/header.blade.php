@@ -169,6 +169,10 @@
                                 <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                                 {{ __('Виплати') }}
                             </a>
+                            <a href="{{ route('author.promo-codes') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">
+                                <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                                {{ __('author_promo.badge') }}
+                            </a>
                             <a href="{{ route('referral') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-zinc-200 transition hover:bg-white/[0.06] hover:text-white">
                                 <svg class="h-4 w-4 shrink-0 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
                                 {{ __('Реферальна програма') }}

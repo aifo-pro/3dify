@@ -47,7 +47,7 @@ class CheckoutController extends Controller
 
         $stashed = session()->pull('promo.'.$product->id);
         if ($stashed && ($stashed['product_id'] ?? null) === $product->id) {
-            $check = $promoService->validate((string) $stashed['code'], auth()->user(), $subtotal);
+            $check = $promoService->validate((string) $stashed['code'], auth()->user(), $subtotal, $product);
             if ($check) {
                 $discount = (float) $check['discount'];
                 $promoApplied = $check['promo'];
@@ -55,6 +55,12 @@ class CheckoutController extends Controller
         }
 
         $itemTotal = max(0.0, round($subtotal - $discount, 2));
+
+        // Author earning base: a SYSTEM promo (no author_id) is funded by the
+        // platform, so the author still earns on the full price. An AUTHOR promo
+        // is funded by the author, so the base is the discounted price.
+        $isSystemPromo = $promoApplied && $promoApplied->author_id === null;
+        $authorEarningBase = $isSystemPromo ? round($subtotal, 2) : $itemTotal;
         $availableBalance = $balances->availableBalance($request->user(), $product->currency ?: AccountBalanceService::DEFAULT_CURRENCY);
         $requestedBalance = $request->boolean('use_balance')
             ? (float) ($data['balance_amount'] ?? $availableBalance)
@@ -75,6 +81,7 @@ class CheckoutController extends Controller
             'product_id' => $product->id,
             'author_id' => $product->user_id,
             'price' => $itemTotal,
+            'author_earning_base' => $authorEarningBase,
             'currency' => $product->currency,
             'license_type' => $licenseType,
             'license_snapshot' => $licenseSnapshot,

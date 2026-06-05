@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\PromoCode;
 use App\Models\PromoCodeRedemption;
 use App\Models\User;
@@ -17,12 +18,26 @@ class PromoCodeService
 
     /**
      * Validate code for the given user/amount; returns discount or null if invalid.
+     *
+     * When a $product is supplied, an author-scoped promo code is only valid for
+     * that author's own products. System promo codes (author_id null) apply to any.
      */
-    public function validate(string $code, User $user, float $amount): ?array
+    public function validate(string $code, User $user, float $amount, ?Product $product = null): ?array
     {
         $promo = $this->find($code);
         if (! $promo || ! $promo->isUsable($amount)) {
             return null;
+        }
+
+        // Author promo codes only work on that author's products.
+        if ($promo->author_id !== null) {
+            if (! $product || (int) $product->user_id !== (int) $promo->author_id) {
+                return null;
+            }
+            // An author must not discount their own purchase via their own code.
+            if ((int) $user->id === (int) $promo->author_id) {
+                return null;
+            }
         }
 
         // Prevent the same user using the same code twice.
