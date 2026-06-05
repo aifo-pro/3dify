@@ -292,6 +292,61 @@
     @endif
 
     {{-- =================================================================== --}}
+    {{-- POPULAR THIS WEEK                                                      --}}
+    {{-- =================================================================== --}}
+    @if(($popularThisWeek ?? collect())->isNotEmpty())
+        <section class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+            <x-ui.section-heading
+                :eyebrow="__('У тренді')"
+                :title="__('Популярне цього тижня')"
+                :description="__('Моделі, які найбільше завантажують прямо зараз.')"
+                :href="route('products.index', ['sort' => 'downloads'])"
+                :action="__('Найбільше завантажень')"
+            />
+            <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                @foreach($popularThisWeek->take(4) as $product)
+                    <x-ui.model-card :product="$product" />
+                @endforeach
+            </div>
+        </section>
+    @endif
+
+    {{-- =================================================================== --}}
+    {{-- TOP AUTHORS (EEAT + internal linking to author profiles)              --}}
+    {{-- =================================================================== --}}
+    @if(($topAuthors ?? collect())->isNotEmpty())
+        <section class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+            <x-ui.section-heading
+                :eyebrow="__('Спільнота')"
+                :title="__('Популярні автори')"
+                :description="__('Дизайнери з найбільшою кількістю завантажень на 3Dify.')"
+                :href="route('authors.index')"
+                :action="__('Усі автори')"
+            />
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                @foreach($topAuthors->take(6) as $author)
+                    <a href="{{ $author->profileUrl() }}"
+                       class="group flex flex-col items-center rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5 text-center shadow-lg shadow-black/15 transition hover:-translate-y-1 hover:border-emerald-300/30 hover:bg-white/[0.07]">
+                        @if($author->avatarUrl())
+                            <img src="{{ $author->avatarUrl() }}" alt="{{ $author->displayName() }}" width="64" height="64" loading="lazy" decoding="async" class="h-16 w-16 rounded-full object-cover ring-2 ring-emerald-400/20">
+                        @else
+                            <span class="grid h-16 w-16 place-items-center rounded-full bg-emerald-400/15 text-xl font-black text-emerald-300 ring-2 ring-emerald-400/20">{{ mb_strtoupper(mb_substr($author->displayName(), 0, 1)) }}</span>
+                        @endif
+                        <span class="mt-3 flex items-center gap-1.5 text-sm font-bold text-white group-hover:text-emerald-100">
+                            <span class="truncate">{{ $author->displayName() }}</span>
+                            <x-ui.verified-badge :user="$author" size="xs" :show-label="false" />
+                        </span>
+                        <span class="mt-1 text-xs text-zinc-500">{{ (int) ($author->published_count ?? 0) }} {{ trans_choice('моделей|модель|моделей', (int) ($author->published_count ?? 0)) }}</span>
+                        @if((int) ($author->total_downloads ?? 0) > 0)
+                            <span class="mt-0.5 text-[11px] text-zinc-600">{{ number_format((int) $author->total_downloads) }} {{ __('завантажень') }}</span>
+                        @endif
+                    </a>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
+    {{-- =================================================================== --}}
     {{-- HOW IT WORKS                                                           --}}
     {{-- =================================================================== --}}
     <section class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
@@ -577,6 +632,26 @@
             </div>
         </div>
     </section>
+
+    {{-- =================================================================== --}}
+    {{-- LATEST BLOG POSTS (internal linking + topical authority)             --}}
+    {{-- =================================================================== --}}
+    @if(($latestPosts ?? collect())->isNotEmpty())
+        <section class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+            <x-ui.section-heading
+                :eyebrow="__('Блог')"
+                :title="__('Гайди та поради з 3D-друку')"
+                :description="__('STL, слайсери, матеріали та налаштування друку — практичні статті від команди 3Dify.')"
+                :href="route('blog.index')"
+                :action="__('Усі статті')"
+            />
+            <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach($latestPosts as $post)
+                    @include('marketplace.blog.partials.card', ['post' => $post])
+                @endforeach
+            </div>
+        </section>
+    @endif
 
     {{-- FAQ — feeds Google AI Overviews / SGE --}}
     <x-seo.faq :faqs="__('faq.home')" :eyebrow="__('Поширені питання')" />

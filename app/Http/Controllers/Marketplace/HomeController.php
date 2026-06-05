@@ -105,7 +105,26 @@ class HomeController extends Controller
                 ->orderByDesc('total_downloads')
                 ->take(6)
                 ->get(),
+            'latestPosts'        => $this->latestBlogPosts(),
         ]);
+    }
+
+    private function latestBlogPosts()
+    {
+        if (! Schema::hasTable('blog_posts')) {
+            return collect();
+        }
+
+        try {
+            return \App\Models\BlogPost::query()
+                ->published()
+                ->with('categories')
+                ->latest('published_at')
+                ->take(3)
+                ->get();
+        } catch (\Throwable) {
+            return collect();
+        }
     }
 
     private function redirectAifoTipReturn(Request $request)
