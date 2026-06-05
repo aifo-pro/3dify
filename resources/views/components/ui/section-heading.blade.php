@@ -1,18 +1,16 @@
 @props(['eyebrow' => null, 'title', 'description' => null, 'href' => null, 'action' => null])
 
-<div {{ $attributes->merge(['class' => 'mb-8 flex flex-wrap items-end justify-between gap-4']) }}>
-    <div class="min-w-0">
+<div {{ $attributes->merge(['class' => 'mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between']) }}>
+    <div>
         @if($eyebrow)
-            <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-400">{{ $eyebrow }}</p>
+            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">{{ $eyebrow }}</p>
         @endif
-        <h2 class="mt-2 text-3xl font-black tracking-tight text-white sm:text-4xl">{{ $title }}</h2>
+        <h2 class="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">{{ $title }}</h2>
         @if($description)
-            <p class="mt-2 max-w-2xl text-sm leading-6 text-zinc-400 sm:text-base">{{ $description }}</p>
+            <p class="mt-3 max-w-2xl text-base leading-7 text-zinc-400">{{ $description }}</p>
         @endif
     </div>
     @if($href && $action)
-        <a href="{{ $href }}" class="shrink-0 text-sm font-semibold text-zinc-400 transition hover:text-emerald-300">
-            {{ $action }} →
-        </a>
+        <x-ui.button :href="$href" variant="secondary">{{ $action }}</x-ui.button>
     @endif
 </div>

@@ -82,109 +82,161 @@
     :seo-canonical="route('home')"
 >
     {{-- =================================================================== --}}
-    {{-- HERO — centered, search-first (Cults3D / Printables look)            --}}
+    {{-- HERO                                                                  --}}
     {{-- =================================================================== --}}
-    <section class="relative border-b border-white/[0.05]">
-        {{-- One subtle radial — no heavy blurs (good for LCP) --}}
-        <div class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(52,211,153,0.08),transparent_70%)]"></div>
+    <section class="relative overflow-hidden">
+        {{-- Background ambient --}}
+        <div class="pointer-events-none absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,#000,transparent_80%)]">
+            <div class="absolute -left-32 top-12 h-96 w-96 rounded-full bg-emerald-500/15 blur-[120px]"></div>
+            <div class="absolute right-0 top-32 h-80 w-80 rounded-full bg-sky-500/10 blur-[120px]"></div>
+        </div>
 
-        <div class="mx-auto max-w-3xl px-4 pb-14 pt-16 text-center sm:px-6 sm:pt-20 lg:px-8 lg:pb-20 lg:pt-24">
-            <h1 class="text-balance text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
-                {{ __('3D-моделі для друку') }} <span class="text-emerald-400">·</span> {{ __('STL, OBJ, 3MF') }}
-            </h1>
+        <div class="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:gap-16 lg:px-8 lg:py-20">
+            {{-- Left: copy + CTA --}}
+            <div class="flex flex-col">
+                <div class="inline-flex items-center gap-2 self-start rounded-full border border-emerald-300/25 bg-emerald-300/[0.08] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-200 backdrop-blur">
+                    <span class="grid h-1.5 w-1.5 place-items-center rounded-full bg-emerald-400 ring-2 ring-emerald-400/30"></span>
+                    {{ __('3Dify Marketplace') }}
+                </div>
 
-            <p class="mx-auto mt-5 max-w-2xl text-balance text-base leading-7 text-zinc-400 sm:text-lg">
-                {{ __('Завантажуйте, переглядайте у браузері та друкуйте якісні 3D-моделі від перевірених авторів.') }}
-            </p>
+                <h1 class="mt-6 text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-[56px]">
+                    {{ __('Преміальні') }}
+                    <span class="whitespace-nowrap bg-gradient-to-r from-emerald-300 via-emerald-200 to-sky-300 bg-clip-text text-transparent">{{ __('3D-моделі') }}</span>
+                    {{ __('для якісного друку') }}
+                </h1>
 
-            {{-- Big centered search --}}
-            <form method="GET" action="{{ route('products.index') }}" class="mx-auto mt-10 flex max-w-2xl items-center gap-1.5 rounded-2xl border border-white/10 bg-zinc-900/70 p-1.5 shadow-2xl shadow-black/40 backdrop-blur transition focus-within:border-emerald-400/40 focus-within:ring-2 focus-within:ring-emerald-400/15">
-                <span class="grid h-12 w-12 shrink-0 place-items-center text-zinc-500">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                </span>
-                <input
-                    name="q"
-                    placeholder="{{ __('Що друкуємо? dragon, phone stand, organizer...') }}"
-                    class="h-12 min-w-0 flex-1 border-0 bg-transparent px-1 text-base text-white placeholder:text-zinc-500 focus:outline-none focus:ring-0"
-                >
-                <button type="submit" class="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-emerald-400 px-6 text-sm font-black text-zinc-950 transition hover:bg-emerald-300">
-                    {{ __('Знайти') }}
-                </button>
-            </form>
+                <p class="mt-5 max-w-xl text-base leading-7 text-zinc-300 sm:text-lg sm:leading-8">{{ __('Знаходьте STL, OBJ, GLB та 3MF файли, перевіряйте модель у браузері, купуйте безпечно та відкривайте завантаження одразу після оплати.') }}</p>
 
-            {{-- Popular tags --}}
-            <div class="mx-auto mt-5 flex max-w-2xl flex-wrap items-center justify-center gap-2 text-xs">
-                <span class="text-zinc-600">{{ __('Популярне') }}:</span>
-                @foreach(['Dragon', 'Phone Stand', 'Vase', 'Cosplay', 'Cookie Cutter'] as $tag)
-                    <a href="{{ route('products.index', ['q' => $tag]) }}" class="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-zinc-400 transition hover:border-emerald-300/30 hover:bg-emerald-300/[0.06] hover:text-emerald-200">{{ $tag }}</a>
-                @endforeach
+                {{-- Search --}}
+                <form method="GET" action="{{ route('products.index') }}" class="mt-8 flex max-w-xl items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] p-1.5 shadow-xl shadow-black/30 backdrop-blur">
+                    <span class="grid h-11 w-11 shrink-0 place-items-center text-zinc-400">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    </span>
+                    <input
+                        name="q"
+                        placeholder="{{ __('Що друкуємо? dragon, phone stand, organizer...') }}"
+                        class="h-11 min-w-0 flex-1 border-0 bg-transparent px-1 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-0"
+                    >
+                    <button type="submit" class="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-emerald-400 px-5 text-sm font-bold text-zinc-950 shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-300">
+                        {{ __('Знайти') }}
+                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </button>
+                </form>
+
+                {{-- Quick search chips --}}
+                <div class="mt-4 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                    <span>{{ __('Популярне') }}:</span>
+                    @foreach(['Dragon', 'Phone Stand', 'Vase', 'Cosplay', 'Cookie Cutter'] as $tag)
+                        <a href="{{ route('products.index', ['q' => $tag]) }}" class="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-zinc-300 transition hover:border-emerald-300/30 hover:bg-emerald-300/[0.08] hover:text-emerald-100">{{ $tag }}</a>
+                    @endforeach
+                </div>
+
+                {{-- CTAs --}}
+                <div class="mt-8 flex flex-wrap items-center gap-3">
+                    <x-ui.button :href="route('products.index')">
+                        {{ __('Дивитися каталог') }}
+                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </x-ui.button>
+                    <x-ui.button :href="auth()->check() ? route('author.products.create') : route('register')" variant="secondary">
+                        {{ __('Стати автором') }}
+                    </x-ui.button>
+                </div>
+
+                {{-- Trust strip --}}
+                <div class="mt-10 flex flex-wrap items-center gap-x-7 gap-y-3 border-t border-white/5 pt-6">
+                    <div class="flex items-center gap-2.5">
+                        <span class="grid h-9 w-9 place-items-center rounded-xl bg-emerald-300/10 text-emerald-200">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                        </span>
+                        <div class="text-xs leading-5 text-zinc-300">
+                            <p class="font-semibold">{{ number_format($stats['products']) }} {{ trans_choice('моделей|моделі|моделей', $stats['products']) }}</p>
+                            <p class="text-zinc-500">{{ __('у каталозі') }}</p>
+            </div>
+                            </div>
+                    <div class="flex items-center gap-2.5">
+                        <span class="grid h-9 w-9 place-items-center rounded-xl bg-sky-300/10 text-sky-200">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </span>
+                        <div class="text-xs leading-5 text-zinc-300">
+                            <p class="font-semibold">{{ $stats['authors'] }} {{ trans_choice('авторів|автор|авторів', $stats['authors']) }}</p>
+                            <p class="text-zinc-500">{{ __('публікують моделі') }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                        <span class="grid h-9 w-9 place-items-center rounded-xl bg-emerald-300/10 text-emerald-200">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </span>
+                        <div class="text-xs leading-5 text-zinc-300">
+                            <p class="font-semibold">{{ __('Безпечні платежі') }}</p>
+                            <p class="text-zinc-500">aifo.pro</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {{-- Trust strip — minimal, inline stats (Cults3D-style) --}}
-            <div class="mt-12 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-center">
-                <div>
-                    <p class="text-2xl font-black text-white">{{ number_format($stats['products']) }}+</p>
-                    <p class="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">{{ __('моделей') }}</p>
-                </div>
-                <div class="hidden h-8 w-px bg-white/[0.07] sm:block"></div>
-                <div>
-                    <p class="text-2xl font-black text-white">{{ number_format($stats['authors']) }}+</p>
-                    <p class="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">{{ __('авторів') }}</p>
-                </div>
-                <div class="hidden h-8 w-px bg-white/[0.07] sm:block"></div>
-                <div>
-                    <p class="text-2xl font-black text-white">{{ number_format($stats['downloads']) }}+</p>
-                    <p class="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">{{ __('Завантаження') }}</p>
-                </div>
+            {{-- Right: marketplace preview mockup --}}
+            <div class="relative">
+                <x-ui.hero-preview />
             </div>
         </div>
     </section>
 
     {{-- =================================================================== --}}
-    {{-- CATEGORIES — compact grid (Cults3D / Printables look)                --}}
+    {{-- POPULAR CATEGORIES                                                    --}}
     {{-- =================================================================== --}}
-    <section id="categories" class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div class="mb-8 flex items-end justify-between gap-4">
-            <div>
-                <p class="text-xs font-black uppercase tracking-[0.16em] text-emerald-400">{{ __('Категорії') }}</p>
-                <h2 class="mt-2 text-3xl font-black tracking-tight text-white sm:text-4xl">{{ __('Знайдіть свою категорію') }}</h2>
-            </div>
-            <a href="{{ route('products.index') }}" class="hidden shrink-0 text-sm font-semibold text-zinc-400 transition hover:text-emerald-300 sm:inline-flex">
-                {{ __('Усі категорії') }} →
-            </a>
-        </div>
+    <section id="categories" class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <x-ui.section-heading
+            :eyebrow="__('Категорії')"
+            :title="__('Популярні категорії')"
+            :description="__('Швидко знайдіть моделі під ваш сценарій друку — від мініатюр до інженерних деталей.')"
+            :href="route('products.index')"
+            :action="__('Усі категорії')"
+        />
 
-        <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             @if($hasCategoriesReal)
-                @foreach($categories->take(12) as $category)
+                @foreach($categories->take(6) as $category)
                     @php
+                        $tone = ['emerald','sky','violet','rose','amber','lime'][$loop->index % 6];
                         $iconNames = ['sword','wrench','sparkle','toy','gear','building'];
                         $iconKey = $iconNames[$loop->index % 6];
                     @endphp
-                    <a href="{{ route('categories.show', $category) }}" class="group flex flex-col items-center rounded-2xl border border-white/[0.07] bg-zinc-900/40 px-4 py-6 text-center transition duration-200 hover:-translate-y-0.5 hover:border-emerald-400/30 hover:bg-zinc-900/80">
-                        <span class="grid h-14 w-14 place-items-center rounded-2xl bg-zinc-800/80 text-zinc-300 transition group-hover:bg-emerald-400/15 group-hover:text-emerald-300">
-                            {!! $catIcon($iconKey) !!}
-                        </span>
-                        <h3 class="mt-4 line-clamp-1 text-sm font-bold text-white group-hover:text-emerald-100">{{ $category->localized('name') }}</h3>
-                        <p class="mt-1 text-[11px] font-semibold text-zinc-500">{{ $category->products_count ?? 0 }} {{ __('моделей') }}</p>
+                    <a href="{{ route('categories.show', $category) }}" class="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-xl shadow-black/15 transition duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.07]">
+                        <div class="absolute inset-0 -z-10 bg-gradient-to-br {{ $catTone[$tone] }} opacity-60"></div>
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/10 bg-zinc-950/50 backdrop-blur {{ $catText[$tone] }}">
+                                {!! $catIcon($iconKey) !!}
+                            </div>
+                            <span class="rounded-full border border-white/10 bg-zinc-950/60 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-300 backdrop-blur">{{ $category->products_count ?? '' }}{{ __('моделей') }}</span>
+                        </div>
+                        <h3 class="mt-5 text-xl font-bold text-white group-hover:text-emerald-100">{{ $category->localized('name') }}</h3>
+                        <p class="mt-2 line-clamp-2 text-sm leading-6 text-zinc-400">{{ $category->localized('description') ?: __('Добірка якісних моделей для 3D-друку.') }}</p>
+                        <div class="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300 transition group-hover:gap-3">
+                            {{ __('Перейти') }}
+                            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </div>
                     </a>
                 @endforeach
             @else
                 @foreach($placeholderCategories as $cat)
-                    <a href="{{ route('products.index') }}" class="group flex flex-col items-center rounded-2xl border border-white/[0.07] bg-zinc-900/40 px-4 py-6 text-center transition duration-200 hover:-translate-y-0.5 hover:border-emerald-400/30 hover:bg-zinc-900/80">
-                        <span class="grid h-14 w-14 place-items-center rounded-2xl bg-zinc-800/80 text-zinc-300 transition group-hover:bg-emerald-400/15 group-hover:text-emerald-300">
-                            {!! $catIcon($cat['icon']) !!}
-                        </span>
-                        <h3 class="mt-4 line-clamp-1 text-sm font-bold text-white group-hover:text-emerald-100">{{ $cat['name'] }}</h3>
-                        <p class="mt-1 text-[11px] font-semibold text-zinc-500">{{ $cat['count'] }} {{ __('моделей') }}</p>
+                    <a href="{{ route('products.index') }}" class="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-xl shadow-black/15 transition duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.07]">
+                        <div class="absolute inset-0 -z-10 bg-gradient-to-br {{ $catTone[$cat['tone']] }} opacity-60"></div>
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/10 bg-zinc-950/50 backdrop-blur {{ $catText[$cat['tone']] }}">
+                                {!! $catIcon($cat['icon']) !!}
+                            </div>
+                            <span class="rounded-full border border-white/10 bg-zinc-950/60 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-300 backdrop-blur">{{ $cat['count'] }}{{ __('моделей') }}</span>
+                        </div>
+                        <h3 class="mt-5 text-xl font-bold text-white group-hover:text-emerald-100">{{ $cat['name'] }}</h3>
+                        <p class="mt-2 line-clamp-2 text-sm leading-6 text-zinc-400">{{ $cat['desc'] }}</p>
+                        <div class="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300 transition group-hover:gap-3">
+                            {{ __('Перейти') }}
+                            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </div>
                     </a>
                 @endforeach
             @endif
         </div>
-
-        <a href="{{ route('products.index') }}" class="mt-6 block text-center text-sm font-semibold text-zinc-400 transition hover:text-emerald-300 sm:hidden">
-            {{ __('Усі категорії') }} →
-        </a>
     </section>
 
     {{-- =================================================================== --}}
