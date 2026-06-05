@@ -12,10 +12,10 @@
         $pageTitle = $pageH1.' — '.__('3D-моделі для друку').' · 3Dify';
         $pageLead = $catDesc;
     } elseif ($activeTag) {
-        $pageH1 = '#'.$activeTag->localized();
+        $pageH1 = '#'.$activeTag->localized('name');
         $pageCanonical = route('products.index', ['tag' => $activeTag->slug]);
-        $pageDescription = \Illuminate\Support\Str::limit(__('3D-моделі з тегом «:tag» для друку. STL, OBJ, GLB, 3MF на маркетплейсі 3Dify.', ['tag' => $activeTag->localized()]), 160);
-        $pageTitle = $activeTag->localized().' — '.__('3D-моделі за тегом').' · 3Dify';
+        $pageDescription = \Illuminate\Support\Str::limit(__('3D-моделі з тегом «:tag» для друку. STL, OBJ, GLB, 3MF на маркетплейсі 3Dify.', ['tag' => $activeTag->localized('name')]), 160);
+        $pageTitle = $activeTag->localized('name').' — '.__('3D-моделі за тегом').' · 3Dify';
         $pageLead = '';
     } else {
         $pageH1 = __('3D-моделі для друку, прототипів і декору');
@@ -324,7 +324,7 @@
                                    'border-emerald-400/40 text-emerald-200' => $activeTag && $activeTag->id === $tag->id,
                                    'border-white/[0.07] text-zinc-400 hover:border-emerald-300/30 hover:text-emerald-200' => ! ($activeTag && $activeTag->id === $tag->id),
                                ])>
-                                #{{ $tag->localized() }}
+                                #{{ $tag->localized('name') }}
                             </a>
                         @endforeach
                     </div>
