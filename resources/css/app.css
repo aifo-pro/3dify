@@ -28,26 +28,6 @@
         -webkit-appearance: auto;
     }
 
-    /* Native <select> dropdown items default to white-on-white on dark sites.
-       Force a readable dark palette globally so options stay legible across
-       Chrome / Edge / Firefox (Firefox honors background-color on <option>;
-       Chromium honors it on the <select> via the color-scheme hint). */
-    select {
-        color-scheme: dark;
-    }
-    option,
-    optgroup {
-        background-color: #18181b;
-        color: #e4e4e7;
-    }
-    option:checked,
-    option:hover {
-        background-color: #27272a;
-        color: #ffffff;
-    }
-    option:disabled {
-        color: #71717a;
-    }
 }
 
 @layer components {

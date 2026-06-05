@@ -130,6 +130,12 @@
         <script src="https://cdn.jsdelivr.net/npm/tinymce@7.4.0/tinymce.min.js"></script>
     @endif
     @stack('head-scripts')
+    <style>
+        select { color-scheme: dark; }
+        select option, select optgroup { background-color: #18181b; color: #e4e4e7; }
+        select option:checked, select option:hover { background-color: #27272a; color: #fff; }
+        select option:disabled { color: #71717a; }
+    </style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body

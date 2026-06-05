@@ -100,6 +100,15 @@
 
     <x-site.google-head />
 
+    {{-- Inline dark palette for native <option> elements (Vite build does not
+         need to be rebuilt for these to take effect). --}}
+    <style>
+        select { color-scheme: dark; }
+        select option, select optgroup { background-color: #18181b; color: #e4e4e7; }
+        select option:checked, select option:hover { background-color: #27272a; color: #fff; }
+        select option:disabled { color: #71717a; }
+    </style>
+
     @stack('head')
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
