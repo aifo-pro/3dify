@@ -76,7 +76,11 @@
     $hasCategoriesReal = $categories->isNotEmpty();
 @endphp
 
-<x-layouts.marketplace>
+<x-layouts.marketplace
+    :seo-title="__('3Dify — маркетплейс 3D-моделей для друку: STL, OBJ, GLB, 3MF')"
+    :seo-description="__('Купуйте, продавайте та завантажуйте якісні 3D-моделі для друку. Тисячі STL, OBJ, GLB і 3MF файлів від перевірених авторів, безпечні платежі та 3D-перегляд у браузері.')"
+    :seo-canonical="route('home')"
+>
     {{-- =================================================================== --}}
     {{-- HERO                                                                  --}}
     {{-- =================================================================== --}}
@@ -573,4 +577,7 @@
             </div>
         </div>
     </section>
+
+    {{-- FAQ — feeds Google AI Overviews / SGE --}}
+    <x-seo.faq :faqs="__('faq.home')" :eyebrow="__('Поширені питання')" />
 </x-layouts.marketplace>

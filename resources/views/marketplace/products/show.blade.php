@@ -204,11 +204,46 @@
             'representativeOfPage' => $index === 0,
         ])
         ->all();
+    // SoftwareApplication: the downloadable, slicer-ready 3D file as a digital asset.
+    $fileFormats = $product->files->where('is_preview', false)->pluck('extension')->unique()
+        ->map(fn ($e) => strtoupper($e))->filter()->values()->all();
+    $softwareApplicationSchema = [
+        '@type' => 'SoftwareApplication',
+        '@id' => $productUrl.'#software',
+        'name' => $product->localized('title'),
+        'description' => $productDescription,
+        'url' => $productUrl,
+        'applicationCategory' => 'DesignApplication',
+        'applicationSubCategory' => '3D printing model',
+        'operatingSystem' => 'Bambu Studio, OrcaSlicer, PrusaSlicer, Cura',
+        'fileFormat' => $fileFormats ?: ['STL'],
+        'author' => ['@type' => 'Person', 'name' => $authorName],
+        'offers' => [
+            '@type' => 'Offer',
+            'price' => (float) $product->price,
+            'priceCurrency' => $product->currency ?? 'UAH',
+            'availability' => 'https://schema.org/InStock',
+        ],
+    ];
+    if ($reviewsCount > 0) {
+        $softwareApplicationSchema['aggregateRating'] = [
+            '@type' => 'AggregateRating',
+            'ratingValue' => (float) $avgRating,
+            'reviewCount' => $reviewsCount,
+            'bestRating' => 5,
+            'worstRating' => 1,
+        ];
+    }
+
+    // FAQ from the model's own data (if present) — short answers for AI Overviews.
+    $productFaqs = [];
+
     $structuredData = [
         '@context' => 'https://schema.org',
         '@graph' => array_merge([
             $webPageSchema,
             $productSchema,
+            $softwareApplicationSchema,
             [
                 '@type' => 'BreadcrumbList',
                 '@id' => $productUrl.'#breadcrumb',

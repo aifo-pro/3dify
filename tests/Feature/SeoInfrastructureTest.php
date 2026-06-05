@@ -76,6 +76,32 @@ class SeoInfrastructureTest extends TestCase
             ->assertSee('rel="canonical" href="'.route('categories.show', $category).'"', false);
     }
 
+    public function test_home_renders_faqpage_schema(): void
+    {
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('"@type":"FAQPage"', false)
+            ->assertSee('"@type":"Question"', false);
+    }
+
+    public function test_product_page_has_softwareapplication_schema(): void
+    {
+        $author = User::factory()->create(['role' => 'author']);
+        $product = Product::query()->create([
+            'user_id' => $author->id, 'slug' => 'sw-model',
+            'title' => ['uk' => 'SW model', 'en' => 'SW model'],
+            'short_description' => ['uk' => 'Short', 'en' => 'Short'],
+            'description' => ['uk' => 'Desc', 'en' => 'Desc'],
+            'status' => 'published', 'price' => 100, 'personal_price' => 100,
+            'currency' => 'UAH', 'is_free' => false, 'published_at' => now(),
+        ]);
+
+        $this->get(route('products.show', $product))
+            ->assertOk()
+            ->assertSee('SoftwareApplication', false)
+            ->assertSee('DesignApplication', false);
+    }
+
     public function test_seo_helper_faq_and_breadcrumb_shape(): void
     {
         $faq = Seo::faqPage([['question' => 'Q1', 'answer' => 'A1']]);

@@ -295,4 +295,9 @@
             </div>
         </div>
     </section>
+
+    {{-- FAQ only on the main catalog (avoid duplicate FAQPage schema on category/tag pages) --}}
+    @if(! $activeCategory && ! $activeTag)
+        <x-seo.faq :faqs="__('faq.catalog')" :eyebrow="__('Поширені питання')" />
+    @endif
 </x-layouts.marketplace>
