@@ -28,9 +28,9 @@
             <div class="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-400/15 blur-3xl"></div>
             <x-ui.badge>{{ __('Автори') }}</x-ui.badge>
             <div class="relative mt-4 flex flex-col gap-8">
-                <div>
+                <div class="text-center">
                     <h1 class="text-4xl font-black tracking-tight text-white sm:text-5xl">{{ __('Автори 3Dify') }}</h1>
-                    <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">{{ __('Знайдіть дизайнерів, які публікують якісні 3D-моделі, підписуйтеся на оновлення та відкривайте їхні колекції.') }}</p>
+                    <p class="mx-auto mt-3 max-w-3xl text-sm leading-6 text-zinc-400">{{ __('Знайдіть дизайнерів, які публікують якісні 3D-моделі, підписуйтеся на оновлення та відкривайте їхні колекції.') }}</p>
                 </div>
 
                 <form method="GET" action="{{ route('authors.index') }}" style="display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;padding:.75rem;border-radius:1.5rem;border:1px solid rgba(255,255,255,.10);background-color:rgba(9,9,11,.55);">
