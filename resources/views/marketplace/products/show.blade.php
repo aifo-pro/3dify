@@ -1349,19 +1349,31 @@
     {{-- FAQ (visible) — schema already in @graph above, no duplicate here     --}}
     {{-- =================================================================== --}}
     @if(count($productFaqs) > 0)
-        <section class="mx-auto max-w-3xl px-4 py-14 sm:px-6 lg:px-8" aria-labelledby="product-faq-heading">
-            <p class="text-center text-xs font-black uppercase tracking-widest text-emerald-400">{{ __('Поширені питання') }}</p>
-            <h2 id="product-faq-heading" class="mt-2 text-center text-2xl font-black text-white sm:text-3xl">{{ __('Часті запитання про модель') }}</h2>
-            <div class="mt-8 divide-y divide-white/[0.07] overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-900/50">
-                @foreach($productFaqs as $i => $faq)
-                    <details class="group" @if($i === 0) open @endif>
-                        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-left text-sm font-bold text-white transition hover:bg-white/[0.03] sm:text-base">
-                            <span>{{ $faq['question'] }}</span>
-                            <svg class="h-4 w-4 shrink-0 text-zinc-500 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                        </summary>
-                        <div class="px-5 pb-5 text-sm leading-relaxed text-zinc-400">{{ $faq['answer'] }}</div>
-                    </details>
-                @endforeach
+        <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8" aria-labelledby="product-faq-heading">
+            <div class="grid gap-10 lg:grid-cols-3 lg:gap-16">
+                {{-- Left column: heading --}}
+                <div class="lg:col-span-1">
+                    <div class="lg:sticky lg:top-24">
+                        <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-400">{{ __('Поширені питання') }}</p>
+                        <h2 id="product-faq-heading" class="mt-3 text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl">{{ __('Часті запитання про модель') }}</h2>
+                        <p class="mt-4 text-sm leading-6 text-zinc-400">{{ __('Відповіді на типові питання про формати файлів, матеріали для друку, ціни та ліцензію цієї моделі.') }}</p>
+                    </div>
+                </div>
+
+                {{-- Right column: accordion --}}
+                <div class="min-w-0 divide-y divide-white/[0.07] lg:col-span-2">
+                    @foreach($productFaqs as $i => $faq)
+                        <details class="group py-2" @if($i === 0) open @endif>
+                            <summary class="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-left text-base font-bold text-white transition hover:text-emerald-100 sm:text-lg">
+                                <span>{{ $faq['question'] }}</span>
+                                <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-zinc-400 transition group-hover:border-emerald-300/40 group-hover:text-emerald-300 group-open:bg-emerald-400/15 group-open:text-emerald-300">
+                                    <svg class="h-4 w-4 transition group-open:rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                </span>
+                            </summary>
+                            <div class="pb-5 pr-12 text-sm leading-relaxed text-zinc-400 sm:text-base sm:leading-7">{{ $faq['answer'] }}</div>
+                        </details>
+                    @endforeach
+                </div>
             </div>
         </section>
     @endif
