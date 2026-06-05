@@ -27,14 +27,14 @@
         <div class="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/30 sm:p-8 lg:p-10">
             <div class="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-400/15 blur-3xl"></div>
             <x-ui.badge>{{ __('Автори') }}</x-ui.badge>
-            <div class="relative mt-4 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                <div style="flex:0 1 360px;min-width:0;">
+            <div class="relative mt-4 flex flex-col gap-8">
+                <div>
                     <h1 class="text-4xl font-black tracking-tight text-white sm:text-5xl">{{ __('Автори 3Dify') }}</h1>
-                    <p class="mt-3 text-sm leading-6 text-zinc-400">{{ __('Знайдіть дизайнерів, які публікують якісні 3D-моделі, підписуйтеся на оновлення та відкривайте їхні колекції.') }}</p>
+                    <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">{{ __('Знайдіть дизайнерів, які публікують якісні 3D-моделі, підписуйтеся на оновлення та відкривайте їхні колекції.') }}</p>
                 </div>
 
-                <form method="GET" action="{{ route('authors.index') }}" style="flex:1 1 0;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;padding:.75rem;border-radius:1.5rem;border:1px solid rgba(255,255,255,.10);background-color:rgba(9,9,11,.55);">
-                    <label style="position:relative;display:block;flex:1 1 200px;min-width:0;">
+                <form method="GET" action="{{ route('authors.index') }}" style="display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;padding:.75rem;border-radius:1.5rem;border:1px solid rgba(255,255,255,.10);background-color:rgba(9,9,11,.55);">
+                    <label style="position:relative;display:block;flex:1 1 300px;min-width:0;">
                         <span style="position:absolute;top:0;bottom:0;left:.75rem;display:flex;align-items:center;color:#71717a;pointer-events:none;">
                             <svg style="height:1rem;width:1rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.65" y2="16.65"/></svg>
                         </span>
