@@ -126,6 +126,8 @@
                     :alt="current().alt"
                     width="1200"
                     height="900"
+                    fetchpriority="high"
+                    decoding="async"
                     class="h-full w-full object-contain"
                     style="background: #05070a;"
                 >

@@ -21,7 +21,7 @@
 <a href="{{ route('products.show', $product) }}" class="block">
     <div class="relative aspect-[4/3] overflow-hidden bg-zinc-900">
         @if($imageUrl)
-            <img src="{{ $imageUrl }}" alt="{{ $product->localized('title') }}" width="400" height="300" loading="lazy" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
+            <img src="{{ $imageUrl }}" alt="{{ $product->localized('title') }}" width="400" height="300" loading="lazy" decoding="async" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
         @else
             <div class="flex h-full items-center justify-center bg-[linear-gradient(135deg,#101827,#06352d)]">
                 <div class="grid h-24 w-24 place-items-center rounded-3xl border border-white/10 bg-white/10 text-4xl font-black text-emerald-200 shadow-2xl shadow-emerald-500/10">3D</div>
