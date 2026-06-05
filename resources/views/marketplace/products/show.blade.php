@@ -235,8 +235,37 @@
         ];
     }
 
-    // FAQ from the model's own data (if present) — short answers for AI Overviews.
+    // Per-model FAQ generated from real model data — short factual answers for
+    // Google AI Overviews / SGE. Only includes questions we can actually answer.
+    $faqFormats = $product->files->where('is_preview', false)->pluck('extension')->unique()
+        ->map(fn ($e) => strtoupper($e))->filter()->values()->all();
+    $faqPrintTime = app(\App\Services\PrintTimeEstimator::class)->estimate($product);
+    $faqMaterials = collect($product->recommended_materials ?? [])->filter()->values()->all();
+    $faqTitle = $product->localized('title');
+
     $productFaqs = [];
+    if ($faqFormats) {
+        $productFaqs[] = ['question' => __('У якому форматі файли моделі «:title»?', ['title' => $faqTitle]),
+            'answer' => __('Модель постачається у форматах :formats. STL та 3MF підходять для більшості FDM-принтерів.', ['formats' => implode(', ', $faqFormats)])];
+    }
+    $productFaqs[] = ['question' => __('Скільки коштує модель «:title»?', ['title' => $faqTitle]),
+        'answer' => $product->is_free
+            ? __('Ця модель безкоштовна — завантажте файли одразу після входу в акаунт.')
+            : __('Ціна моделі — :price. Після оплати файли стають доступні у вашій бібліотеці.', ['price' => $product->display_price])];
+    if ($faqMaterials) {
+        $productFaqs[] = ['question' => __('Яким матеріалом друкувати?'),
+            'answer' => __('Рекомендовані матеріали: :materials.', ['materials' => implode(', ', $faqMaterials)])];
+    }
+    if ($faqPrintTime) {
+        $productFaqs[] = ['question' => __('Скільки часу займає друк?'),
+            'answer' => __('Орієнтовний час друку — близько :time за стандартних налаштувань (0.2 мм, 15% заповнення).', ['time' => $faqPrintTime])];
+    }
+    if ($product->license) {
+        $productFaqs[] = ['question' => __('Чи можна використовувати модель комерційно?'),
+            'answer' => ($product->license->allows_commercial_use ?? false)
+                ? __('Так, ліцензія «:license» дозволяє комерційне використання згідно з її умовами.', ['license' => $product->license->localized('name')])
+                : __('Ліцензія «:license» призначена для особистого використання. Для комерції оберіть відповідну ліцензію або зверніться до автора.', ['license' => $product->license->localized('name')])];
+    }
 
     $structuredData = [
         '@context' => 'https://schema.org',
@@ -249,7 +278,15 @@
                 '@id' => $productUrl.'#breadcrumb',
                 'itemListElement' => $breadcrumbItems,
             ],
-        ], $imageSchemas),
+        ], $imageSchemas, count($productFaqs) ? [[
+            '@type' => 'FAQPage',
+            '@id' => $productUrl.'#faq',
+            'mainEntity' => array_map(fn ($f) => [
+                '@type' => 'Question',
+                'name' => $f['question'],
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f['answer']],
+            ], $productFaqs),
+        ]] : []),
     ];
 @endphp
 
@@ -275,6 +312,19 @@
     {{-- HERO                                                                  --}}
     {{-- =================================================================== --}}
     <section class="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
+        {{-- Visible breadcrumbs (matches BreadcrumbList schema) --}}
+        <nav aria-label="Breadcrumb" class="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500">
+            <a href="{{ route('home') }}" class="transition hover:text-emerald-300">{{ __('Головна') }}</a>
+            <span class="text-zinc-700">›</span>
+            <a href="{{ route('products.index') }}" class="transition hover:text-emerald-300">{{ __('Каталог') }}</a>
+            @if($product->category)
+                <span class="text-zinc-700">›</span>
+                <a href="{{ route('categories.show', $product->category) }}" class="max-w-[12rem] truncate transition hover:text-emerald-300 sm:max-w-none">{{ $product->category->localized('name') }}</a>
+            @endif
+            <span class="text-zinc-700">›</span>
+            <span class="max-w-[14rem] truncate text-zinc-300 sm:max-w-md">{{ $product->localized('title') }}</span>
+        </nav>
+
         <div class="mb-8">
             <div class="flex flex-wrap items-center gap-2">
                 <x-ui.badge :variant="$product->is_free ? 'free' : 'paid'">{{ $product->is_free ? __('Безкоштовна модель') : __('Преміальна модель') }}</x-ui.badge>
@@ -1294,6 +1344,27 @@
             @endif
         </div>
     </section>
+
+    {{-- =================================================================== --}}
+    {{-- FAQ (visible) — schema already in @graph above, no duplicate here     --}}
+    {{-- =================================================================== --}}
+    @if(count($productFaqs) > 0)
+        <section class="mx-auto max-w-3xl px-4 py-14 sm:px-6 lg:px-8" aria-labelledby="product-faq-heading">
+            <p class="text-center text-xs font-black uppercase tracking-widest text-emerald-400">{{ __('Поширені питання') }}</p>
+            <h2 id="product-faq-heading" class="mt-2 text-center text-2xl font-black text-white sm:text-3xl">{{ __('Часті запитання про модель') }}</h2>
+            <div class="mt-8 divide-y divide-white/[0.07] overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-900/50">
+                @foreach($productFaqs as $i => $faq)
+                    <details class="group" @if($i === 0) open @endif>
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-left text-sm font-bold text-white transition hover:bg-white/[0.03] sm:text-base">
+                            <span>{{ $faq['question'] }}</span>
+                            <svg class="h-4 w-4 shrink-0 text-zinc-500 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                        </summary>
+                        <div class="px-5 pb-5 text-sm leading-relaxed text-zinc-400">{{ $faq['answer'] }}</div>
+                    </details>
+                @endforeach
+            </div>
+        </section>
+    @endif
 
     {{-- =================================================================== --}}
     {{-- REPORT MODAL                                                          --}}

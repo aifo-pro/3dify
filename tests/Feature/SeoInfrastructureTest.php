@@ -102,6 +102,24 @@ class SeoInfrastructureTest extends TestCase
             ->assertSee('DesignApplication', false);
     }
 
+    public function test_product_page_has_faqpage_and_visible_breadcrumbs(): void
+    {
+        $author = User::factory()->create(['role' => 'author']);
+        $product = Product::query()->create([
+            'user_id' => $author->id, 'slug' => 'faq-model',
+            'title' => ['uk' => 'FAQ model', 'en' => 'FAQ model'],
+            'short_description' => ['uk' => 'Short', 'en' => 'Short'],
+            'description' => ['uk' => 'Desc', 'en' => 'Desc'],
+            'status' => 'published', 'price' => 100, 'personal_price' => 100,
+            'currency' => 'UAH', 'is_free' => false, 'published_at' => now(),
+        ]);
+
+        $this->get(route('products.show', $product))
+            ->assertOk()
+            ->assertSee('FAQPage', false)
+            ->assertSee('aria-label="Breadcrumb"', false);
+    }
+
     public function test_seo_helper_faq_and_breadcrumb_shape(): void
     {
         $faq = Seo::faqPage([['question' => 'Q1', 'answer' => 'A1']]);
