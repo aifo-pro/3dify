@@ -33,9 +33,9 @@
                     <p class="mt-3 max-w-2xl text-sm leading-6 text-zinc-400">{{ __('Знайдіть дизайнерів, які публікують якісні 3D-моделі, підписуйтеся на оновлення та відкривайте їхні колекції.') }}</p>
                 </div>
 
-                <form method="GET" action="{{ route('authors.index') }}" class="grid gap-3 rounded-3xl border border-white/10 bg-zinc-950/55 p-3 sm:grid-cols-[minmax(0,1fr)_170px_auto]">
+                <form method="GET" action="{{ route('authors.index') }}" class="grid gap-3 rounded-3xl border border-white/10 bg-zinc-950/55 p-3 sm:grid-cols-[minmax(0,1fr)_240px_auto]">
                     <input name="q" value="{{ $filters['q'] }}" placeholder="{{ __('Пошук автора') }}" class="h-11 rounded-2xl border border-white/10 bg-white/[0.06] px-4 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40">
-                    <select name="sort" class="h-11 rounded-2xl border border-white/10 bg-white/[0.06] px-4 text-sm text-white focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40">
+                    <select name="sort" class="h-11 rounded-2xl border border-white/10 bg-white/[0.06] pl-4 pr-10 text-sm text-white focus:border-emerald-300 focus:ring-1 focus:ring-emerald-300/40">
                         <option value="popular" @selected($filters['sort'] === 'popular')>{{ __('Популярні') }}</option>
                         <option value="new" @selected($filters['sort'] === 'new')>{{ __('Нові') }}</option>
                         <option value="models" @selected($filters['sort'] === 'models')>{{ __('Найбільше моделей') }}</option>
