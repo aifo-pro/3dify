@@ -42,6 +42,20 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    {{-- Import map for the no-build three.js 3D viewer. MUST be in <head> before
+         any module script (incl. @vite) for the addon loaders' bare 'three'
+         imports to resolve. Placed here unconditionally so it never races with
+         @push/@stack ordering. --}}
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
     @php
         $finalTitle = $seoTitle ?? $seo?->title ?? $siteName.' - '.__('маркетплейс 3D-моделей');
         $finalDescription = $seoDescription ?? $seo?->description ?? __('Купуйте, продавайте та завантажуйте якісні 3D-моделі для друку.');

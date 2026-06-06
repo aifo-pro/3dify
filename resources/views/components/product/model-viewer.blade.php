@@ -23,22 +23,8 @@
 @endphp
 
 @if($available && $src)
-    {{-- Import map so the three.js addon loaders (which import bare 'three')
-         resolve to the same module instance. Must be in <head> before any module
-         script; @stack('head') renders before @vite in the layout. Emitted once. --}}
-    @once
-        @push('head')
-        <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-        </script>
-        @endpush
-    @endonce
-
+    {{-- The three.js import map lives in the layout <head> (before @vite) so the
+         addon loaders' bare 'three' imports resolve. --}}
     <div
         id="{{ $vid }}"
         data-model-viewer-root
@@ -250,7 +236,11 @@
             try {
                 THREE = await import('three');
                 ({ OrbitControls } = await import('three/addons/controls/OrbitControls.js'));
-            } catch (e) { showError(); return; }
+            } catch (e) {
+                console.error('[3Dify viewer] failed to import three.js (import map missing?):', e);
+                showError();
+                return;
+            }
 
             // The actual renderer creation is the definitive WebGL test.
             const renderer = createRenderer(THREE);
