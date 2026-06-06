@@ -83,6 +83,7 @@
                 </div>
                 <p class="mt-3 text-sm font-bold text-white">{{ __('3D-перегляд недоступний у вашому браузері') }}</p>
                 <p class="mt-1 text-xs leading-relaxed text-zinc-400">{{ __('Ваш браузер не підтримує WebGL. Спробуйте інший браузер або оновіть поточний.') }}</p>
+                <p data-nowebgl-reason class="mt-2 break-words text-[10px] leading-relaxed text-zinc-600"></p>
             </div>
         </div>
     </div>
@@ -90,24 +91,30 @@
     @verbatim
     <script type="module">
     (() => {
-        const VER = '0.165.0';
+        // r160: WebGLRenderer automatically falls back to WebGL1 when WebGL2 is
+        // unavailable (r163+ is WebGL2-only) — widest browser coverage.
+        const VER = '0.160.0';
         const BASE = 'https://unpkg.com/three@' + VER;
 
-        // Try hard to obtain a WebGL renderer across browsers/GPUs: WebGL2 first
-        // (three r155+ uses it), then a non-AA retry which lets software
-        // renderers (SwiftShader / llvmpipe) succeed where AA contexts fail.
+        // Try hard to obtain a WebGL renderer across browsers/GPUs. A non-AA
+        // retry lets software renderers (SwiftShader / llvmpipe) succeed where
+        // AA contexts fail. The last error is logged for diagnostics.
         function createRenderer(THREE) {
             const attempts = [
                 { antialias: true, failIfMajorPerformanceCaveat: false },
                 { antialias: false, failIfMajorPerformanceCaveat: false },
                 { antialias: false, failIfMajorPerformanceCaveat: false, powerPreference: 'low-power' },
+                { antialias: false, failIfMajorPerformanceCaveat: false, forceWebGL1: true },
             ];
+            let lastErr = null;
             for (const opts of attempts) {
                 try {
                     const r = new THREE.WebGLRenderer(opts);
-                    if (r && r.getContext && r.getContext()) return r;
-                } catch (e) { /* try next */ }
+                    if (r) return r;
+                } catch (e) { lastErr = e; }
             }
+            if (lastErr) console.error('[3Dify viewer] WebGL renderer creation failed:', lastErr);
+            createRenderer.lastError = lastErr;
             return null;
         }
 
@@ -162,7 +169,14 @@
             const src = root.getAttribute('data-src');
 
             const showError = () => { if (loadingEl) loadingEl.hidden = true; if (errorEl) errorEl.hidden = false; };
-            const showNoWebgl = () => { if (loadingEl) loadingEl.hidden = true; if (noWebgl) noWebgl.hidden = false; };
+            const showNoWebgl = (err) => {
+                if (loadingEl) loadingEl.hidden = true;
+                if (noWebgl) {
+                    noWebgl.hidden = false;
+                    const reason = noWebgl.querySelector('[data-nowebgl-reason]');
+                    if (reason && err) reason.textContent = String(err && err.message ? err.message : err);
+                }
+            };
 
             let THREE, OrbitControls;
             try {
@@ -172,7 +186,7 @@
 
             // The actual renderer creation is the definitive WebGL test.
             const renderer = createRenderer(THREE);
-            if (!renderer) { showNoWebgl(); return; }
+            if (!renderer) { showNoWebgl(createRenderer.lastError); return; }
 
             let disposed = false, raf = 0, ro = null;
 
