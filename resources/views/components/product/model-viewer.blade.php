@@ -82,7 +82,7 @@
                 </div>
                 <p class="mt-3 text-sm font-bold text-white">{{ __('Не вдалося завантажити 3D-перегляд') }}</p>
                 <p data-error-reason class="mt-3 max-w-md break-words font-mono text-sm font-bold leading-relaxed text-white">…</p>
-                <p class="mt-2 text-[9px] text-zinc-700">viewer build: esm-v5</p>
+                <p class="mt-2 text-[9px] text-zinc-700">viewer build: esm-v6</p>
             </div>
         </div>
 
@@ -290,33 +290,31 @@
             const initialTarget = new THREE.Vector3();
 
             function frameObject(object) {
-                let box = new THREE.Box3().setFromObject(object);
+                // Deterministic framing: measure once, then center + scale using
+                // the known values (no fragile re-measure after the transform).
+                const box = new THREE.Box3().setFromObject(object);
                 const size = box.getSize(new THREE.Vector3());
                 const center = box.getCenter(new THREE.Vector3());
-                object.position.x -= center.x;
-                object.position.y -= center.y;
-                object.position.z -= center.z;
                 const maxDim = Math.max(size.x, size.y, size.z) || 1;
-                object.scale.setScalar(2 / maxDim);
-                // Flush the transform so the re-measured box reflects the new
-                // scale (otherwise the camera frames the un-scaled size and the
-                // model ends up tiny / far away).
+                const s = 2 / maxDim;
+
+                // Scale to ~2 units and move the (scaled) centre to the origin.
+                object.scale.multiplyScalar(s);
+                object.position.copy(center).multiplyScalar(-s);
                 object.updateMatrixWorld(true);
 
-                box = new THREE.Box3().setFromObject(object);
-                const sphere = box.getBoundingSphere(new THREE.Sphere());
-                const r = sphere.radius || 1;
+                const r = Math.max(0.5 * size.length() * s, 0.001); // scaled radius
                 const fov = camera.fov * Math.PI / 180;
-                const dist = (r / Math.sin(fov / 2)) * 1.05;
-                camera.position.set(dist * 0.7, dist * 0.55, dist * 0.95);
-                camera.near = Math.max(dist / 200, 0.01);
-                camera.far = dist * 200;
+                const dist = (r / Math.sin(fov / 2)) * 1.1;
+                camera.position.set(dist * 0.7, dist * 0.5, dist * 0.95);
+                camera.near = Math.max(dist / 100, 0.001);
+                camera.far = dist * 100;
                 camera.updateProjectionMatrix();
-                controls.target.copy(sphere.center);
+                controls.target.set(0, 0, 0);
                 controls.update();
 
                 const grid = new THREE.GridHelper(Math.ceil(r * 6) || 6, 24, 0x1f2937, 0x14161c);
-                grid.position.y = box.min.y;
+                grid.position.y = -(size.y * s) / 2;
                 if (grid.material) {
                     const gm = Array.isArray(grid.material) ? grid.material : [grid.material];
                     gm.forEach((m) => { m.transparent = true; m.opacity = 0.5; });
