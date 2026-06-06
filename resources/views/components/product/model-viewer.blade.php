@@ -23,8 +23,8 @@
 @endphp
 
 @if($available && $src)
-    {{-- The three.js import map lives in the layout <head> (before @vite) so the
-         addon loaders' bare 'three' imports resolve. --}}
+    {{-- three.js + addon loaders are loaded from esm.sh, which rewrites the
+         loaders' bare 'three' imports to full URLs — no import map needed. --}}
     <div
         id="{{ $vid }}"
         data-model-viewer-root
@@ -165,24 +165,24 @@
 
         async function loadObject(THREE, format, url, onProgress) {
             if (format === 'glb' || format === 'gltf') {
-                const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+                const { GLTFLoader } = await import('https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js');
                 const gltf = await new Promise((res, rej) => new GLTFLoader().load(url, res, onProgress, rej));
                 return gltf.scene;
             }
             if (format === 'stl') {
-                const { STLLoader } = await import('three/addons/loaders/STLLoader.js');
+                const { STLLoader } = await import('https://esm.sh/three@0.160.0/examples/jsm/loaders/STLLoader.js');
                 const geo = await new Promise((res, rej) => new STLLoader().load(url, res, onProgress, rej));
                 geo.computeVertexNormals();
                 return new THREE.Mesh(geo, defaultMaterial(THREE));
             }
             if (format === 'obj') {
-                const { OBJLoader } = await import('three/addons/loaders/OBJLoader.js');
+                const { OBJLoader } = await import('https://esm.sh/three@0.160.0/examples/jsm/loaders/OBJLoader.js');
                 const obj = await new Promise((res, rej) => new OBJLoader().load(url, res, onProgress, rej));
                 applyDefaultMaterial(THREE, obj);
                 return obj;
             }
             if (format === '3mf') {
-                const { ThreeMFLoader } = await import('three/addons/loaders/3MFLoader.js');
+                const { ThreeMFLoader } = await import('https://esm.sh/three@0.160.0/examples/jsm/loaders/3MFLoader.js');
                 const obj = await new Promise((res, rej) => new ThreeMFLoader().load(url, res, onProgress, rej));
                 applyDefaultMaterial(THREE, obj);
                 return obj;
@@ -234,8 +234,8 @@
 
             let THREE, OrbitControls;
             try {
-                THREE = await import('three');
-                ({ OrbitControls } = await import('three/addons/controls/OrbitControls.js'));
+                THREE = await import('https://esm.sh/three@0.160.0');
+                ({ OrbitControls } = await import('https://esm.sh/three@0.160.0/examples/jsm/controls/OrbitControls.js'));
             } catch (e) {
                 console.error('[3Dify viewer] failed to import three.js (import map missing?):', e);
                 showError();
