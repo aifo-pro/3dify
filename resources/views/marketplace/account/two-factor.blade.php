@@ -187,7 +187,7 @@
                             </h3>
                             <p class="mt-1 max-w-prose text-xs leading-5 text-zinc-400">{{ __('Кожен код одноразовий. Зберігайте їх у менеджері паролів — увійдете без Authenticator, якщо втратите телефон.') }}</p>
                         </div>
-                        <div x-data="{ copied: false, copy() { const codes = @js(implode(\"\\n\", $recoveryCodes)); navigator.clipboard.writeText(codes); this.copied = true; setTimeout(() => this.copied = false, 1600); } }">
+                        <div x-data="{ copied: false, copy() { const codes = {{ \Illuminate\Support\Js::from(implode(\"\n\", $recoveryCodes)) }}; navigator.clipboard.writeText(codes); this.copied = true; setTimeout(() => this.copied = false, 1600); } }">
                             <button type="button" @click="copy()" class="inline-flex h-9 items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-bold text-zinc-200 transition hover:bg-white/[0.10]" :class="copied && 'border-emerald-300/40 bg-emerald-300/[0.10] text-emerald-200'">
                                 <template x-if="!copied">
                                     <span class="inline-flex items-center gap-1.5">

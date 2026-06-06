@@ -399,11 +399,11 @@
                         licenseType: 'personal',
                         personalPrice: {{ (float) $product->personalPrice() }},
                         commercialPrice: {{ (float) $product->commercialPrice() }},
-                        currency: @js($product->currency ?? 'UAH'),
+                        currency: {{ \Illuminate\Support\Js::from($product->currency ?? 'UAH') }},
                         accountBalance: {{ (float) $accountBalance }},
                         balanceAmount: {{ (float) min($accountBalance, max($product->personalPrice(), 0)) }},
-                        locale: @js(app()->getLocale() === 'uk' ? 'uk-UA' : 'en-US'),
-                        freeLabel: @js(__('Безкоштовно'))
+                        locale: {{ \Illuminate\Support\Js::from(app()->getLocale() === 'uk' ? 'uk-UA' : 'en-US') }},
+                        freeLabel: {{ \Illuminate\Support\Js::from(__('Безкоштовно')) }}
                     })"
                     x-on:license-changed="licenseType = $event.detail.type"
                 >
