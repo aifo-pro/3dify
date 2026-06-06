@@ -176,6 +176,10 @@
                     const reason = noWebgl.querySelector('[data-nowebgl-reason]');
                     if (reason && err) reason.textContent = String(err && err.message ? err.message : err);
                 }
+                // Tell the gallery to drop the 3D slide and fall back to photos,
+                // so a browser without WebGL still gets a working page out of the
+                // box (no scary message, no settings to toggle).
+                root.dispatchEvent(new CustomEvent('viewer-webgl-unavailable', { bubbles: true }));
             };
 
             let THREE, OrbitControls;

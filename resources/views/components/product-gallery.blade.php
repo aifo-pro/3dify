@@ -100,8 +100,18 @@
             }
             this.touchStartX = null;
         },
+
+        // Called when the 3D viewer can't get a WebGL context: drop the viewer
+        // slide and fall back to images so the page still works out of the box.
+        dropViewer() {
+            const images = this.media.filter(item => this.isImage(item));
+            if (images.length === 0) return; // nothing to fall back to — keep the notice
+            this.media = images;
+            this.currentIndex = 0;
+        },
     }"
     x-init="$nextTick(() => window.dispatchEvent(new CustomEvent('init-model-viewers')))"
+    @viewer-webgl-unavailable="dropViewer()"
     @keydown.escape.window="lightboxOpen ? closeLightbox() : (viewerOpen ? closeViewer() : null)"
     @keydown.arrow-right.window="lightboxOpen ? lightboxNext() : next()"
     @keydown.arrow-left.window="lightboxOpen ? lightboxPrev() : prev()"
