@@ -148,7 +148,7 @@
              survives slide switches; hidden via x-show when another slide is active. --}}
         @if($viewer && ($viewer['available'] ?? false))
             <div x-show="isViewer(current())" class="absolute inset-0 z-[5]">
-                <x-product.model-viewer :viewer="$viewer" :title="$productTitle" :fill="true" />
+                <x-product.model-viewer :viewer="$viewer" :title="$productTitle" :fill="true" :poster="$primarySeoImage ?: null" />
             </div>
         @endif
 

@@ -2,6 +2,7 @@
     'viewer' => ['available' => false, 'format' => null, 'src' => null, 'reason' => 'none'],
     'title' => '',
     'fill' => false,
+    'poster' => null, // image shown in-place if WebGL/loading fails (out-of-the-box fallback)
 ])
 
 @php
@@ -32,6 +33,13 @@
     >
         {{-- WebGL canvas host --}}
         <div data-canvas class="absolute inset-0"></div>
+
+        {{-- Static fallback image shown in-place when WebGL is unavailable or the
+             model fails to load — keeps the slide useful with zero configuration. --}}
+        @if($poster)
+            <img data-poster src="{{ $poster }}" alt="{{ $title }}" hidden loading="lazy"
+                 class="absolute inset-0 z-20 h-full w-full object-contain" style="background:#05070a;">
+        @endif
 
         {{-- Format badge --}}
         <div class="pointer-events-none absolute left-4 top-4 z-10 flex items-center gap-1.5 rounded-full border border-emerald-300/30 bg-emerald-400/[0.12] px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-200 backdrop-blur">
@@ -168,17 +176,27 @@
             const format = (root.getAttribute('data-format') || '').toLowerCase();
             const src = root.getAttribute('data-src');
 
-            const showError = () => { if (loadingEl) loadingEl.hidden = true; if (errorEl) errorEl.hidden = false; };
+            const posterEl = root.querySelector('[data-poster]');
+            const hasPoster = () => posterEl && posterEl.getAttribute('src');
+
+            const showError = () => {
+                if (loadingEl) loadingEl.hidden = true;
+                // Prefer the product image over a technical error message.
+                if (hasPoster()) { posterEl.hidden = false; }
+                else if (errorEl) { errorEl.hidden = false; }
+            };
             const showNoWebgl = (err) => {
                 if (loadingEl) loadingEl.hidden = true;
-                if (noWebgl) {
+                // Out-of-the-box fallback: show the product image right here.
+                if (hasPoster()) {
+                    posterEl.hidden = false;
+                } else if (noWebgl) {
                     noWebgl.hidden = false;
                     const reason = noWebgl.querySelector('[data-nowebgl-reason]');
                     if (reason && err) reason.textContent = String(err && err.message ? err.message : err);
                 }
-                // Tell the gallery to drop the 3D slide and fall back to photos,
-                // so a browser without WebGL still gets a working page out of the
-                // box (no scary message, no settings to toggle).
+                // Also tell the gallery to drop the 3D slide entirely so the user
+                // lands on the real photo gallery (belt-and-suspenders).
                 root.dispatchEvent(new CustomEvent('viewer-webgl-unavailable', { bubbles: true }));
             };
 
