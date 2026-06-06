@@ -82,6 +82,8 @@
                 </div>
                 <p class="mt-3 text-sm font-bold text-white">{{ __('Не вдалося завантажити 3D-перегляд') }}</p>
                 <p class="mt-1 text-xs leading-relaxed text-zinc-400">{{ __('Спробуйте оновити сторінку. Ви все одно можете завантажити файл моделі.') }}</p>
+                <p data-error-reason class="mt-2 break-words font-mono text-[10px] leading-relaxed text-amber-300/70"></p>
+                <p class="mt-1 text-[9px] text-zinc-700">viewer build: esm-v1</p>
             </div>
         </div>
 
@@ -202,11 +204,13 @@
             const posterEl = root.querySelector('[data-poster]');
             const hasPoster = () => posterEl && posterEl.getAttribute('src');
 
-            const showError = () => {
+            const showError = (detail) => {
                 if (loadingEl) loadingEl.hidden = true;
-                // Prefer the product image over a technical error message.
-                if (hasPoster()) { posterEl.hidden = false; }
-                else if (errorEl) { errorEl.hidden = false; }
+                if (errorEl) {
+                    errorEl.hidden = false;
+                    const r = errorEl.querySelector('[data-error-reason]');
+                    if (r && detail) r.textContent = String(detail);
+                }
             };
             const showNoWebgl = (err) => {
                 if (loadingEl) loadingEl.hidden = true;
@@ -237,8 +241,8 @@
                 THREE = await import('https://esm.sh/three@0.160.0');
                 ({ OrbitControls } = await import('https://esm.sh/three@0.160.0/examples/jsm/controls/OrbitControls.js'));
             } catch (e) {
-                console.error('[3Dify viewer] failed to import three.js (import map missing?):', e);
-                showError();
+                console.error('[3Dify viewer] failed to import three.js from esm.sh:', e);
+                showError('three.js import failed: ' + (e && e.message ? e.message : e));
                 return;
             }
 
@@ -394,14 +398,17 @@
                 animate();
             } catch (e) {
                 console.error('[3Dify viewer] model load failed:', { src, format, error: e });
-                // Probe the endpoint so the actual HTTP status is visible in the console.
+                // Probe the endpoint so the actual HTTP status is visible (also on-screen).
+                let detail = (format || '?') + ' load failed';
                 try {
                     const probe = await fetch(src, { headers: { 'Accept': '*/*' } });
+                    detail = 'endpoint ' + probe.status + ' · ' + (probe.headers.get('content-type') || '?');
                     console.error('[3Dify viewer] preview endpoint:', probe.status, probe.headers.get('content-type'));
                 } catch (probeErr) {
+                    detail = 'endpoint unreachable: ' + (probeErr && probeErr.message ? probeErr.message : probeErr);
                     console.error('[3Dify viewer] preview endpoint unreachable:', probeErr);
                 }
-                showError();
+                showError(detail);
             }
         }
 
