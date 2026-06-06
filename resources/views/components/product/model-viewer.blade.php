@@ -93,11 +93,22 @@
         const VER = '0.165.0';
         const BASE = 'https://unpkg.com/three@' + VER;
 
-        function webglAvailable() {
-            try {
-                const c = document.createElement('canvas');
-                return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl')));
-            } catch (e) { return false; }
+        // Try hard to obtain a WebGL renderer across browsers/GPUs: WebGL2 first
+        // (three r155+ uses it), then a non-AA retry which lets software
+        // renderers (SwiftShader / llvmpipe) succeed where AA contexts fail.
+        function createRenderer(THREE) {
+            const attempts = [
+                { antialias: true, failIfMajorPerformanceCaveat: false },
+                { antialias: false, failIfMajorPerformanceCaveat: false },
+                { antialias: false, failIfMajorPerformanceCaveat: false, powerPreference: 'low-power' },
+            ];
+            for (const opts of attempts) {
+                try {
+                    const r = new THREE.WebGLRenderer(opts);
+                    if (r && r.getContext && r.getContext()) return r;
+                } catch (e) { /* try next */ }
+            }
+            return null;
         }
 
         function defaultMaterial(THREE) {
@@ -151,18 +162,17 @@
             const src = root.getAttribute('data-src');
 
             const showError = () => { if (loadingEl) loadingEl.hidden = true; if (errorEl) errorEl.hidden = false; };
-
-            if (!webglAvailable()) {
-                if (loadingEl) loadingEl.hidden = true;
-                if (noWebgl) noWebgl.hidden = false;
-                return;
-            }
+            const showNoWebgl = () => { if (loadingEl) loadingEl.hidden = true; if (noWebgl) noWebgl.hidden = false; };
 
             let THREE, OrbitControls;
             try {
                 THREE = await import(BASE + '/build/three.module.js');
                 ({ OrbitControls } = await import(BASE + '/examples/jsm/controls/OrbitControls.js'));
             } catch (e) { showError(); return; }
+
+            // The actual renderer creation is the definitive WebGL test.
+            const renderer = createRenderer(THREE);
+            if (!renderer) { showNoWebgl(); return; }
 
             let disposed = false, raf = 0, ro = null;
 
@@ -176,7 +186,6 @@
 
             const camera = new THREE.PerspectiveCamera(45, aspect(), 0.01, 5000);
 
-            const renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
             renderer.setSize(host.clientWidth || 1, host.clientHeight || 1, false);
             const canvas = renderer.domElement;
