@@ -23,6 +23,22 @@
 @endphp
 
 @if($available && $src)
+    {{-- Import map so the three.js addon loaders (which import bare 'three')
+         resolve to the same module instance. Must be in <head> before any module
+         script; @stack('head') renders before @vite in the layout. Emitted once. --}}
+    @once
+        @push('head')
+        <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+        </script>
+        @endpush
+    @endonce
+
     <div
         id="{{ $vid }}"
         data-model-viewer-root
@@ -122,10 +138,8 @@
     @verbatim
     <script type="module">
     (() => {
-        // r160: WebGLRenderer automatically falls back to WebGL1 when WebGL2 is
-        // unavailable (r163+ is WebGL2-only) — widest browser coverage.
-        const VER = '0.160.0';
-        const BASE = 'https://unpkg.com/three@' + VER;
+        // three modules are resolved via the <head> import map (see above):
+        // 'three' and 'three/addons/...'. r160 auto-falls back to WebGL1.
 
         // Try hard to obtain a WebGL renderer across browsers/GPUs. A non-AA
         // retry lets software renderers (SwiftShader / llvmpipe) succeed where
@@ -165,24 +179,24 @@
 
         async function loadObject(THREE, format, url, onProgress) {
             if (format === 'glb' || format === 'gltf') {
-                const { GLTFLoader } = await import(BASE + '/examples/jsm/loaders/GLTFLoader.js');
+                const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
                 const gltf = await new Promise((res, rej) => new GLTFLoader().load(url, res, onProgress, rej));
                 return gltf.scene;
             }
             if (format === 'stl') {
-                const { STLLoader } = await import(BASE + '/examples/jsm/loaders/STLLoader.js');
+                const { STLLoader } = await import('three/addons/loaders/STLLoader.js');
                 const geo = await new Promise((res, rej) => new STLLoader().load(url, res, onProgress, rej));
                 geo.computeVertexNormals();
                 return new THREE.Mesh(geo, defaultMaterial(THREE));
             }
             if (format === 'obj') {
-                const { OBJLoader } = await import(BASE + '/examples/jsm/loaders/OBJLoader.js');
+                const { OBJLoader } = await import('three/addons/loaders/OBJLoader.js');
                 const obj = await new Promise((res, rej) => new OBJLoader().load(url, res, onProgress, rej));
                 applyDefaultMaterial(THREE, obj);
                 return obj;
             }
             if (format === '3mf') {
-                const { ThreeMFLoader } = await import(BASE + '/examples/jsm/loaders/3MFLoader.js');
+                const { ThreeMFLoader } = await import('three/addons/loaders/3MFLoader.js');
                 const obj = await new Promise((res, rej) => new ThreeMFLoader().load(url, res, onProgress, rej));
                 applyDefaultMaterial(THREE, obj);
                 return obj;
@@ -234,8 +248,8 @@
 
             let THREE, OrbitControls;
             try {
-                THREE = await import(BASE + '/build/three.module.js');
-                ({ OrbitControls } = await import(BASE + '/examples/jsm/controls/OrbitControls.js'));
+                THREE = await import('three');
+                ({ OrbitControls } = await import('three/addons/controls/OrbitControls.js'));
             } catch (e) { showError(); return; }
 
             // The actual renderer creation is the definitive WebGL test.
