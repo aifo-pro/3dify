@@ -82,7 +82,7 @@
                 </div>
                 <p class="mt-3 text-sm font-bold text-white">{{ __('Не вдалося завантажити 3D-перегляд') }}</p>
                 <p data-error-reason class="mt-3 max-w-md break-words font-mono text-sm font-bold leading-relaxed text-white">…</p>
-                <p class="mt-2 text-[9px] text-zinc-700">viewer build: esm-v4</p>
+                <p class="mt-2 text-[9px] text-zinc-700">viewer build: esm-v5</p>
             </div>
         </div>
 
@@ -298,12 +298,16 @@
                 object.position.z -= center.z;
                 const maxDim = Math.max(size.x, size.y, size.z) || 1;
                 object.scale.setScalar(2 / maxDim);
+                // Flush the transform so the re-measured box reflects the new
+                // scale (otherwise the camera frames the un-scaled size and the
+                // model ends up tiny / far away).
+                object.updateMatrixWorld(true);
 
                 box = new THREE.Box3().setFromObject(object);
                 const sphere = box.getBoundingSphere(new THREE.Sphere());
                 const r = sphere.radius || 1;
                 const fov = camera.fov * Math.PI / 180;
-                const dist = (r / Math.sin(fov / 2)) * 1.25;
+                const dist = (r / Math.sin(fov / 2)) * 1.05;
                 camera.position.set(dist * 0.7, dist * 0.55, dist * 0.95);
                 camera.near = Math.max(dist / 200, 0.01);
                 camera.far = dist * 200;
