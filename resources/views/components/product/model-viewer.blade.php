@@ -83,15 +83,38 @@
             </div>
         </div>
 
-        {{-- WebGL unsupported fallback --}}
-        <div data-nowebgl hidden class="absolute inset-0 z-20 grid place-items-center bg-[#05070a] px-6 text-center">
-            <div class="max-w-xs">
-                <div class="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] text-zinc-300">
-                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        {{-- WebGL unavailable fallback: shows the product image + an actionable
+             prompt to enable hardware acceleration (with a Retry button). --}}
+        <div data-nowebgl hidden class="absolute inset-0 z-20">
+            {{-- Product image backdrop so something is always visible --}}
+            <img data-nowebgl-poster src="" alt="{{ $title }}" hidden class="absolute inset-0 h-full w-full object-contain opacity-35">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/30"></div>
+
+            <div class="relative z-10 grid h-full place-items-center px-6 text-center">
+                <div class="max-w-sm">
+                    <div class="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-emerald-300/25 bg-emerald-400/[0.10] text-emerald-200">
+                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    </div>
+                    <p class="mt-3 text-sm font-bold text-white">{{ __('Увімкніть 3D-перегляд') }}</p>
+                    <p class="mt-1 text-xs leading-relaxed text-zinc-300">{{ __('Для інтерактивного 3D потрібне апаратне прискорення (WebGL). Нижче — як його ввімкнути за 20 секунд.') }}</p>
+
+                    <div class="mt-4 flex items-center justify-center gap-2">
+                        <button type="button" data-nowebgl-retry class="inline-flex h-9 items-center gap-2 rounded-full bg-emerald-400 px-4 text-xs font-black text-zinc-950 transition hover:bg-emerald-300">
+                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                            {{ __('Спробувати ще раз') }}
+                        </button>
+                        <button type="button" data-nowebgl-help-toggle class="inline-flex h-9 items-center rounded-full border border-white/15 bg-white/[0.04] px-4 text-xs font-bold text-zinc-200 transition hover:border-white/25">
+                            {{ __('Як увімкнути') }}
+                        </button>
+                    </div>
+
+                    <div data-nowebgl-help hidden class="mt-3 rounded-2xl border border-white/10 bg-zinc-950/70 p-3 text-left text-[11px] leading-relaxed text-zinc-300 backdrop-blur">
+                        <p class="font-bold text-white">Google Chrome / Edge</p>
+                        <p class="mt-1">{{ __('Меню ⋮ → Налаштування → Система → увімкніть «Використовувати апаратне прискорення (за наявності)» → перезапустіть браузер.') }}</p>
+                        <p class="mt-2 text-zinc-400">{{ __('Перевірити стан: відкрийте') }} <span class="rounded bg-white/10 px-1 font-mono text-zinc-200">chrome://gpu</span></p>
+                        <p data-nowebgl-reason class="mt-2 break-words text-[10px] text-zinc-600"></p>
+                    </div>
                 </div>
-                <p class="mt-3 text-sm font-bold text-white">{{ __('3D-перегляд недоступний у вашому браузері') }}</p>
-                <p class="mt-1 text-xs leading-relaxed text-zinc-400">{{ __('Ваш браузер не підтримує WebGL. Спробуйте інший браузер або оновіть поточний.') }}</p>
-                <p data-nowebgl-reason class="mt-2 break-words text-[10px] leading-relaxed text-zinc-600"></p>
             </div>
         </div>
     </div>
@@ -187,17 +210,26 @@
             };
             const showNoWebgl = (err) => {
                 if (loadingEl) loadingEl.hidden = true;
-                // Out-of-the-box fallback: show the product image right here.
-                if (hasPoster()) {
-                    posterEl.hidden = false;
-                } else if (noWebgl) {
-                    noWebgl.hidden = false;
-                    const reason = noWebgl.querySelector('[data-nowebgl-reason]');
-                    if (reason && err) reason.textContent = String(err && err.message ? err.message : err);
+                if (!noWebgl) return;
+                // Product image as a dimmed backdrop so something always shows.
+                const bg = noWebgl.querySelector('[data-nowebgl-poster]');
+                if (bg && hasPoster()) { bg.src = posterEl.getAttribute('src'); bg.hidden = false; }
+                // Diagnostic detail (kept subtle, inside the help panel).
+                const reason = noWebgl.querySelector('[data-nowebgl-reason]');
+                if (reason && err) reason.textContent = String(err && err.message ? err.message : err);
+                // Wire the "Try again" + "How to enable" controls once.
+                const retry = noWebgl.querySelector('[data-nowebgl-retry]');
+                if (retry && !retry.dataset.wired) {
+                    retry.dataset.wired = '1';
+                    retry.addEventListener('click', () => location.reload());
                 }
-                // Also tell the gallery to drop the 3D slide entirely so the user
-                // lands on the real photo gallery (belt-and-suspenders).
-                root.dispatchEvent(new CustomEvent('viewer-webgl-unavailable', { bubbles: true }));
+                const helpToggle = noWebgl.querySelector('[data-nowebgl-help-toggle]');
+                const help = noWebgl.querySelector('[data-nowebgl-help]');
+                if (helpToggle && help && !helpToggle.dataset.wired) {
+                    helpToggle.dataset.wired = '1';
+                    helpToggle.addEventListener('click', () => { help.hidden = !help.hidden; });
+                }
+                noWebgl.hidden = false;
             };
 
             let THREE, OrbitControls;

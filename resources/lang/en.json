@@ -364,5 +364,11 @@
     "Для цієї моделі немає файлу, який можна показати в 3D-перегляді.": "This model has no file that can be shown in the 3D preview.",
     "Немає зображень": "No images",
     "ZIP-архіви не показуються в 3D-перегляді. Додайте окремий STL / OBJ / GLB / 3MF або 3D-preview, щоб увімкнути перегляд.": "ZIP archives aren't shown in the 3D preview. Add a separate STL / OBJ / GLB / 3MF or a 3D preview file to enable it.",
-    "GLB · GLTF · OBJ · STL для інтерактивного 3D-перегляду, або GIF / PNG / JPG / WEBP як статичне прев’ю. Бачать усі відвідувачі.": "GLB · GLTF · OBJ · STL for the interactive 3D preview, or GIF / PNG / JPG / WEBP as a static preview. Visible to everyone."
+    "GLB · GLTF · OBJ · STL для інтерактивного 3D-перегляду, або GIF / PNG / JPG / WEBP як статичне прев’ю. Бачать усі відвідувачі.": "GLB · GLTF · OBJ · STL for the interactive 3D preview, or GIF / PNG / JPG / WEBP as a static preview. Visible to everyone.",
+    "Увімкніть 3D-перегляд": "Enable 3D preview",
+    "Для інтерактивного 3D потрібне апаратне прискорення (WebGL). Нижче — як його ввімкнути за 20 секунд.": "Interactive 3D needs hardware acceleration (WebGL). Here's how to turn it on in 20 seconds.",
+    "Спробувати ще раз": "Try again",
+    "Як увімкнути": "How to enable",
+    "Меню ⋮ → Налаштування → Система → увімкніть «Використовувати апаратне прискорення (за наявності)» → перезапустіть браузер.": "Menu ⋮ → Settings → System → turn on “Use hardware acceleration when available” → restart the browser.",
+    "Перевірити стан: відкрийте": "Check the status at"
 }

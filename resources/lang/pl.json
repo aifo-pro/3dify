@@ -364,5 +364,11 @@
     "Для цієї моделі немає файлу, який можна показати в 3D-перегляді.": "Ten model nie ma pliku, który można wyświetlić w podglądzie 3D.",
     "Немає зображень": "Brak obrazów",
     "ZIP-архіви не показуються в 3D-перегляді. Додайте окремий STL / OBJ / GLB / 3MF або 3D-preview, щоб увімкнути перегляд.": "Archiwa ZIP nie są pokazywane w podglądzie 3D. Dodaj osobny plik STL / OBJ / GLB / 3MF lub plik podglądu 3D, aby go włączyć.",
-    "GLB · GLTF · OBJ · STL для інтерактивного 3D-перегляду, або GIF / PNG / JPG / WEBP як статичне прев’ю. Бачать усі відвідувачі.": "GLB · GLTF · OBJ · STL do interaktywnego podglądu 3D lub GIF / PNG / JPG / WEBP jako statyczny podgląd. Widoczne dla wszystkich."
+    "GLB · GLTF · OBJ · STL для інтерактивного 3D-перегляду, або GIF / PNG / JPG / WEBP як статичне прев’ю. Бачать усі відвідувачі.": "GLB · GLTF · OBJ · STL do interaktywnego podglądu 3D lub GIF / PNG / JPG / WEBP jako statyczny podgląd. Widoczne dla wszystkich.",
+    "Увімкніть 3D-перегляд": "Włącz podgląd 3D",
+    "Для інтерактивного 3D потрібне апаратне прискорення (WebGL). Нижче — як його ввімкнути за 20 секунд.": "Interaktywne 3D wymaga akceleracji sprzętowej (WebGL). Poniżej jak ją włączyć w 20 sekund.",
+    "Спробувати ще раз": "Spróbuj ponownie",
+    "Як увімкнути": "Jak włączyć",
+    "Меню ⋮ → Налаштування → Система → увімкніть «Використовувати апаратне прискорення (за наявності)» → перезапустіть браузер.": "Menu ⋮ → Ustawienia → System → włącz „Używaj akceleracji sprzętowej, gdy jest dostępna” → uruchom ponownie przeglądarkę.",
+    "Перевірити стан: відкрийте": "Sprawdź status pod adresem"
 }
