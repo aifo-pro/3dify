@@ -105,6 +105,10 @@ Route::get('/challenges/{challenge:slug}', [PrintChallengeController::class, 'sh
 Route::get('/categories/{category:slug}', [ProductController::class, 'index'])->name('categories.show');
 Route::get('/models/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/models/{product:slug}/embed', [ProductController::class, 'embed'])->name('products.embed');
+// Streams the 3D-viewable file for the in-browser viewer. Public route; access
+// is re-checked inside the controller (free → everyone, paid → buyers/author/mod).
+Route::get('/models/{product:slug}/preview', \App\Http\Controllers\Marketplace\ModelPreviewController::class)
+    ->name('products.preview-file');
 // Tip shortcut URL (bookmark/share): works for guests — redirects to product page where the tip form lives.
 Route::get('/models/{product:slug}/tip', [TipController::class, 'redirect'])->name('products.tip.redirect');
 

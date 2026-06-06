@@ -112,19 +112,20 @@
         ])
         ->all();
     $modelPreviewUrl = $modelPreview ? $diskUrl($modelPreview->disk, $modelPreview->path) : null;
+    // The interactive 3D viewer is rendered as a dedicated card (see below); the
+    // gallery stays image-only so the two don't conflict.
     $galleryMediaItems = collect($gallerySliderImages)
         ->map(fn ($item) => [
             'type' => 'image',
             'url' => $item['url'],
             'alt' => $item['alt'],
         ])
-        ->when($modelPreviewUrl, fn ($items) => $items->prepend([
-            'type' => 'viewer',
-            'url' => $modelPreviewUrl,
-            'alt' => $product->localized('title'),
-        ]))
         ->values()
         ->all();
+
+    // Resolve which file (if any) may be shown in the 3D viewer for this viewer,
+    // enforcing access control server-side.
+    $previewViewer = app(\App\Services\ModelPreviewResolver::class)->viewerData($product, auth()->user());
 
     $productUrl = route('products.show', $product);
     $productDescription = $product->localized('short_description') ?: $product->localized('description') ?: __('3D-модель для друку на 3Dify.');
@@ -346,15 +347,19 @@
 
         <div class="grid gap-8 lg:grid-cols-[1fr_390px]">
             <div class="grid gap-8">
+                {{-- Interactive 3D viewer (preview file or authorized source file) --}}
+                @if($previewViewer['available'] || in_array($previewViewer['reason'], ['zip', 'unauthorized'], true))
+                    <x-product.model-viewer :viewer="$previewViewer" :title="$product->localized('title')" />
+                @endif
+
                 @if(count($galleryMediaItems) > 0)
-                    <x-product-gallery :media-items="$galleryMediaItems" :model-preview-url="$modelPreviewUrl" :product-title="$product->localized('title')" />
-                @elseif($modelPreview)
-                    <div class="overflow-hidden rounded-3xl" style="aspect-ratio: 4/3; max-height: 620px; background: #05070a;">
-                        <div data-model-viewer data-model-url="{{ Storage::disk($modelPreview->disk)->url($modelPreview->path) }}" class="h-full w-full"></div>
-                    </div>
-                @else
-                    <div class="overflow-hidden rounded-3xl" style="aspect-ratio: 4/3; max-height: 620px; background: #05070a;">
-                        <div data-model-viewer data-model-url="" class="h-full w-full"></div>
+                    <x-product-gallery :media-items="$galleryMediaItems" :product-title="$product->localized('title')" />
+                @elseif(! $previewViewer['available'])
+                    <div class="grid place-items-center overflow-hidden rounded-3xl border border-white/10" style="aspect-ratio: 4/3; max-height: 620px; background: #05070a;">
+                        <div class="text-center text-zinc-600">
+                            <svg class="mx-auto h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            <p class="mt-2 text-xs">{{ __('Немає зображень') }}</p>
+                        </div>
                     </div>
                 @endif
 

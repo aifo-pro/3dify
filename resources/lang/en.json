@@ -349,5 +349,20 @@
     "Додані матеріали": "Added materials",
     "Фото галереї та файли, які вже привʼязані до цієї моделі.": "Gallery photos and files already attached to this model.",
     "Галерея": "Gallery",
-    "Видалити це фото з галереї?": "Remove this photo from the gallery?"
+    "Видалити це фото з галереї?": "Remove this photo from the gallery?",
+    "Скинути камеру": "Reset camera",
+    "На весь екран": "Fullscreen",
+    "Обертайте мишкою · колесо — зум · права кнопка — перемістити": "Drag to rotate · scroll to zoom · right-click to pan",
+    "Завантаження 3D-моделі": "Loading 3D model",
+    "Не вдалося завантажити 3D-перегляд": "Could not load the 3D preview",
+    "Спробуйте оновити сторінку. Ви все одно можете завантажити файл моделі.": "Try refreshing the page. You can still download the model file.",
+    "3D-перегляд недоступний у вашому браузері": "3D preview is not available in your browser",
+    "Ваш браузер не підтримує WebGL. Спробуйте інший браузер або оновіть поточний.": "Your browser does not support WebGL. Try another browser or update the current one.",
+    "3D-перегляд недоступний": "3D preview unavailable",
+    "Модель завантажена як ZIP-архів — його не можна показати у 3D напряму. Завантажте архів, щоб отримати файли STL/OBJ/GLB всередині.": "This model was uploaded as a ZIP archive, which can't be shown in 3D directly. Download the archive to get the STL/OBJ/GLB files inside.",
+    "Інтерактивний 3D-перегляд цієї моделі стане доступним після придбання.": "Interactive 3D preview for this model becomes available after purchase.",
+    "Для цієї моделі немає файлу, який можна показати в 3D-перегляді.": "This model has no file that can be shown in the 3D preview.",
+    "Немає зображень": "No images",
+    "ZIP-архіви не показуються в 3D-перегляді. Додайте окремий STL / OBJ / GLB / 3MF або 3D-preview, щоб увімкнути перегляд.": "ZIP archives aren't shown in the 3D preview. Add a separate STL / OBJ / GLB / 3MF or a 3D preview file to enable it.",
+    "GLB · GLTF · OBJ · STL для інтерактивного 3D-перегляду, або GIF / PNG / JPG / WEBP як статичне прев’ю. Бачать усі відвідувачі.": "GLB · GLTF · OBJ · STL for the interactive 3D preview, or GIF / PNG / JPG / WEBP as a static preview. Visible to everyone."
 }

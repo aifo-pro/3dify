@@ -288,13 +288,14 @@
                         <label class="group flex flex-col rounded-2xl border border-dashed border-white/15 bg-zinc-950/40 p-5 transition hover:border-sky-300/50 hover:bg-zinc-900/60">
                             <span class="grid h-11 w-11 place-items-center rounded-xl bg-sky-300/15 text-xs font-bold text-sky-100">3D</span>
                             <span class="mt-4 block text-sm font-semibold text-white">{{ __('3D preview або зображення') }}</span>
-                            <span class="mt-1 block text-xs leading-5 text-zinc-500">{{ __('GLB · GLTF · OBJ · STL для 3D-сцени, або GIF / PNG / JPG / WEBP як статичне прев’ю. Бачать усі відвідувачі.') }}</span>
+                            <span class="mt-1 block text-xs leading-5 text-zinc-500">{{ __('GLB · GLTF · OBJ · STL для інтерактивного 3D-перегляду, або GIF / PNG / JPG / WEBP як статичне прев’ю. Бачать усі відвідувачі.') }}</span>
                             <input type="file" name="preview_file" accept=".glb,.gltf,.obj,.stl,.gif,.png,.jpg,.jpeg,.webp" class="mt-3 w-full text-xs text-zinc-400 file:mr-3 file:rounded-full file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-zinc-100 file:hover:bg-white/15">
                         </label>
                         <label class="group flex flex-col rounded-2xl border border-dashed border-white/15 bg-zinc-950/40 p-5 transition hover:border-violet-300/50 hover:bg-zinc-900/60">
                             <span class="grid h-11 w-11 place-items-center rounded-xl bg-violet-300/15 text-xs font-bold text-violet-100">ZIP</span>
                             <span class="mt-4 block text-sm font-semibold text-white">{{ __('Файли для завантаження') }}</span>
                             <span class="mt-1 block text-xs leading-5 text-zinc-500">{{ __('STL, OBJ, GLB, GLTF, ZIP, 3MF. Доступ після покупки.') }}</span>
+                            <span class="mt-1 block text-[11px] leading-5 text-amber-300/80">{{ __('ZIP-архіви не показуються в 3D-перегляді. Додайте окремий STL / OBJ / GLB / 3MF або 3D-preview, щоб увімкнути перегляд.') }}</span>
                             <input type="file" name="files[]" multiple accept=".stl,.obj,.glb,.gltf,.zip,.3mf" class="mt-3 w-full text-xs text-zinc-400 file:mr-3 file:rounded-full file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-zinc-100 file:hover:bg-white/15">
                         </label>
                     </div>
