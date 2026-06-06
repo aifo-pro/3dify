@@ -403,6 +403,14 @@
                 if (loadingEl) loadingEl.hidden = true;
                 animate();
             } catch (e) {
+                console.error('[3Dify viewer] model load failed:', { src, format, error: e });
+                // Probe the endpoint so the actual HTTP status is visible in the console.
+                try {
+                    const probe = await fetch(src, { headers: { 'Accept': '*/*' } });
+                    console.error('[3Dify viewer] preview endpoint:', probe.status, probe.headers.get('content-type'));
+                } catch (probeErr) {
+                    console.error('[3Dify viewer] preview endpoint unreachable:', probeErr);
+                }
                 showError();
             }
         }

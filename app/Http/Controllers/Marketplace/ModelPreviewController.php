@@ -42,12 +42,23 @@ class ModelPreviewController extends Controller
         };
 
         $name = $file->original_name ?: ('model.'.$file->extension);
-
-        return $disk->response($file->path, $name, [
+        $headers = [
             'Content-Type' => $mime,
             'Content-Disposition' => 'inline; filename="'.addslashes($name).'"',
             'Cache-Control' => 'private, max-age=600',
             'X-Content-Type-Options' => 'nosniff',
-        ]);
+            // Allow the in-page fetch even if assets are served from a CDN host.
+            'Access-Control-Allow-Origin' => '*',
+        ];
+
+        // Prefer a BinaryFileResponse for local disks: it sets Content-Length and
+        // supports range requests, which streams binary models far more reliably
+        // through nginx / Cloudflare than a chunked StreamedResponse.
+        $localPath = method_exists($disk, 'path') ? $disk->path($file->path) : null;
+        if ($localPath !== null && is_file($localPath)) {
+            return response()->file($localPath, $headers);
+        }
+
+        return $disk->response($file->path, $name, $headers);
     }
 }
