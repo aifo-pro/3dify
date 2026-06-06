@@ -76,14 +76,13 @@
 
         {{-- Error state --}}
         <div data-error hidden class="absolute inset-0 z-20 grid place-items-center bg-[#05070a] px-6 text-center">
-            <div class="max-w-xs">
+            <div class="max-w-md">
                 <div class="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-amber-300/25 bg-amber-400/[0.08] text-amber-300">
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 </div>
                 <p class="mt-3 text-sm font-bold text-white">{{ __('Не вдалося завантажити 3D-перегляд') }}</p>
-                <p class="mt-1 text-xs leading-relaxed text-zinc-400">{{ __('Спробуйте оновити сторінку. Ви все одно можете завантажити файл моделі.') }}</p>
-                <p data-error-reason class="mt-3 break-words rounded-lg bg-amber-400/[0.08] px-2 py-1.5 font-mono text-xs font-bold leading-relaxed text-amber-200"></p>
-                <p class="mt-1 text-[9px] text-zinc-700">viewer build: esm-v2</p>
+                <p data-error-reason class="mt-3 max-w-md break-words font-mono text-sm font-bold leading-relaxed text-white">…</p>
+                <p class="mt-2 text-[9px] text-zinc-700">viewer build: esm-v3</p>
             </div>
         </div>
 
