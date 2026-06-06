@@ -4,10 +4,10 @@
     <div class="relative border-b border-white/[0.06] bg-zinc-950 py-12 sm:py-16">
         <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-10%,rgba(52,211,153,.08),transparent)]"></div>
         <div class="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-            <h1 class="mb-6 text-center text-3xl font-black text-white sm:text-4xl">Пошук по 3Dify</h1>
+            <h1 class="mb-6 text-center text-3xl font-black tracking-tight text-white sm:text-4xl">Пошук по 3Dify</h1>
             <form method="GET" action="{{ route('search') }}">
-                <div class="flex items-center gap-2 rounded-2xl border border-white/10 bg-zinc-900/80 px-4 focus-within:border-emerald-400/50 focus-within:ring-2 focus-within:ring-emerald-400/20 transition">
-                    <svg class="h-5 w-5 shrink-0 text-zinc-500"
+                <div class="group group-input flex items-center gap-2 rounded-full border border-white/10 bg-zinc-900/70 p-2 pl-5 shadow-2xl shadow-black/40 backdrop-blur transition focus-within:border-emerald-400/60 focus-within:bg-zinc-900/90 focus-within:shadow-emerald-500/10">
+                    <svg class="h-5 w-5 shrink-0 text-zinc-500 transition group-focus-within:text-emerald-300"
                          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -18,10 +18,11 @@
                         autofocus
                         autocomplete="off"
                         placeholder="Моделі, автори, статті…"
-                        class="h-14 min-w-0 flex-1 bg-transparent text-base text-white placeholder:text-zinc-500 focus:outline-none"
+                        style="outline:none;box-shadow:none;"
+                        class="no-outline h-12 min-w-0 flex-1 bg-transparent text-base text-white placeholder:text-zinc-500 focus:outline-none"
                     >
                     <button type="submit"
-                            class="shrink-0 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-black text-zinc-950 transition hover:bg-emerald-300">
+                            class="shrink-0 rounded-full bg-emerald-400 px-6 py-3 text-sm font-black text-zinc-950 transition hover:bg-emerald-300">
                         Шукати
                     </button>
                 </div>

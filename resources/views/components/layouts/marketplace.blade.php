@@ -108,6 +108,17 @@
         select option, select optgroup { background-color: #18181b; color: #e4e4e7; }
         select option:checked, select option:hover { background-color: #27272a; color: #fff; }
         select option:disabled { color: #71717a; }
+        /* Replace the browser's blue focus outline on text fields with the
+           site's emerald accent (kept for a11y, just on-brand). */
+        input:focus-visible, textarea:focus-visible {
+            outline: 2px solid rgba(52, 211, 153, .55);
+            outline-offset: 1px;
+            border-radius: 0.5rem;
+        }
+        /* Inputs that sit inside a styled wrapper (which provides its own focus
+           ring) shouldn't draw their own outline. */
+        .group-input:focus-within input:focus-visible,
+        input.no-outline:focus-visible { outline: none; }
     </style>
 
     @stack('head')
