@@ -75,22 +75,22 @@
         </div>
 
         {{-- Error state --}}
-        <div data-error hidden class="absolute inset-0 z-20 grid place-items-center bg-[#05070a] px-6 text-center">
+        <div data-error style="display:none" class="absolute inset-0 z-20 grid place-items-center bg-[#05070a] px-6 text-center">
             <div class="max-w-md">
                 <div class="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-amber-300/25 bg-amber-400/[0.08] text-amber-300">
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 </div>
                 <p class="mt-3 text-sm font-bold text-white">{{ __('Не вдалося завантажити 3D-перегляд') }}</p>
                 <p data-error-reason class="mt-3 max-w-md break-words font-mono text-sm font-bold leading-relaxed text-white">…</p>
-                <p class="mt-2 text-[9px] text-zinc-700">viewer build: esm-v3</p>
+                <p class="mt-2 text-[9px] text-zinc-700">viewer build: esm-v4</p>
             </div>
         </div>
 
         {{-- WebGL unavailable fallback: shows the product image + an actionable
              prompt to enable hardware acceleration (with a Retry button). --}}
-        <div data-nowebgl hidden class="absolute inset-0 z-20">
+        <div data-nowebgl style="display:none" class="absolute inset-0 z-20">
             {{-- Product image backdrop so something is always visible --}}
-            <img data-nowebgl-poster src="" alt="{{ $title }}" hidden class="absolute inset-0 h-full w-full object-contain opacity-35">
+            <img data-nowebgl-poster src="" alt="{{ $title }}" style="display:none" class="absolute inset-0 h-full w-full object-contain opacity-35">
             <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/30"></div>
 
             <div class="relative z-10 grid h-full place-items-center px-6 text-center">
@@ -111,7 +111,7 @@
                         </button>
                     </div>
 
-                    <div data-nowebgl-help hidden class="mt-3 rounded-2xl border border-white/10 bg-zinc-950/70 p-3 text-left text-[11px] leading-relaxed text-zinc-300 backdrop-blur">
+                    <div data-nowebgl-help style="display:none" class="mt-3 rounded-2xl border border-white/10 bg-zinc-950/70 p-3 text-left text-[11px] leading-relaxed text-zinc-300 backdrop-blur">
                         <p class="font-bold text-white">Google Chrome / Edge</p>
                         <p class="mt-1">{{ __('Меню ⋮ → Налаштування → Система → увімкніть «Використовувати апаратне прискорення (за наявності)» → перезапустіть браузер.') }}</p>
                         <p class="mt-2 text-zinc-400">{{ __('Перевірити стан: відкрийте') }} <span class="rounded bg-white/10 px-1 font-mono text-zinc-200">chrome://gpu</span></p>
@@ -203,20 +203,25 @@
             const posterEl = root.querySelector('[data-poster]');
             const hasPoster = () => posterEl && posterEl.getAttribute('src');
 
+            // Use inline style.display (beats Tailwind's display utility classes
+            // like .grid, which override the [hidden] attribute).
+            const hide = (el) => { if (el) el.style.display = 'none'; };
+            const show = (el, mode) => { if (el) el.style.display = mode || 'block'; };
+
             const showError = (detail) => {
-                if (loadingEl) loadingEl.hidden = true;
+                hide(loadingEl);
                 if (errorEl) {
-                    errorEl.hidden = false;
+                    show(errorEl, 'grid');
                     const r = errorEl.querySelector('[data-error-reason]');
                     if (r) r.textContent = detail ? String(detail) : '(no detail captured)';
                 }
             };
             const showNoWebgl = (err) => {
-                if (loadingEl) loadingEl.hidden = true;
+                hide(loadingEl);
                 if (!noWebgl) return;
                 // Product image as a dimmed backdrop so something always shows.
                 const bg = noWebgl.querySelector('[data-nowebgl-poster]');
-                if (bg && hasPoster()) { bg.src = posterEl.getAttribute('src'); bg.hidden = false; }
+                if (bg && hasPoster()) { bg.src = posterEl.getAttribute('src'); show(bg); }
                 // Diagnostic detail (kept subtle, inside the help panel).
                 const reason = noWebgl.querySelector('[data-nowebgl-reason]');
                 if (reason && err) reason.textContent = String(err && err.message ? err.message : err);
@@ -230,9 +235,11 @@
                 const help = noWebgl.querySelector('[data-nowebgl-help]');
                 if (helpToggle && help && !helpToggle.dataset.wired) {
                     helpToggle.dataset.wired = '1';
-                    helpToggle.addEventListener('click', () => { help.hidden = !help.hidden; });
+                    helpToggle.addEventListener('click', () => {
+                        help.style.display = (help.style.display === 'none' || !help.style.display) ? 'block' : 'none';
+                    });
                 }
-                noWebgl.hidden = false;
+                show(noWebgl);
             };
 
             let THREE, OrbitControls;
@@ -393,7 +400,7 @@
                 if (disposed) return;
                 scene.add(object);
                 frameObject(object);
-                if (loadingEl) loadingEl.hidden = true;
+                hide(loadingEl);
                 animate();
             } catch (e) {
                 console.error('[3Dify viewer] model load failed:', { src, format, error: e });
