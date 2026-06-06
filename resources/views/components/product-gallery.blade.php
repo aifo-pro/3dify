@@ -1,4 +1,4 @@
-@props(['mediaItems' => [], 'modelPreviewUrl' => null, 'productTitle' => ''])
+@props(['mediaItems' => [], 'viewer' => null, 'productTitle' => ''])
 
 @php
     $seoImages = collect($mediaItems)
@@ -134,19 +134,13 @@
             </button>
         </template>
 
-        {{-- 3D Viewer display --}}
-        <template x-if="isViewer(current())">
-            <div class="relative flex h-full w-full items-center justify-center" style="background: #05070a;">
-                <button
-                    type="button"
-                    @click.stop="openViewer()"
-                    class="absolute right-4 top-4 z-20 inline-flex h-10 items-center gap-2 rounded-full border border-emerald-300/25 bg-emerald-300/[0.12] px-4 text-xs font-black uppercase tracking-[0.14em] text-emerald-100 backdrop-blur transition hover:bg-emerald-300/[0.18]"
-                >
-                    {{ __('Відкрити 3D') }}
-                </button>
-                <div data-model-viewer :data-model-url="current().url" class="h-full w-full"></div>
+        {{-- 3D Viewer display — persistent (not re-mounted) so the WebGL scene
+             survives slide switches; hidden via x-show when another slide is active. --}}
+        @if($viewer && ($viewer['available'] ?? false))
+            <div x-show="isViewer(current())" class="absolute inset-0 z-[5]">
+                <x-product.model-viewer :viewer="$viewer" :title="$productTitle" :fill="true" />
             </div>
-        </template>
+        @endif
 
         {{-- Navigation arrows --}}
         <template x-if="media.length > 1">
@@ -304,26 +298,4 @@
         </template>
     </div>
 
-    {{-- ===== 3D VIEWER MODAL (separate from lightbox) ===== --}}
-    <div
-        x-show="viewerOpen"
-        x-cloak
-        x-transition.opacity.duration.200ms
-        class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md"
-        role="dialog"
-        aria-modal="true"
-        @click.self="closeViewer()"
-    >
-        <button
-            type="button"
-            @click="closeViewer()"
-            class="absolute right-4 top-4 z-20 grid h-12 w-12 place-items-center rounded-full border border-white/15 bg-zinc-900/80 text-white backdrop-blur transition hover:bg-white/10"
-            aria-label="{{ __('Закрити') }}"
-        >
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-        </button>
-        <div class="h-[85vh] w-[90vw] max-w-6xl overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 shadow-2xl shadow-black/50">
-            <div x-show="isViewer(current())" data-model-viewer :data-model-url="current()?.url" class="h-full w-full"></div>
-        </div>
-    </div>
 </div>

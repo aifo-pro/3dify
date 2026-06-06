@@ -1,6 +1,7 @@
 @props([
     'viewer' => ['available' => false, 'format' => null, 'src' => null, 'reason' => 'none'],
     'title' => '',
+    'fill' => false,
 ])
 
 @php
@@ -9,6 +10,15 @@
     $format = strtolower((string) ($viewer['format'] ?? ''));
     $src = $viewer['src'] ?? null;
     $reason = $viewer['reason'] ?? 'none';
+
+    // `fill` mode is used when the viewer lives inside the gallery frame, so it
+    // fills the parent instead of imposing its own card aspect ratio / border.
+    $rootClass = $fill
+        ? 'group relative h-full w-full overflow-hidden'
+        : 'group relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/30';
+    $rootStyle = $fill
+        ? 'height:100%;width:100%;background:#05070a;'
+        : 'aspect-ratio: 4/3; max-height: 620px; background:#05070a;';
 @endphp
 
 @if($available && $src)
@@ -17,8 +27,8 @@
         data-model-viewer-root
         data-src="{{ $src }}"
         data-format="{{ $format }}"
-        class="group relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/30"
-        style="aspect-ratio: 4/3; max-height: 620px; background:#05070a;"
+        class="{{ $rootClass }}"
+        style="{{ $rootStyle }}"
     >
         {{-- WebGL canvas host --}}
         <div data-canvas class="absolute inset-0"></div>
@@ -225,6 +235,9 @@
             function animate() {
                 if (disposed) return;
                 raf = requestAnimationFrame(animate);
+                // Skip GPU work while the slide is hidden (e.g. another gallery
+                // image is shown) — the element collapses to zero size.
+                if (host.clientWidth < 8 || host.clientHeight < 8) return;
                 controls.update();
                 renderer.render(scene, camera);
             }

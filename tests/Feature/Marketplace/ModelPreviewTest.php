@@ -250,8 +250,8 @@ class ModelPreviewTest extends TestCase
             ->assertSee(route('products.preview-file', $product), false);
     }
 
-    /** Unauthorized paid model shows the purchase-required message, no viewer. */
-    public function test_paid_model_shows_purchase_message_without_viewer(): void
+    /** Unauthorized paid model renders no 3D viewer (gallery shows images only). */
+    public function test_paid_model_renders_no_viewer_for_unauthorized_user(): void
     {
         Storage::fake('private');
         Storage::fake('public');
@@ -262,6 +262,5 @@ class ModelPreviewTest extends TestCase
         $response = $this->get(route('products.show', $product));
         $response->assertOk();
         $response->assertDontSee('data-model-viewer-root', false);
-        $response->assertSee(__('3D-перегляд недоступний'), false);
     }
 }
