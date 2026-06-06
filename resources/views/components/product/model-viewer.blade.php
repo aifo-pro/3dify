@@ -82,8 +82,8 @@
                 </div>
                 <p class="mt-3 text-sm font-bold text-white">{{ __('Не вдалося завантажити 3D-перегляд') }}</p>
                 <p class="mt-1 text-xs leading-relaxed text-zinc-400">{{ __('Спробуйте оновити сторінку. Ви все одно можете завантажити файл моделі.') }}</p>
-                <p data-error-reason class="mt-2 break-words font-mono text-[10px] leading-relaxed text-amber-300/70"></p>
-                <p class="mt-1 text-[9px] text-zinc-700">viewer build: esm-v1</p>
+                <p data-error-reason class="mt-3 break-words rounded-lg bg-amber-400/[0.08] px-2 py-1.5 font-mono text-xs font-bold leading-relaxed text-amber-200"></p>
+                <p class="mt-1 text-[9px] text-zinc-700">viewer build: esm-v2</p>
             </div>
         </div>
 
@@ -209,7 +209,7 @@
                 if (errorEl) {
                     errorEl.hidden = false;
                     const r = errorEl.querySelector('[data-error-reason]');
-                    if (r && detail) r.textContent = String(detail);
+                    if (r) r.textContent = detail ? String(detail) : '(no detail captured)';
                 }
             };
             const showNoWebgl = (err) => {
