@@ -18,8 +18,8 @@
                         autofocus
                         autocomplete="off"
                         placeholder="Моделі, автори, статті…"
-                        style="outline:none;box-shadow:none;"
-                        class="no-outline h-12 min-w-0 flex-1 bg-transparent text-base text-white placeholder:text-zinc-500 focus:outline-none"
+                        style="outline:none;box-shadow:none;border:none;-webkit-appearance:none;appearance:none;background:transparent;"
+                        class="no-outline h-12 min-w-0 flex-1 border-0 bg-transparent text-base text-white placeholder:text-zinc-500 focus:outline-none focus:ring-0"
                     >
                     <button type="submit"
                             class="shrink-0 rounded-full bg-emerald-400 px-6 py-3 text-sm font-black text-zinc-950 transition hover:bg-emerald-300">
